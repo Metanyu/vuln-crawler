@@ -2,3 +2,5 @@ scrapy
 requests
 scrapy_proxy_pool
 scrapy-user-agents
+js2py
+bs4

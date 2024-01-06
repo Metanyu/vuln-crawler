@@ -4,7 +4,7 @@ from scrapy.crawler import CrawlerProcess
 from datetime import datetime
 from scrapy.utils.reactor import install_reactor
 import sys
-sys.path.insert(0, r'E:\Programming\Python practice\RISE\WebCrawler\neural\neural\spiders')
+sys.path.insert(-1, 'spiders')
 from Test_BE import *
 # Define the spider class
 
