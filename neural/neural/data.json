@@ -1,0 +1,86 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Linux",
+            "url": "/vuln/linux"
+        },
+        {
+            "label": "rocky",
+            "url": "/vuln/rocky"
+        },
+        {
+            "label": "rocky:8"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "kernel-tools-libs-devel"
+        }
+    ],
+    "credit": [
+        ""
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2022-08-25T13:11:21.609842Z",
+            "severity": "medium"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2022-05-03T22:02:22.926023Z",
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2022-10-26T21:12:15.679473Z",
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2022-08-23T16:15:09.837000Z",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05674",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-ROCKY8-KERNELTOOLSLIBSDEVEL-3192920",
+    "identifiers": {
+        "ALTERNATIVE": [],
+        "CVE": [
+            "CVE-2021-3764"
+        ],
+        "CWE": [
+            "CWE-401"
+        ]
+    },
+    "language": "linux",
+    "malicious": false,
+    "packageManager": "rocky:8",
+    "packageName": "kernel-tools-libs-devel",
+    "publicationTime": "2023-01-05T07:08:13.222028Z",
+    "remediation": "Upgrade Rocky-Linux:8 kernel-tools-libs-devel to version 0:4.18.0-372.9.1.el8 or higher. This issue was patched in RLSA-2022:1988 . ",
+    "semver": {
+        "vulnerable": [
+            "<0:4.18.0-372.9.1.el8"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Memory Leak",
+    "vulnDescription": {
+        "NVD Description": "Note: Versions mentioned in the description apply only to the upstream kernel-tools-libs-devel package and not the kernel-tools-libs-devel package as distributed by Rocky-Linux . See How to fix? for Rocky-Linux:8 relevant fixed versions and status. A memory leak flaw was found in the Linux kernel's ccp_run_aes_gcm_cmd() function that allows an attacker to cause a denial of service. The vulnerability is similar to the older CVE-2019-18808. The highest threat from this vulnerability is to system availability. ",
+        "References": "https://github.com/torvalds/linux/commit/505d9dcb0f7ddf9d075e729523a33d38642ae680"
+    }
+}
