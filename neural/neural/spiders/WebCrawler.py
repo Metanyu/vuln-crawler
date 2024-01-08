@@ -7,20 +7,20 @@ import sys
 sys.path.insert(-1, 'spiders')
 from Test_BE import *
 # Define the spider class
+import os
+def find_file_in_subfolders(filename, directory = 'data'):
+    for root, dirs, files in os.walk(directory):
+        if filename in files:
+            return True
+    return None
 
 class CrawlingSpider(CrawlSpider):
     name = 'CrawlingSpidery'
     allowed_domains = ['security.snyk.io']
     start_urls = ['https://security.snyk.io/vuln']
-    # custom_settings = {
-    #     'CONCURRENT_REQUESTS': 1,
-    #     'CONCURRENT_ITEMS' :1,
-    #     'CLOSESPIDER_PAGECOUNT': 2,
-    #     'CLOSESPIDER_ITEMCOUNT': 10
-    # }
     
     rules = (
-        Rule(LinkExtractor(allow=()), callback='parse_item', follow=True),
+        Rule(LinkExtractor(allow=()), callback='parse_item', process_links='process_links'), #follow = True),
     )
     install_reactor("twisted.internet.asyncioreactor.AsyncioSelectorReactor")
 
@@ -30,3 +30,9 @@ class CrawlingSpider(CrawlSpider):
             return
         else:
             yield get_data(response.url)
+    def process_links(self, links):
+        for link in links:
+        #1
+            if find_file_in_subfolders(str(link.split('/')[-1] + '.json')):# or link.split('/')[-4] == 'package':
+                continue  # skip all links that already existed
+            yield link 

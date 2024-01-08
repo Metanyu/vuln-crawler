@@ -6,11 +6,13 @@ import js2py
 import ast 
 def get_first_valid_github_commit_link(soup):
     commit_link_pattern = r'https://github\.com/.+?/commit/[0-9a-f]'
-    
+    links = []
     for link in soup.find_all('a'):
         commit_url  = link.get('href')
-        if re.match(commit_link_pattern, commit_url):
-            return commit_url
+        links.append('href')
+        
+        # if re.match(commit_link_pattern, commit_url):
+        #     return commit_url
     return None
 
 
@@ -66,8 +68,6 @@ def get_data(url = 'https://security.snyk.io/vuln/SNYK-PHP-MOODLEMOODLE-6141131'
     #     f.write(result)
     # py_dict = json.loads(result)
     py_dict = result
-    del py_dict['vulnerableVersions']
-    del py_dict['description']
     return py_dict
 
 # with open('data.json', 'w') as f:
