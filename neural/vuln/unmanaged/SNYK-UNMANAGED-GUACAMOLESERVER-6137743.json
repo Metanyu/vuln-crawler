@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Joseph Surin, Matt Jones (Elttam)"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-20 15:46:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-GUACAMOLESERVER-6137743",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-43826"
+        ],
+        "CWE": [
+            "CWE-190"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-21 18:08:26",
+    "remediation": "Upgrade guacamole-server to version 1.5.4-RC1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Integer Overflow or Wraparound",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Integer Overflow or Wraparound when handling VNC image buffers. An attacker can cause memory corruption or execute arbitrary code with the privileges of the running guacd process by convincing a user to connect to a compromised VNC server. "
+    },
+    "source_code": [
+        {
+            "filename": "src/protocols/vnc/argv.c",
+            "diff": "@@ -21,8 +21,10 @@\n #include \"argv.h\"\n #include \"vnc.h\"\n \n+#include <guacamole/mem.h>\n #include <guacamole/protocol.h>\n #include <guacamole/socket.h>\n+#include <guacamole/string.h>\n #include <guacamole/user.h>\n \n #include <pthread.h>\n@@ -38,16 +40,16 @@ int guac_vnc_argv_callback(guac_user* user, const char* mimetype,\n \n     /* Update username */\n     if (strcmp(name, GUAC_VNC_ARGV_USERNAME) == 0) {\n-        free(settings->username);\n-        settings->username = strdup(value);\n+        guac_mem_free(settings->username);\n+        settings->username = guac_strdup(value);\n     }\n     \n     /* Update password */\n     else if (strcmp(name, GUAC_VNC_ARGV_PASSWORD) == 0) {\n-        free(settings->password);\n-        settings->password = strdup(value);\n+        guac_mem_free(settings->password);\n+        settings->password = guac_strdup(value);\n     }\n \n     return 0;\n \n-}\n\\ No newline at end of file\n+}"
+        },
+        {
+            "filename": "src/protocols/vnc/client.c",
+            "diff": "@@ -34,6 +34,7 @@\n #endif\n \n #include <guacamole/client.h>\n+#include <guacamole/mem.h>\n #include <guacamole/recording.h>\n \n #include <pthread.h>\n@@ -102,7 +103,7 @@ int guac_client_init(guac_client* client) {\n     client->args = GUAC_VNC_CLIENT_ARGS;\n \n     /* Alloc client data */\n-    guac_vnc_client* vnc_client = calloc(1, sizeof(guac_vnc_client));\n+    guac_vnc_client* vnc_client = guac_mem_zalloc(sizeof(guac_vnc_client));\n     client->data = vnc_client;\n \n #ifdef ENABLE_VNC_TLS_LOCKING\n@@ -209,7 +210,7 @@ int guac_vnc_client_free_handler(guac_client* client) {\n #endif\n \n     /* Free generic data struct */\n-    free(client->data);\n+    guac_mem_free(client->data);\n \n     return 0;\n }"
+        },
+        {
+            "filename": "src/protocols/vnc/cursor.c",
+            "diff": "@@ -28,6 +28,7 @@\n #include <cairo/cairo.h>\n #include <guacamole/client.h>\n #include <guacamole/layer.h>\n+#include <guacamole/mem.h>\n #include <guacamole/protocol.h>\n #include <guacamole/socket.h>\n #include <rfb/rfbclient.h>\n@@ -51,7 +52,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {\n \n     /* Cairo image buffer */\n     int stride = cairo_format_stride_for_width(CAIRO_FORMAT_ARGB32, w);\n-    unsigned char* buffer = malloc(h*stride);\n+    unsigned char* buffer = guac_mem_alloc(h, stride);\n     unsigned char* buffer_row_current = buffer;\n \n     /* VNC image buffer */\n@@ -120,7 +121,7 @@ void guac_vnc_cursor(rfbClient* client, int x, int y, int w, int h, int bpp) {\n             buffer, w, h, stride);\n \n     /* Free surface */\n-    free(buffer);\n+    guac_mem_free(buffer);\n \n     /* libvncclient does not free rcMask as it does rcSource */\n     free(client->rcMask);"
+        },
+        {
+            "filename": "src/protocols/vnc/display.c",
+            "diff": "@@ -27,6 +27,7 @@\n #include <cairo/cairo.h>\n #include <guacamole/client.h>\n #include <guacamole/layer.h>\n+#include <guacamole/mem.h>\n #include <guacamole/protocol.h>\n #include <guacamole/socket.h>\n #include <rfb/rfbclient.h>\n@@ -69,7 +70,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {\n \n     /* Init Cairo buffer */\n     stride = cairo_format_stride_for_width(CAIRO_FORMAT_RGB24, w);\n-    buffer = malloc(h*stride);\n+    buffer = guac_mem_alloc(h, stride);\n     buffer_row_current = buffer;\n \n     bpp = client->format.bitsPerPixel/8;\n@@ -134,7 +135,7 @@ void guac_vnc_update(rfbClient* client, int x, int y, int w, int h) {\n \n     /* Free surface */\n     cairo_surface_destroy(surface);\n-    free(buffer);\n+    guac_mem_free(buffer);\n \n }\n "
+        },
+        {
+            "filename": "src/protocols/vnc/settings.c",
+            "diff": "@@ -24,6 +24,7 @@\n #include \"common/defaults.h\"\n #include \"settings.h\"\n \n+#include <guacamole/mem.h>\n #include <guacamole/user.h>\n #include <guacamole/wol-constants.h>\n \n@@ -395,7 +396,7 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,\n         return NULL;\n     }\n \n-    guac_vnc_settings* settings = calloc(1, sizeof(guac_vnc_settings));\n+    guac_vnc_settings* settings = guac_mem_zalloc(sizeof(guac_vnc_settings));\n \n     settings->hostname =\n         guac_user_parse_args_string(user, GUAC_VNC_CLIENT_ARGS, argv,\n@@ -646,43 +647,43 @@ guac_vnc_settings* guac_vnc_parse_args(guac_user* user,\n void guac_vnc_settings_free(guac_vnc_settings* settings) {\n \n     /* Free settings strings */\n-    free(settings->clipboard_encoding);\n-    free(settings->encodings);\n-    free(settings->hostname);\n-    free(settings->password);\n-    free(settings->recording_name);\n-    free(settings->recording_path);\n-    free(settings->username);\n+    guac_mem_free(settings->clipboard_encoding);\n+    guac_mem_free(settings->encodings);\n+    guac_mem_free(settings->hostname);\n+    guac_mem_free(settings->password);\n+    guac_mem_free(settings->recording_name);\n+    guac_mem_free(settings->recording_path);\n+    guac_mem_free(settings->username);\n \n #ifdef ENABLE_VNC_REPEATER\n     /* Free VNC repeater settings */\n-    free(settings->dest_host);\n+    guac_mem_free(settings->dest_host);\n #endif\n \n #ifdef ENABLE_COMMON_SSH\n     /* Free SFTP settings */\n-    free(settings->sftp_directory);\n-    free(settings->sftp_root_directory);\n-    free(settings->sftp_host_key);\n-    free(settings->sftp_hostname);\n-    free(settings->sftp_passphrase);\n-    free(settings->sftp_password);\n-    free(settings->sftp_port);\n-    free(settings->sftp_private_key);\n-    free(settings->sftp_username);\n+    guac_mem_free(settings->sftp_directory);\n+    guac_mem_free(settings->sftp_root_directory);\n+    guac_mem_free(settings->sftp_host_key);\n+    guac_mem_free(settings->sftp_hostname);\n+    guac_mem_free(settings->sftp_passphrase);\n+    guac_mem_free(settings->sftp_password);\n+    guac_mem_free(settings->sftp_port);\n+    guac_mem_free(settings->sftp_private_key);\n+    guac_mem_free(settings->sftp_username);\n #endif\n \n #ifdef ENABLE_PULSE\n     /* Free PulseAudio settings */\n-    free(settings->pa_servername);\n+    guac_mem_free(settings->pa_servername);\n #endif\n     \n     /* Free Wake-on-LAN strings */\n-    free(settings->wol_mac_addr);\n-    free(settings->wol_broadcast_addr);\n+    guac_mem_free(settings->wol_mac_addr);\n+    guac_mem_free(settings->wol_broadcast_addr);\n \n     /* Free settings structure */\n-    free(settings);\n+    guac_mem_free(settings);\n \n }\n "
+        }
+    ],
+    "commitTime": "2023-10-25 19:18:13"
+}

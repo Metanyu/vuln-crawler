@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Hubert Kario"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-18 01:50:06",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06940",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CRYPTOPP-6130089",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50979"
+        ],
+        "CWE": [
+            "CWE-203"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 14:28:17",
+    "remediation": "There is no fixed version for cryptopp . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Observable Discrepancy in Cryptographic Operations",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Observable Discrepancy in Cryptographic Operations due to a side channel vulnerability during the decryption process. An attacker can potentially extract sensitive information by analyzing the time taken to perform decryption operations. "
+    },
+    "source_code": []
+}

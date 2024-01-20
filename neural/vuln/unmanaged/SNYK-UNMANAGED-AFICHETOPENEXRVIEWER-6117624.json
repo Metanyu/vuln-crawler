@@ -1,0 +1,82 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "leedongha"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-11 23:50:36",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.36610",
+        "probability": "0.00087"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-AFICHETOPENEXRVIEWER-6117624",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50245"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-12 16:31:24",
+    "remediation": "Upgrade afichet/openexr-viewer to version 0.6.1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Copy without Checking Size of Input ('Classic Buffer Overflow'). An attacker can potentially execute arbitrary code or cause a denial of service by submitting a specially crafted OpenEXR file. "
+    },
+    "source_code": [
+        {
+            "filename": "src/model/framebuffer/FramebufferModel.cpp",
+            "diff": "@@ -39,7 +39,6 @@\n \n FramebufferModel::FramebufferModel(QObject* parent)\n   : QObject(parent)\n-  , m_pixelBuffer(nullptr)\n   , m_width(0)\n   , m_height(0)\n   , m_isImageLoaded(false)\n@@ -59,7 +58,4 @@ QRect FramebufferModel::getDataWindow() const\n     return m_dataWindow;\n }\n \n-FramebufferModel::~FramebufferModel()\n-{\n-    delete[] m_pixelBuffer;\n-}\n+FramebufferModel::~FramebufferModel() {}"
+        },
+        {
+            "filename": "src/model/framebuffer/FramebufferModel.h",
+            "diff": "@@ -37,7 +37,7 @@\n #include <QObject>\n #include <QRect>\n #include <QVector>\n-#include <array>\n+#include <vector>\n \n class FramebufferModel: public QObject\n {\n@@ -67,8 +67,8 @@ class FramebufferModel: public QObject\n     void loadFailed(QString message);\n \n   protected:\n-    float* m_pixelBuffer;\n-    QImage m_image;\n+    std::vector<float> m_pixelBuffer;\n+    QImage             m_image;\n \n     // Right now, the width and height are defined as Vec2i in OpenEXR\n     // i.e. int type."
+        },
+        {
+            "filename": "src/model/framebuffer/RGBFramebufferModel.cpp",
+            "diff": "@@ -81,6 +81,23 @@ void RGBFramebufferModel::load(\n             m_displayWindow\n               = QRect(dispW.min.x, dispW.min.y, dispW_width, dispW_height);\n \n+            // Check to avoid type overflow, width and height are 32bits int\n+            // representing a 2 dimentional image. Can overflow the type when\n+            // multiplied together.\n+            // 0x1FFFFFFF is a save limit for 4 * 0x7FFFFFFF the max\n+            // representable int since we need 4 channels.\n+            // TODO: Use larger type when manipulating framebuffer\n+            const uint64_t partial_size\n+              = (uint64_t)m_width * (uint64_t)m_height;\n+\n+            if (partial_size > 0x1FFFFFFF) {\n+                throw std::runtime_error(\n+                  \"The total image size is too large. May be supported in a \"\n+                  \"future revision.\");\n+            }\n+\n+            m_pixelBuffer.resize(4 * m_width * m_height);\n+\n             // Check if there is specific chromaticities tied to the color\n             // representation in this part.\n             const Imf::ChromaticitiesAttribute* c\n@@ -93,8 +110,6 @@ void RGBFramebufferModel::load(\n                 chromaticities = c->value();\n             }\n \n-            m_pixelBuffer = new float[4 * m_width * m_height];\n-\n             // Check if there is alpha channel\n             if (hasAlpha) {\n                 std::string      aLayer = m_parentLayer + \"A\";\n@@ -190,12 +205,12 @@ void RGBFramebufferModel::load(\n \n                     Imf::FrameBuffer framebuffer;\n \n-                    Imf::Rgba* buff1 = new Imf::Rgba[m_width * m_height];\n-                    Imf::Rgba* buff2 = new Imf::Rgba[m_width * m_height];\n+                    std::vector<Imf::Rgba> buff1(m_width * m_height);\n+                    std::vector<Imf::Rgba> buff2(m_width * m_height);\n \n-                    float* yBuffer  = new float[m_width * m_height];\n-                    float* ryBuffer = new float[m_width / 2 * m_height / 2];\n-                    float* byBuffer = new float[m_width / 2 * m_height / 2];\n+                    std::vector<float> yBuffer(m_width * m_height);\n+                    std::vector<float> ryBuffer(m_width / 2 * m_height / 2);\n+                    std::vector<float> byBuffer(m_width / 2 * m_height / 2);\n \n                     Imf::Slice ySlice = Imf::Slice::Make(\n                       Imf::PixelType::FLOAT,\n@@ -335,12 +350,6 @@ void RGBFramebufferModel::load(\n                             m_pixelBuffer[4 * (y * m_width + x) + 2] = rgb.z;\n                         }\n                     }\n-\n-                    delete[] yBuffer;\n-                    delete[] ryBuffer;\n-                    delete[] byBuffer;\n-                    delete[] buff1;\n-                    delete[] buff2;\n                 }\n \n                 break;"
+        },
+        {
+            "filename": "src/model/framebuffer/YFramebufferModel.cpp",
+            "diff": "@@ -90,12 +90,25 @@ void YFramebufferModel::load(Imf::MultiPartInputFile& file, int partId)\n                   dispW_width / 2,\n                   dispW_height / 2);\n \n-                m_pixelBuffer = new float[m_width * m_height];\n+                // Check to avoid type overflow, width and height are 32bits int\n+                // representing a 2 dimentional image. Can overflow the type when\n+                // multiplied together\n+                // TODO: Use larger type when manipulating framebuffer\n+                const uint64_t partial_size\n+                  = (uint64_t)m_width * (uint64_t)m_height;\n+\n+                if (partial_size > 0x7FFFFFFF) {\n+                    throw std::runtime_error(\n+                      \"The total image size is too large. May be supported in \"\n+                      \"a future revision.\");\n+                }\n+\n+                m_pixelBuffer.resize(m_width * m_height);\n \n                 // Luminance Chroma channels\n                 graySlice = Imf::Slice::Make(\n                   Imf::PixelType::FLOAT,\n-                  m_pixelBuffer,\n+                  m_pixelBuffer.data(),\n                   datW,\n                   sizeof(float),\n                   m_width * sizeof(float),\n@@ -112,11 +125,11 @@ void YFramebufferModel::load(Imf::MultiPartInputFile& file, int partId)\n                 m_displayWindow\n                   = QRect(dispW.min.x, dispW.min.y, dispW_width, dispW_height);\n \n-                m_pixelBuffer = new float[m_width * m_height];\n+                m_pixelBuffer.resize(m_width * m_height);\n \n                 graySlice = Imf::Slice::Make(\n                   Imf::PixelType::FLOAT,\n-                  m_pixelBuffer,\n+                  m_pixelBuffer.data(),\n                   datW);\n             }\n "
+        }
+    ],
+    "commitTime": "2023-12-09 13:26:22"
+}

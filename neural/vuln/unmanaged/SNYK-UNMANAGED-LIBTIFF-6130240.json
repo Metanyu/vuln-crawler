@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Shin-Yan"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-18 14:52:59",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23973",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-LIBTIFF-6130240",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6228"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 15:23:38",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption when processing a crafted TIFF file, which may result in a heap-based buffer overflow and lead to an application crash. An attacker can cause a denial of service by submitting a maliciously crafted TIFF file to the affected utility. "
+    },
+    "source_code": [
+        {
+            "filename": "tools/tiffcp.c",
+            "diff": "@@ -846,6 +846,8 @@ static int tiffcp(TIFF *in, TIFF *out)\n     if (!TIFFIsCODECConfigured(compression))\n         return FALSE;\n     TIFFGetFieldDefaulted(in, TIFFTAG_COMPRESSION, &input_compression);\n+    if (!TIFFIsCODECConfigured(input_compression))\n+        return FALSE;\n     TIFFGetFieldDefaulted(in, TIFFTAG_PHOTOMETRIC, &input_photometric);\n     if (input_compression == COMPRESSION_JPEG)\n     {"
+        }
+    ],
+    "commitTime": "2023-09-09 13:45:47"
+}

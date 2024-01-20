@@ -1,0 +1,59 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:C/C:L/I:L/A:N/E:P",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "RubyGems",
+            "url": "/vuln/rubygems"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "avo"
+        }
+    ],
+    "credit": [
+        "Stephen Ierodiaconou"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.7,
+    "description": "## Overview Affected versions of this package are vulnerable to Cross-site Scripting (XSS) via the `error` or `succeed` methods in an `Avo::BaseAction` subclass. An attacker can execute arbitrary scripts in the context of the user's browser session by injecting unsanitized HTML content into toast notifications displayed upon Action completion. This is only exploitable if the Content Security Policy is disabled. ## PoC ```ruby\r class Avo::Actions::MyAction < Avo::BaseAction\r self.name = \"An action\"\r \r def handle(**args)\r error \" oh no \"\r end\r end\r ``` ## Details A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, `<` can be coded as `<`; and `>` can be coded as `>`; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses `<` and `>` as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. ### Types of attacks There are a few methods by which XSS can be manipulated: |Type|Origin|Description| |--|--|--| |**Stored**|Server|The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link.| |**Reflected**|Server|The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser.| |**DOM-based**|Client|The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data.| |**Mutated**| |The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters.| ### Affected environments The following environments are susceptible to an XSS attack: * Web servers * Application servers * Web application environments ### How to prevent This section describes the top best practices designed to specifically protect your code: * Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. * Convert special characters such as `?`, `&`, `/`, `<`, `>` and spaces to their respective HTML or URL encoded equivalents. * Give users the option to disable client-side scripts. * Redirect invalid requests. * Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. * Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. * Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ## Remediation Upgrade `avo` to version 3.0.2 or higher. ## References - [GitHub Commit](https://github.com/avo-hq/avo/commit/469636c685bc55e44e7cede6061b637e2e174d0b) ",
+    "disclosureTime": "2024-01-17T22:34:03Z",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-RUBY-AVO-6173172",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-22411"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "ruby",
+    "malicious": false,
+    "packageManager": "rubygems",
+    "packageName": "avo",
+    "proprietary": false,
+    "publicationTime": "2024-01-18T09:14:43.434857Z",
+    "remediation": "Upgrade avo to version 3.0.2 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "<3.0.2"
+        ]
+    },
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "Affected versions of this package are vulnerable to Cross-site Scripting (XSS) via the error or succeed methods in an Avo::BaseAction subclass. An attacker can execute arbitrary scripts in the context of the user's browser session by injecting unsanitized HTML content into toast notifications displayed upon Action completion. This is only exploitable if the Content Security Policy is disabled. ",
+        "PoC": "class Avo::Actions::MyAction < Avo::BaseAction self.name = \"An action\" def handle(**args) error \"<em>oh no</em><script>alert('boo')</script>\" end end ",
+        "References": [
+            "https://github.com/avo-hq/avo/commit/469636c685bc55e44e7cede6061b637e2e174d0b"
+        ]
+    },
+    "vulnerableVersions": "<3.0.2"
+}

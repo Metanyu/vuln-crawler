@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "shinmao"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-07-21 11:32:35",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.13997",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-OSTREE-6137732",
+    "identifiers": {
+        "CVE": [
+            "CVE-2022-47085"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2023-12-21 15:38:25",
+    "remediation": "Upgrade ostree to version 0.17.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Overview": "ostree is a Rust bindings for libostree. Affected versions of this package are vulnerable to Denial of Service (DoS) via the print_panic function in the repo_checkout_filter.rs file. "
+    },
+    "source_code": [
+        {
+            "filename": "rust-bindings/src/repo_checkout_at_options/repo_checkout_filter.rs",
+            "diff": "@@ -107,18 +107,26 @@ pub(super) unsafe extern \"C\" fn filter_trampoline_unwindsafe(\n ///\n /// If the panic value is either `&str` or `String`, we print it. Otherwise, we don't.\n fn print_panic(panic: Box<dyn Any>) {\n-    eprintln!(\"A Rust callback invoked by C code panicked.\");\n-    eprintln!(\"Unwinding across FFI boundaries is Undefined Behavior so abort() will be called.\");\n+    use std::io::Write;\n+    let stderr = std::io::stderr();\n+    let mut stderr = stderr.lock();\n+    // Directly write to stderr instead of eprintln!() as that function panics\n+    // if writing fails, which would involve a double panic which we don't want.\n+    let _ = stderr.write_all(\n+        r#\"A Rust callback invoked by C code panicked.\n+Unwinding across FFI boundaries is Undefined Behavior so abort() will be called.\"#\n+            .as_bytes(),\n+    );\n     let msg = {\n         if let Some(s) = panic.as_ref().downcast_ref::<&str>() {\n             s\n         } else if let Some(s) = panic.as_ref().downcast_ref::<String>() {\n             s\n         } else {\n-            \"UNABLE TO SHOW VALUE OF PANIC\"\n+            \"(non-string panic value)\"\n         }\n     };\n-    eprintln!(\"Panic value: {}\", msg);\n+    let _ = stderr.write_all(msg.as_bytes());\n }\n \n #[cfg(test)]"
+        }
+    ],
+    "commitTime": "2022-11-21 18:21:09"
+}

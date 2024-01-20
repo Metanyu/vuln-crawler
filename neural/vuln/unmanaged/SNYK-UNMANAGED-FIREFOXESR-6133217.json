@@ -1,0 +1,95 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Jan Varga"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23798",
+        "probability": "0.00060"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOXESR-6133217",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6865"
+        ],
+        "CWE": [
+            "CWE-908"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 15:05:31",
+    "remediation": "Upgrade Firefox-ESR to version 115.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use of Uninitialized Resource",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use of Uninitialized Resource due to improper handling of memory in the EncryptingOutputStream component. An attacker can potentially expose uninitialized data by writing data to a local disk, which may compromise the privacy of browsing sessions. "
+    },
+    "source_code": []
+}

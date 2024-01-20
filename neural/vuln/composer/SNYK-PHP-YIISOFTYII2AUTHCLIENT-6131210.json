@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "rhertogh"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.8,
+    "disclosureTime": "2023-12-18 19:34:20",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-YIISOFTYII2AUTHCLIENT-6131210",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50714"
+        ],
+        "CWE": [
+            "CWE-287"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-19 14:46:40",
+    "remediation": "Upgrade yiisoft/yii2-authclient to version 2.2.15 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Authentication",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Authentication due to improper handling of the authCodeVerifier which should be removed after usage. Additionally, there is a susceptibility to a downgrade attack when PKCE is used for CSRF protection. An attacker can exploit these weaknesses by intercepting or manipulating the authorization process. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -5,7 +5,8 @@ Yii Framework 2 authclient extension Change Log\n ------------------------\n \n - Bug #364: Use issuer claim from OpenID Configuration (radwouters)\n-- Enh: #367: Throw more specific `ClientErrorResponseException` when the response code in `BaseOAuth::sendRequest()` is a 4xx (rhertogh)  \n+- Enh #367: Throw more specific `ClientErrorResponseException` when the response code in `BaseOAuth::sendRequest()` is a 4xx (rhertogh)\n+- Enh GHSA-rw54-6826-c8j5: Improved security for OAuth2 client by requiring an `authCodeVerifier` if PKCE is enabled and clearing it after usage (rhertogh)\n \n \n 2.2.14 November 18, 2022"
+        },
+        {
+            "filename": "src/OAuth2.php",
+            "diff": "@@ -131,7 +131,14 @@ public function fetchAccessToken($authCode, array $params = [])\n         ];\n \n         if ($this->enablePkce) {\n-            $defaultParams['code_verifier'] = $this->getState('authCodeVerifier');\n+            $authCodeVerifier = $this->getState('authCodeVerifier');\n+            if (empty($authCodeVerifier)) {\n+                // Prevent PKCE Downgrade Attack\n+                // https://datatracker.ietf.org/doc/html/draft-ietf-oauth-security-topics#name-pkce-downgrade-attack\n+                throw new HttpException(409, 'Invalid auth code verifier.');\n+            }\n+            $defaultParams['code_verifier'] = $authCodeVerifier;\n+            $this->removeState('authCodeVerifier');\n         }\n \n         $request = $this->createRequest()"
+        }
+    ],
+    "commitTime": "2023-12-16 15:09:48"
+}

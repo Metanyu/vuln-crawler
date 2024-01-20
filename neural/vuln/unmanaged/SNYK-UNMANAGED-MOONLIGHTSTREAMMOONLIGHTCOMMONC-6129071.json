@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Keane"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-14 17:45:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.42816",
+        "probability": "0.00106"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-MOONLIGHTSTREAMMOONLIGHTCOMMONC-6129071",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-42800"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 14:50:06",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Classic Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Classic Buffer Overflow via the performRtspHandshake() function in RtspConnection.c file. An attacker can crash the client or achieve remote code execution on the client by sending crafted packets to the vulnerable function. "
+    },
+    "source_code": [
+        {
+            "filename": "src/RtspConnection.c",
+            "diff": "@@ -776,7 +776,8 @@ int performRtspHandshake(PSERVER_INFORMATION serverInfo) {\n             (StreamConfig.streamingRemotely != STREAM_CFG_REMOTE || CHANNEL_COUNT_FROM_AUDIO_CONFIGURATION(StreamConfig.audioConfiguration) <= 2)) {\n         // If we have an RTSP URL string and it was successfully parsed, use that string\n         if (serverInfo->rtspSessionUrl != NULL && parseUrlAddrFromRtspUrlString(serverInfo->rtspSessionUrl, urlAddr, sizeof(urlAddr))) {\n-            strcpy(rtspTargetUrl, serverInfo->rtspSessionUrl);\n+            PltSafeStrcpy(rtspTargetUrl, sizeof(rtspTargetUrl), serverInfo->rtspSessionUrl);\n+            rtspTargetUrl[sizeof(rtspTargetUrl) - 1] = '\\0';\n         }\n         else {\n             // If an RTSP URL string was not provided or failed to parse, we will construct one now as best we can."
+        }
+    ],
+    "commitTime": "2023-10-07 02:14:30"
+}

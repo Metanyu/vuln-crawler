@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Miguel Segovia Gil"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-13 12:06:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14135",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGOPENCMS-6129055",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6379"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 14:38:29",
+    "remediation": "Upgrade org.opencms:opencms-core to version 16.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting",
+    "vulnDescription": {
+        "Overview": "org.opencms:opencms-core is a Java open source content management system by Alkacon Software. Affected versions of this package are vulnerable to Cross-site Scripting due to improper neutralization of input during web page generation. An attacker can inject malicious scripts and potentially compromise the integrity of the user's session by sending a specially crafted JavaScript payload. "
+    },
+    "source_code": [
+        {
+            "filename": "src/org/opencms/ui/apps/modules/CmsModuleInfoDialog.java",
+            "diff": "@@ -34,6 +34,7 @@\n import org.opencms.ui.apps.Messages;\n import org.opencms.ui.components.CmsBasicDialog;\n import org.opencms.ui.components.CmsResourceInfo;\n+import org.opencms.ui.components.CmsRichTextArea;\n import org.opencms.workplace.explorer.CmsExplorerTypeSettings;\n import org.opencms.workplace.explorer.CmsResourceUtil;\n \n@@ -92,7 +93,7 @@ public CmsModuleInfoDialog(String moduleName, Consumer<String> editAction) {\n             CmsModuleApp.Icons.RESINFO_ICON);\n         displayResourceInfoDirectly(Arrays.asList(resInfo));\n         m_description.setContentMode(ContentMode.HTML);\n-        m_description.setValue(module.getDescription());\n+        m_description.setValue(CmsRichTextArea.cleanHtml(module.getDescription(), true));\n         m_ok.addClickListener(new ClickListener() {\n \n             private static final long serialVersionUID = 1L;"
+        }
+    ],
+    "commitTime": "2023-08-25 14:17:47"
+}

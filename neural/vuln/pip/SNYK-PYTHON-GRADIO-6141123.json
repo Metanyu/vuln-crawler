@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.4,
+    "disclosureTime": "2024-01-01 06:31:54",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-GRADIO-6141123",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-918"
+        ],
+        "PVE": [
+            "PVE-2023-62973"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 11:14:46",
+    "remediation": "Upgrade gradio to version 4.10.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Server-side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "gradio is a Python library for easily interacting with trained machine learning models Affected versions of this package are vulnerable to Server-side Request Forgery (SSRF) using the /file route since it used to perform a GET/HEAD request to determine if a filepath was a possible URL. "
+    },
+    "source_code": []
+}

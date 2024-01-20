@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-06-11 09:29:28",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.13986",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137920",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-34100"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:29:25",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-Bounds",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-Bounds. When reading the TCP MSS option value from an incoming packet, the Contiki-NG OS does not verify that certain buffer indices to read from are within the bounds of the IPv6 packet buffer, uip_buf . In particular, there is a 2-byte buffer read in the module os/net/ipv6/uip6.c . The buffer is indexed using 'UIP_IPTCPH_LEN + 2 + c' and 'UIP_IPTCPH_LEN + 3 + c', but the uip_buf buffer may not have enough data, resulting in a 2-byte read out of bounds. "
+    },
+    "source_code": []
+}

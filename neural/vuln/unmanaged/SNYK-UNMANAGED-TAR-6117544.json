@@ -1,0 +1,59 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 3.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "low"
+        }
+    ],
+    "cvssScore": 2.8,
+    "disclosureTime": "2023-12-11 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TAR-6117544",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-39804"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-12 08:17:48",
+    "remediation": "Upgrade tar to version 1.35 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow due to incorrectly handled extension attributes in PAX archives. An attacker can cause the application to crash by manipulating the PAX archive attributes. "
+    },
+    "source_code": []
+}

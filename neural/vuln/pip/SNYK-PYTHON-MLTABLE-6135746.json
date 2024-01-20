@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2023-12-12 18:31:35",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14550",
+        "probability": "0.00048"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-MLTABLE-6135746",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-35625"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 11:53:21",
+    "remediation": "Upgrade mltable to version 1.5.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "mltable is a Contains MLTable loading and authoring apis for the mltable package. Affected versions of this package are vulnerable to Information Exposure due to improper handling of sensitive information. "
+    },
+    "source_code": []
+}

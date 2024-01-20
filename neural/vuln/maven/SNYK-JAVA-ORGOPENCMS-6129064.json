@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Miguel Segovia Gil"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-13 12:06:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.71230",
+        "probability": "0.00416"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGOPENCMS-6129064",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6380"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 14:33:14",
+    "remediation": "Upgrade org.opencms:opencms-core to version 16.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "URL Redirection to Untrusted Site ('Open Redirect')",
+    "vulnDescription": {
+        "Overview": "org.opencms:opencms-core is a Java open source content management system by Alkacon Software. Affected versions of this package are vulnerable to URL Redirection to Untrusted Site ('Open Redirect') due to improper sanitization of the URI parameter. An attacker can redirect a user to a malicious site and potentially compromise their system by sending a specially crafted URL. "
+    },
+    "source_code": [
+        {
+            "filename": "src/org/opencms/ui/apps/modules/CmsModuleInfoDialog.java",
+            "diff": "@@ -34,6 +34,7 @@\n import org.opencms.ui.apps.Messages;\n import org.opencms.ui.components.CmsBasicDialog;\n import org.opencms.ui.components.CmsResourceInfo;\n+import org.opencms.ui.components.CmsRichTextArea;\n import org.opencms.workplace.explorer.CmsExplorerTypeSettings;\n import org.opencms.workplace.explorer.CmsResourceUtil;\n \n@@ -92,7 +93,7 @@ public CmsModuleInfoDialog(String moduleName, Consumer<String> editAction) {\n             CmsModuleApp.Icons.RESINFO_ICON);\n         displayResourceInfoDirectly(Arrays.asList(resInfo));\n         m_description.setContentMode(ContentMode.HTML);\n-        m_description.setValue(module.getDescription());\n+        m_description.setValue(CmsRichTextArea.cleanHtml(module.getDescription(), true));\n         m_ok.addClickListener(new ClickListener() {\n \n             private static final long serialVersionUID = 1L;"
+        }
+    ],
+    "commitTime": "2023-08-25 14:17:47"
+}

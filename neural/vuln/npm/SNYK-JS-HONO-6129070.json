@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.2,
+    "disclosureTime": "2023-12-15 02:45:54",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12317",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JS-HONO-6129070",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50710"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-15 14:47:27",
+    "remediation": "Upgrade hono to version 3.11.7 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Arbitrary Code Injection",
+    "vulnDescription": {
+        "Overview": "hono is an Ultrafast web framework for the Edges Affected versions of this package are vulnerable to Arbitrary Code Injection via the TrieRouter process. An attacker can manipulate the path parameters to override named path parameter values from previous requests, potentially leading to unintended behavior or access to privileged operations. Note: This is only exploitable if the application uses TrieRouter explicitly or matches a pattern not supported by the default RegExpRouter . ",
+        "Workaround": "This vulnerability can be mitigated by avoiding the direct use of TrieRouter . "
+    },
+    "source_code": [
+        {
+            "filename": "deno_dist/router/trie-router/node.ts",
+            "diff": "@@ -5,12 +5,15 @@ import { splitPath, splitRoutingPath, getPattern } from '../../utils/url.ts'\n \n type HandlerSet<T> = {\n   handler: T\n-  params: Record<string, string>\n   possibleKeys: string[]\n   score: number\n   name: string // For debug\n }\n \n+type HandlerParamsSet<T> = HandlerSet<T> & {\n+  params: Record<string, string>\n+}\n+\n export class Node<T> {\n   methods: Record<string, HandlerSet<T>>[]\n \n@@ -26,7 +29,7 @@ export class Node<T> {\n     this.name = ''\n     if (method && handler) {\n       const m: Record<string, HandlerSet<T>> = {}\n-      m[method] = { handler, params: {}, possibleKeys: [], score: 0, name: this.name }\n+      m[method] = { handler, possibleKeys: [], score: 0, name: this.name }\n       this.methods = [m]\n     }\n     this.patterns = []\n@@ -74,7 +77,6 @@ export class Node<T> {\n \n     const handlerSet: HandlerSet<T> = {\n       handler,\n-      params: {},\n       possibleKeys,\n       name: this.name,\n       score: this.order,\n@@ -87,12 +89,17 @@ export class Node<T> {\n   }\n \n   // getHandlerSets\n-  private gHSets(node: Node<T>, method: string, params: Record<string, string>): HandlerSet<T>[] {\n-    const handlerSets: HandlerSet<T>[] = []\n+  private gHSets(\n+    node: Node<T>,\n+    method: string,\n+    params: Record<string, string>\n+  ): HandlerParamsSet<T>[] {\n+    const handlerSets: HandlerParamsSet<T>[] = []\n     for (let i = 0, len = node.methods.length; i < len; i++) {\n       const m = node.methods[i]\n-      const handlerSet = m[method] || m[METHOD_NAME_ALL]\n+      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>\n       if (handlerSet !== undefined) {\n+        handlerSet.params = {}\n         handlerSet.possibleKeys.map((key) => {\n           handlerSet.params[key] = params[key]\n         })\n@@ -103,7 +110,7 @@ export class Node<T> {\n   }\n \n   search(method: string, path: string): [[T, Params][]] {\n-    const handlerSets: HandlerSet<T>[] = []\n+    const handlerSets: HandlerParamsSet<T>[] = []\n \n     const params: Record<string, string> = {}\n     this.params = {}\n@@ -126,11 +133,9 @@ export class Node<T> {\n           if (isLast === true) {\n             // '/hello/*' => match '/hello'\n             if (nextNode.children['*']) {\n-              handlerSets.push(\n-                ...this.gHSets(nextNode.children['*'], method, { ...params, ...node.params })\n-              )\n+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params))\n             }\n-            handlerSets.push(...this.gHSets(nextNode, method, { ...params, ...node.params }))\n+            handlerSets.push(...this.gHSets(nextNode, method, node.params))\n           } else {\n             tempNodes.push(nextNode)\n           }\n@@ -144,7 +149,7 @@ export class Node<T> {\n           if (pattern === '*') {\n             const astNode = node.children['*']\n             if (astNode) {\n-              handlerSets.push(...this.gHSets(astNode, method, { ...params, ...node.params }))\n+              handlerSets.push(...this.gHSets(astNode, method, node.params))\n               tempNodes.push(astNode)\n             }\n             continue"
+        },
+        {
+            "filename": "src/router/trie-router/node.test.ts",
+            "diff": "@@ -89,6 +89,21 @@ describe('Name path', () => {\n     expect(res[0][0]).toEqual('get events')\n     expect(res[0][1]['location']).toBe('yokohama')\n   })\n+\n+  it('Should not return a previous param value', () => {\n+    const node = new Node()\n+    node.insert('delete', '/resource/:id', 'resource')\n+    const [resA] = node.search('delete', '/resource/a')\n+    const [resB] = node.search('delete', '/resource/b')\n+    expect(resA).not.toBeNull()\n+    expect(resA.length).toBe(1)\n+    expect(resA[0][0]).toEqual('resource')\n+    expect(resA[0][1]).toEqual({ id: 'a' })\n+    expect(resB).not.toBeNull()\n+    expect(resB.length).toBe(1)\n+    expect(resB[0][0]).toEqual('resource')\n+    expect(resB[0][1]).toEqual({ id: 'b' })\n+  })\n })\n \n describe('Name path - Multiple route', () => {"
+        },
+        {
+            "filename": "src/router/trie-router/node.ts",
+            "diff": "@@ -5,12 +5,15 @@ import { splitPath, splitRoutingPath, getPattern } from '../../utils/url'\n \n type HandlerSet<T> = {\n   handler: T\n-  params: Record<string, string>\n   possibleKeys: string[]\n   score: number\n   name: string // For debug\n }\n \n+type HandlerParamsSet<T> = HandlerSet<T> & {\n+  params: Record<string, string>\n+}\n+\n export class Node<T> {\n   methods: Record<string, HandlerSet<T>>[]\n \n@@ -26,7 +29,7 @@ export class Node<T> {\n     this.name = ''\n     if (method && handler) {\n       const m: Record<string, HandlerSet<T>> = {}\n-      m[method] = { handler, params: {}, possibleKeys: [], score: 0, name: this.name }\n+      m[method] = { handler, possibleKeys: [], score: 0, name: this.name }\n       this.methods = [m]\n     }\n     this.patterns = []\n@@ -74,7 +77,6 @@ export class Node<T> {\n \n     const handlerSet: HandlerSet<T> = {\n       handler,\n-      params: {},\n       possibleKeys,\n       name: this.name,\n       score: this.order,\n@@ -87,12 +89,17 @@ export class Node<T> {\n   }\n \n   // getHandlerSets\n-  private gHSets(node: Node<T>, method: string, params: Record<string, string>): HandlerSet<T>[] {\n-    const handlerSets: HandlerSet<T>[] = []\n+  private gHSets(\n+    node: Node<T>,\n+    method: string,\n+    params: Record<string, string>\n+  ): HandlerParamsSet<T>[] {\n+    const handlerSets: HandlerParamsSet<T>[] = []\n     for (let i = 0, len = node.methods.length; i < len; i++) {\n       const m = node.methods[i]\n-      const handlerSet = m[method] || m[METHOD_NAME_ALL]\n+      const handlerSet = (m[method] || m[METHOD_NAME_ALL]) as HandlerParamsSet<T>\n       if (handlerSet !== undefined) {\n+        handlerSet.params = {}\n         handlerSet.possibleKeys.map((key) => {\n           handlerSet.params[key] = params[key]\n         })\n@@ -103,7 +110,7 @@ export class Node<T> {\n   }\n \n   search(method: string, path: string): [[T, Params][]] {\n-    const handlerSets: HandlerSet<T>[] = []\n+    const handlerSets: HandlerParamsSet<T>[] = []\n \n     const params: Record<string, string> = {}\n     this.params = {}\n@@ -126,11 +133,9 @@ export class Node<T> {\n           if (isLast === true) {\n             // '/hello/*' => match '/hello'\n             if (nextNode.children['*']) {\n-              handlerSets.push(\n-                ...this.gHSets(nextNode.children['*'], method, { ...params, ...node.params })\n-              )\n+              handlerSets.push(...this.gHSets(nextNode.children['*'], method, node.params))\n             }\n-            handlerSets.push(...this.gHSets(nextNode, method, { ...params, ...node.params }))\n+            handlerSets.push(...this.gHSets(nextNode, method, node.params))\n           } else {\n             tempNodes.push(nextNode)\n           }\n@@ -144,7 +149,7 @@ export class Node<T> {\n           if (pattern === '*') {\n             const astNode = node.children['*']\n             if (astNode) {\n-              handlerSets.push(...this.gHSets(astNode, method, { ...params, ...node.params }))\n+              handlerSets.push(...this.gHSets(astNode, method, node.params))\n               tempNodes.push(astNode)\n             }\n             continue"
+        }
+    ],
+    "commitTime": "2023-12-14 01:21:02"
+}

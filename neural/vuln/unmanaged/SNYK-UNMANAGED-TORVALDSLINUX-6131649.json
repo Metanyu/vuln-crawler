@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Robb Gatica"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-18 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16759",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6131649",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6817"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-19 15:32:34",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc5 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free due to improper handling of inactive elements in nft_pipapo_walk . An attacker can trigger an application crash, information disclosure, or local privilege escalation. "
+    },
+    "source_code": [
+        {
+            "filename": "net/netfilter/nft_set_pipapo.c",
+            "diff": "@@ -2043,6 +2043,9 @@ static void nft_pipapo_walk(const struct nft_ctx *ctx, struct nft_set *set,\n \n \t\te = f->mt[r].e;\n \n+\t\tif (!nft_set_elem_active(&e->ext, iter->genmask))\n+\t\t\tgoto cont;\n+\n \t\titer->err = iter->fn(ctx, set, iter, &e->priv);\n \t\tif (iter->err < 0)\n \t\t\tgoto out;"
+        }
+    ],
+    "commitTime": "2023-12-06 16:14:37"
+}

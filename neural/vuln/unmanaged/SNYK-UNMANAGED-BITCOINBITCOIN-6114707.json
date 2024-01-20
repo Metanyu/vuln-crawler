@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-09 19:44:31",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12570",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-BITCOINBITCOIN-6114707",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50428"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-10 12:01:25",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation of the script size limits. An attacker can bypass data carrier size restrictions by disguising data as executable code, such as using OP_FALSE OP_IF constructs, which has been observed in the wild with Inscriptions in 2022 and 2023. "
+    },
+    "source_code": []
+}

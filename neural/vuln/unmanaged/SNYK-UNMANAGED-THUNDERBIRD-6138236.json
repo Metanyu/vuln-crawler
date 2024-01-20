@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Marcus Brinkmann"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-THUNDERBIRD-6138236",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50762"
+        ],
+        "CWE": [
+            "CWE-347"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:16:39",
+    "remediation": "Upgrade thunderbird to version 115.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Verification of Cryptographic Signature",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Verification of Cryptographic Signature when processing a PGP/MIME payload that contains digitally signed text. A digitally signed text from a different context, such as a signed GIT commit, could be used to spoof an email message. Note: The text was interpreted as a MIME message and the first paragraph was always treated as an email header section. "
+    },
+    "source_code": []
+}

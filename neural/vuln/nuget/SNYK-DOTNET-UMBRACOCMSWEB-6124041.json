@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Jeroen Koppenol"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-12 20:52:39",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-UMBRACOCMSWEB-6124041",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49273"
+        ],
+        "CWE": [
+            "CWE-863"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-13 13:31:49",
+    "remediation": "Upgrade UmbracoCms.Web to version 8.18.10 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Incorrect Authorization",
+    "vulnDescription": {
+        "Overview": "UmbracoCms.Web is an ASP.NET CMS. Affected versions of this package are vulnerable to Incorrect Authorization due to improper access control mechanisms. An attacker can gain access to unauthorized functionalities or data by exploiting the endpoints that are not adequately secured. "
+    },
+    "source_code": [
+        {
+            "filename": "src/Umbraco.Web/Editors/LanguageController.cs",
+            "diff": "@@ -18,6 +18,7 @@ namespace Umbraco.Web.Editors\n     /// </summary>\n     [PluginController(\"UmbracoApi\")]\n     [PrefixlessBodyModelValidator]\n+    [UmbracoApplicationAuthorize(Core.Constants.Applications.Settings)]\n     public class LanguageController : UmbracoAuthorizedJsonController\n     {\n         /// <summary>"
+        },
+        {
+            "filename": "src/Umbraco.Web/Editors/NuCacheStatusController.cs",
+            "diff": "@@ -5,9 +5,11 @@\n using Umbraco.Web.PublishedCache;\n using Umbraco.Web.PublishedCache.NuCache;\n using Umbraco.Web.WebApi;\n+using Umbraco.Web.WebApi.Filters;\n \n namespace Umbraco.Web.Editors\n {\n+    [UmbracoApplicationAuthorize(Core.Constants.Applications.Settings)]\n     public class NuCacheStatusController : UmbracoAuthorizedApiController\n     {\n         private readonly IPublishedSnapshotService _publishedSnapshotService;"
+        },
+        {
+            "filename": "src/Umbraco.Web/Editors/RedirectUrlManagementController.cs",
+            "diff": "@@ -25,16 +25,17 @@ public RedirectUrlManagementController(ILogger logger)\n             _logger = logger;\n         }\n \n+        private static bool IsEnabled => Current.Configs.Settings().WebRouting.DisableRedirectUrlTracking == false;\n+\n         /// <summary>\n         /// Returns true/false of whether redirect tracking is enabled or not\n         /// </summary>\n         /// <returns></returns>\n         [HttpGet]\n         public IHttpActionResult GetEnableState()\n         {\n-            var enabled = Current.Configs.Settings().WebRouting.DisableRedirectUrlTracking == false;\n             var userIsAdmin = UmbracoContext.Security.CurrentUser.IsAdmin();\n-            return Ok(new { enabled, userIsAdmin });\n+            return Ok(new { enabled = IsEnabled, userIsAdmin });\n         }\n \n         //add paging\n@@ -83,6 +84,11 @@ public RedirectUrlSearchResult RedirectUrlsForContentItem(string contentUdi)\n         [HttpPost]\n         public IHttpActionResult DeleteRedirectUrl(Guid id)\n         {\n+            if (IsEnabled is false)\n+            {\n+                return BadRequest(\"Redirect tracking is disabled.\");\n+            }\n+\n             var redirectUrlService = Services.RedirectUrlService;\n             redirectUrlService.Delete(id);\n             return Ok();"
+        },
+        {
+            "filename": "src/Umbraco.Web/Editors/StylesheetController.cs",
+            "diff": "@@ -3,13 +3,15 @@\n using Umbraco.Core;\n using Umbraco.Web.Models.ContentEditing;\n using Umbraco.Web.Mvc;\n+using Umbraco.Web.WebApi.Filters;\n \n namespace Umbraco.Web.Editors\n {\n     /// <summary>\n     /// The API controller used for retrieving available stylesheets\n     /// </summary>\n     [PluginController(\"UmbracoApi\")]\n+    [UmbracoApplicationAuthorize(Core.Constants.Applications.Settings)]\n     public class StylesheetController : UmbracoAuthorizedJsonController\n     {\n         public IEnumerable<Stylesheet> GetAll()\n@@ -32,4 +34,4 @@ public IEnumerable<StylesheetRule> GetRulesByName(string name)\n         }\n     }\n \n-}\n\\ No newline at end of file\n+}"
+        }
+    ],
+    "commitTime": "2023-12-11 12:59:59"
+}

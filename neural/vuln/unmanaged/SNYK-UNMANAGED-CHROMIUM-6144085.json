@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Toan (suto) Pham",
+        "Tri Dang"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.8,
+    "disclosureTime": "2024-01-04 02:43:42",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CHROMIUM-6144085",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0223"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-04 15:48:57",
+    "remediation": "Upgrade chromium to version 120.0.6099.199 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow in the ANGLE component. "
+    },
+    "source_code": []
+}

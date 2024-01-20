@@ -1,0 +1,80 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Florian Walter"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.1,
+    "disclosureTime": "2024-01-03 15:30:26",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-PERFOODCOUCHAUTH-6143587",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-39655"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2024-01-04 15:19:41",
+    "remediation": "Upgrade @perfood/couch-auth to version 0.20.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Information Exposure Through Sent Data",
+    "vulnDescription": {
+        "Overview": "@perfood/couch-auth is an Easy and secure authentication for CouchDB/Cloudant. Based on SuperLogin, updated and rewritten in Typescript. Affected versions of this package are vulnerable to Information Exposure Through Sent Data via the password reset feature. An attacker can intercept password reset tokens and take over user accounts by sending a specially crafted host header in the forgot password request, which causes the password reset link to be sent to an attacker-controlled server. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -1,5 +1,13 @@\n ## Change Log\n \n+#### 0.20.X: Brute force protection\n+\n+##### 0.20.1\n+- :sparkles: if `security.passwordResetRateLimit` is set, password reset request are rate limited per username/email and the correct username/email must be included in the password reset requests\n+- :bug: sporadic session creation errors are fixed\n+\n+##### 0.20.0\n+- :sparkles: if `security.loginRateLimit` is set, login requests are rate limited per username/email\n \n #### 0.19.X: Token validation idempotency\n "
+        },
+        {
+            "filename": "README.md",
+            "diff": "@@ -376,7 +376,7 @@ It's easy to add custom fields to user documents. When added to a `profile` fiel\n \n ## Brute force protection\n \n-To enable brute force protection for the `/login` route you just need to add `loginRateLimit: {}` to `security` in your `config`. Adding just the empty object uses following defaults that can be overriden as needed:\n+To enable brute force protection for the `/login` route you just need to add `loginRateLimit: {}` to `security` in your `config`. The same goes for the `/password-reset` route, where you just need to add `passwordResetRateLimit: {}` accordingly. Adding just the empty object uses following defaults that can be overriden as needed:\n \n ```ts\n const config {\n@@ -406,6 +406,7 @@ couch-auth uses [express-slow-down](https://www.npmjs.com/package/express-slow-d\n \n ### Important notes:\n - You won't be able to override the keyGenerator option, as we use usernameField from the config.\n+- When activating rate limiting for the `/password-reset` route, `username` field is required in the request body!\n - If you want to use Redis Store instead of Memory Store you currently need to use [rate-limit-redis@2x](https://github.com/wyattjoh/rate-limit-redis/tree/v2.1.0) for now [due to known issues](https://github.com/express-rate-limit/express-slow-down/issues/40#issuecomment-1548011953) with newer versions of rate-limit-redis.\n \n ## Advanced Configuration\n@@ -481,6 +482,8 @@ forgot-password `token` and new password\n ##### `POST /password-reset`\n \n Resets the password. Required fields: `token`, `password`, and `confirmPassword`.\n+If `security.passwordResetRateLimit` is set, `username` (or your configured \n+username field) must be provided as for `/login`.\n \n ##### `POST /password-change`\n "
+        },
+        {
+            "filename": "package-lock.json",
+            "diff": "@@ -1,12 +1,12 @@\n {\n   \"name\": \"@perfood/couch-auth\",\n-  \"version\": \"0.20.0\",\n+  \"version\": \"0.20.1-1\",\n   \"lockfileVersion\": 2,\n   \"requires\": true,\n   \"packages\": {\n     \"\": {\n       \"name\": \"@perfood/couch-auth\",\n-      \"version\": \"0.20.0\",\n+      \"version\": \"0.20.1-1\",\n       \"license\": \"MIT\",\n       \"dependencies\": {\n         \"@sl-nx/couch-pwd\": \"2.0.0\","
+        },
+        {
+            "filename": "package.json",
+            "diff": "@@ -1,6 +1,6 @@\n {\n   \"name\": \"@perfood/couch-auth\",\n-  \"version\": \"0.20.0\",\n+  \"version\": \"0.20.1-1\",\n   \"description\": \"Easy and secure authentication for CouchDB/Cloudant. Based on SuperLogin, updated and rewritten in Typescript.\",\n   \"main\": \"./lib/index.js\",\n   \"files\": ["
+        },
+        {
+            "filename": "src/routes.ts",
+            "diff": "@@ -232,9 +232,50 @@ export default function (\n       }\n     );\n \n-  if (!disabled.includes('password-reset'))\n+  if (!disabled.includes('password-reset')) {\n+    const speedLimiter = slowDown({\n+      windowMs:\n+        config.security.passwordResetRateLimit?.windowMs || 5 * 60 * 1000,\n+      delayAfter: config.security.passwordResetRateLimit?.delayAfter || 3,\n+      delayMs: config.security.passwordResetRateLimit\n+        ? config.security.passwordResetRateLimit.delayMs || 500\n+        : 0,\n+      maxDelayMs: config.security.passwordResetRateLimit?.maxDelayMs || 10000,\n+      skipSuccessfulRequests:\n+        config.security.passwordResetRateLimit?.skipSuccessfulRequests || true,\n+      skipFailedRequests:\n+        config.security.passwordResetRateLimit?.skipFailedRequests || false,\n+      keyGenerator: function (req) {\n+        const usernameField = config.local.usernameField || 'username';\n+\n+        return req.body[usernameField];\n+      },\n+      onLimitReached:\n+        config.security.passwordResetRateLimit?.onLimitReached ||\n+        function () {},\n+      store: config.security.passwordResetRateLimit?.store || undefined,\n+      headers: config.security.passwordResetRateLimit?.headers || false\n+    });\n+\n     router.post(\n       '/password-reset',\n+      function (req: Request, res: Response, next: NextFunction) {\n+        if (!config.security.passwordResetRateLimit) {\n+          return next();\n+        }\n+\n+        const usernameField = config.local.usernameField || 'username';\n+\n+        if (!req.body[usernameField]) {\n+          return next({\n+            error: 'username required',\n+            status: 422\n+          });\n+        }\n+\n+        return next();\n+      },\n+      speedLimiter,\n       function (req: Request, res: Response, next: NextFunction) {\n         user.resetPassword(req.body, req).then(\n           function (currentUser) {\n@@ -264,6 +305,7 @@ export default function (\n         );\n       }\n     );\n+  }\n \n   if (!disabled.includes('password-change'))\n     router.post("
+        },
+        {
+            "filename": "src/types/config.ts",
+            "diff": "@@ -99,6 +99,7 @@ export interface SecurityConfig {\n    */\n   forwardErrors?: boolean;\n   loginRateLimit?: ExpressSlowDownOptions;\n+  passwordResetRateLimit?: ExpressSlowDownOptions;\n }\n \n export interface LengthConstraint {"
+        },
+        {
+            "filename": "src/user.ts",
+            "diff": "@@ -28,15 +28,15 @@ import {\n } from './types/typings';\n import { DbManager } from './user/DbManager';\n import {\n-  arrayUnion,\n   EMAIL_REGEXP,\n+  URLSafeUUID,\n+  USER_REGEXP,\n+  arrayUnion,\n   extractCurrentConsents,\n   getSessionKey,\n   hashToken,\n   hyphenizeUUID,\n   removeHyphens,\n-  URLSafeUUID,\n-  USER_REGEXP,\n   verifyConsentUpdate,\n   verifySessionConfigRoles\n } from './util';\n@@ -792,6 +792,20 @@ export class User {\n     if (user.forgotPassword.expires < Date.now()) {\n       return Promise.reject({ status: 400, error: 'Token expired' });\n     }\n+\n+    if (this.config.security.passwordResetRateLimit) {\n+      const username = form[this.config.local.usernameField || 'username'];\n+      if (!username) {\n+        throw { status: 400, error: 'Invalid token' };\n+      }\n+      const slUser = await this.getUser(\n+        form[this.config.local.usernameField || 'username']\n+      );\n+      if (user._id !== slUser._id) {\n+        throw { status: 400, error: 'Invalid token' };\n+      }\n+    }\n+\n     const hash = await this.hashPassword(form.password);\n \n     if (!user.local) {"
+        },
+        {
+            "filename": "test/test.config.ts",
+            "diff": "@@ -22,7 +22,10 @@ export const config = {\n   },\n   security: {\n     disabledRoutes: [],\n-    userActivityLogSize: 10\n+    userActivityLogSize: 10,\n+    passwordResetRateLimit: {\n+      delayMs: 500\n+    }\n   },\n   local: {\n     sendConfirmEmail: true,"
+        },
+        {
+            "filename": "test/test.spec.ts",
+            "diff": "@@ -309,6 +309,7 @@ describe('SuperLogin', function () {\n             .post(server + '/auth/password-reset')\n             .send({\n               token: resetToken,\n+              username: newUser.email,\n               password: 'newpass1',\n               confirmPassword: 'newpass1'\n             })"
+        }
+    ],
+    "commitTime": "2023-11-21 11:11:23"
+}

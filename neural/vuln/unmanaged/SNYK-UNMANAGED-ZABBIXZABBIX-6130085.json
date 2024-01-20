@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.6,
+    "disclosureTime": "2023-12-18 10:45:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06917",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-ZABBIXZABBIX-6130085",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-32725"
+        ],
+        "CWE": [
+            "CWE-565"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 14:17:22",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Reliance on Cookies without Validation and Integrity Checking",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Reliance on Cookies without Validation and Integrity Checking due to improper validation and integrity checking of cookies. An attacker can gain unauthorized access to the frontend by intercepting or forging the session cookie. "
+    },
+    "source_code": []
+}

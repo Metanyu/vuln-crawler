@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-10-01 06:31:39",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-OSGEOGDAL-6112458",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-61143"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 09:58:04",
+    "remediation": "Upgrade osgeo/gdal to version 3.4.0-RC1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Race Condition via the MSG driver. This driver looks for a matching \"prologue\"-file when calling MSGDataset::Open . The filename depends on the satellite number. There are only 4 satellites and all of them are tried until an existing prologue is found. The satellite number is stored as a static variable iCurrentSatellite and each call to Open triggers a loop that modifies this variable. If multiple threads try to open a MSG dataset, the state of iCurrentSatellite is modified in all threads. "
+    },
+    "source_code": [
+        {
+            "filename": "gdal/frmts/msg/msgdataset.cpp",
+            "diff": "@@ -53,7 +53,7 @@ const double MSGDataset::rA[12] = {-1, -1, -1, 0.9959, 0.9963, 0.9991, 0.9996, 0\n const double MSGDataset::rB[12] = {-1, -1, -1, 3.471, 2.219, 0.485, 0.181, 0.060, 0.627, 0.397, 0.576, -1};\n const int MSGDataset::iCentralPixelVIS_IR = 1856; // center pixel VIS and IR\n const int MSGDataset::iCentralPixelHRV = 5566; // center pixel HRV\n-int MSGDataset::iCurrentSatellite = 1; // satellite number 1,2,3,4 for MSG1, MSG2, MSG3 and MSG4\n+int MSGDataset::iCurrentSatelliteHint = 1;     // satellite number hint 1,2,3,4 for MSG1, MSG2, MSG3 and MSG4\n const char *MSGDataset::metadataDomain = \"msg\"; // the metadata domain\n \n #define MAX_SATELLITES 4\n@@ -151,34 +151,26 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )\n /* -------------------------------------------------------------------- */\n     Prologue pp;\n \n+    int iCurrentSatellite = iCurrentSatelliteHint; // Start with the hint. It is nice to have but don't rely on it...\n+\n     std::string sPrologueFileName = command.sPrologueFileName(iCurrentSatellite, 1);\n     bool fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n \n-    // Make sure we're testing for MSG1,2,3 or 4 exactly once, start with the most recently used, and remember it in the static member for the next round.\n-    if (!fPrologueExists)\n+    // Make sure we're testing for MSG1,2,3 or 4 exactly once, start with the hint which is the most recently used.\n+    int iTries = 1;\n+    while (!fPrologueExists && (iTries < MAX_SATELLITES))\n     {\n       iCurrentSatellite = 1 + iCurrentSatellite % MAX_SATELLITES;\n       sPrologueFileName = command.sPrologueFileName(iCurrentSatellite, 1);\n       fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n-      int iTries = 2;\n-      while (!fPrologueExists && (iTries < MAX_SATELLITES))\n-      {\n-        iCurrentSatellite = 1 + iCurrentSatellite % MAX_SATELLITES;\n-        sPrologueFileName = command.sPrologueFileName(iCurrentSatellite, 1);\n-        fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n-        ++iTries;\n-      }\n-      if (!fPrologueExists) // assume missing prologue file, keep original satellite number\n-      {\n-        iCurrentSatellite = 1 + iCurrentSatellite % MAX_SATELLITES;\n-        sPrologueFileName = command.sPrologueFileName(iCurrentSatellite, 1);\n-      }\n+      ++iTries;\n     }\n \n     if (fPrologueExists)\n     {\n-      std::ifstream p_file(sPrologueFileName.c_str(), std::ios::in|std::ios::binary);\n-      XRITHeaderParser xhp (p_file);\n+      iCurrentSatelliteHint = iCurrentSatellite; // set the hint\n+      std::ifstream p_file(sPrologueFileName.c_str(), std::ios::in | std::ios::binary);\n+      XRITHeaderParser xhp(p_file);\n       if (xhp.isValid() && xhp.isPrologue())\n         pp.read(p_file);\n       p_file.close();\n@@ -200,9 +192,15 @@ GDALDataset *MSGDataset::Open( GDALOpenInfo * poOpenInfo )\n     MSGDataset *poDS = new MSGDataset();\n     poDS->command = command; // copy it\n \n-/* -------------------------------------------------------------------- */\n-/*      Capture raster size from MSG prologue and submit it to GDAL     */\n-/* -------------------------------------------------------------------- */\n+    /* -------------------------------------------------------------------- */\n+    /*      Set the current satellite for this DS                           */\n+    /* -------------------------------------------------------------------- */\n+\n+    poDS->iCurrentSatellite = iCurrentSatellite; // copy it\n+\n+    /* -------------------------------------------------------------------- */\n+    /*      Capture raster size from MSG prologue and submit it to GDAL     */\n+    /* -------------------------------------------------------------------- */\n \n     if (command.channel[11] != 0) // the HRV band\n     {\n@@ -345,31 +343,22 @@ MSGRasterBand::MSGRasterBand( MSGDataset *poDSIn, int nBandIn )\n     // Find if we're dealing with MSG1, MSG2, MSG3 or MSG4\n     // Doing this per band is the only way to guarantee time-series when the satellite is changed\n \n-    std::string sPrologueFileName = poDSIn->command.sPrologueFileName(poDSIn->iCurrentSatellite, nBand);\n+    int iCurrentSatellite = poDSIn->iCurrentSatellite; // Start with the satellite selected by the dataset\n+\n+    std::string sPrologueFileName = poDSIn->command.sPrologueFileName(iCurrentSatellite, 1);\n     bool fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n \n-    // Make sure we're testing for MSG1,2,3 or 4 exactly once, start with the most recently used, and remember it in the static member for the next round.\n-    if (!fPrologueExists)\n+    // Make sure we're testing for MSG1,2,3 or 4 exactly once, start with the one of the dataset\n+    int iTries = 1;\n+    while (!fPrologueExists && (iTries < MAX_SATELLITES))\n     {\n-      poDSIn->iCurrentSatellite = 1 + poDSIn->iCurrentSatellite % MAX_SATELLITES;\n-      sPrologueFileName = poDSIn->command.sPrologueFileName(poDSIn->iCurrentSatellite, nBand);\n+      iCurrentSatellite = 1 + iCurrentSatellite % MAX_SATELLITES;\n+      sPrologueFileName = poDSIn->command.sPrologueFileName(iCurrentSatellite, 1);\n       fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n-      int iTries = 2;\n-      while (!fPrologueExists && (iTries < MAX_SATELLITES))\n-      {\n-        poDSIn->iCurrentSatellite = 1 + poDSIn->iCurrentSatellite % MAX_SATELLITES;\n-        sPrologueFileName = poDSIn->command.sPrologueFileName(poDSIn->iCurrentSatellite, nBand);\n-        fPrologueExists = (access(sPrologueFileName.c_str(), 0) == 0);\n-        ++iTries;\n-      }\n-      if (!fPrologueExists) // assume missing prologue file, keep original satellite number\n-      {\n-        poDSIn->iCurrentSatellite = 1 + poDSIn->iCurrentSatellite % MAX_SATELLITES;\n-        sPrologueFileName = poDSIn->command.sPrologueFileName(poDSIn->iCurrentSatellite, nBand);\n-      }\n+      ++iTries;\n     }\n \n-    iSatellite = poDSIn->iCurrentSatellite; // From here on, the satellite that corresponds to this band is settled to the current satellite\n+    iSatellite = iCurrentSatellite; // From here on, the satellite that corresponds to this band is settled to the current satellite\n \n     nBlockXSize = poDSIn->GetRasterXSize();\n     nBlockYSize = poDSIn->GetRasterYSize();"
+        },
+        {
+            "filename": "gdal/frmts/msg/msgdataset.h",
+            "diff": "@@ -94,7 +94,8 @@ class MSGDataset final: public GDALDataset\n     OGRCoordinateTransformation *poTransform;\n     double rCalibrationOffset[12];\n     double rCalibrationSlope[12];\n-    static int iCurrentSatellite; // satellite number 1,2,3,4 for MSG1, MSG2, MSG3 and MSG4\n+    int iCurrentSatellite;            // satellite number 1,2,3,4 for MSG1, MSG2, MSG3 and MSG4\n+    static int iCurrentSatelliteHint; // hint for satellite number 1,2,3,4 for MSG1, MSG2, MSG3 and MSG4\n     static const double rCentralWvl[12];\n     static const double rVc[12];\n     static const double rA[12];"
+        }
+    ],
+    "commitTime": "2021-08-02 17:17:07"
+}

@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "PawelJ-PL"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.6,
+    "disclosureTime": "2023-12-11 23:50:33",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06911",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-KOACORS-6117545",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49803"
+        ],
+        "CWE": [
+            "CWE-346"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-12 08:20:21",
+    "remediation": "Upgrade @koa/cors to version 5.0.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Origin Validation Error",
+    "vulnDescription": {
+        "Overview": "@koa/cors is a Cross-Origin Resource Sharing(CORS) for koa Affected versions of this package are vulnerable to Origin Validation Error. An attacker can bypass the Same Origin Policy (SOP) by sending a request from an untrusted origin. This is only exploitable if the middleware is used in a production environment without proper origin restrictions. "
+    },
+    "source_code": [
+        {
+            "filename": ".github/workflows/nodejs.yml",
+            "diff": "@@ -12,8 +12,6 @@ on:\n     branches:\n       - main\n       - master\n-  schedule:\n-    - cron: '0 2 * * *'\n \n jobs:\n   build:\n@@ -22,7 +20,7 @@ jobs:\n     strategy:\n       fail-fast: false\n       matrix:\n-        node-version: [14, 16, 18]\n+        node-version: [14, 16, 18, 20]\n         os: [ubuntu-latest]\n \n     steps:"
+        },
+        {
+            "filename": "README.md",
+            "diff": "@@ -1,5 +1,4 @@\n-@koa/cors\n-=======\n+# @koa/cors\n \n [![NPM version][npm-image]][npm-url]\n [![Node.js CI](https://github.com/koajs/cors/actions/workflows/nodejs.yml/badge.svg)](https://github.com/koajs/cors/actions/workflows/nodejs.yml)\n@@ -43,7 +42,8 @@ app.use(cors());\n  * CORS middleware\n  *\n  * @param {Object} [options]\n- *  - {String|Function(ctx)} origin `Access-Control-Allow-Origin`, default is request Origin header\n+ *  - {String|Function(ctx)} origin `Access-Control-Allow-Origin`, default is '*'\n+ *    If `credentials` set and return `true, the `origin` default value will set to the request `Origin` header\n  *  - {String|Array} allowMethods `Access-Control-Allow-Methods`, default is 'GET,HEAD,PUT,POST,DELETE,PATCH'\n  *  - {String|Array} exposeHeaders `Access-Control-Expose-Headers`\n  *  - {String|Array} allowHeaders `Access-Control-Allow-Headers`\n@@ -57,6 +57,18 @@ app.use(cors());\n  */\n ```\n \n+## Breaking change between 5.0 and 4.0\n+\n+The default `origin` is set to `*`, if you want to keep the 4.0 behavior, you can set the `origin` handler like this:\n+\n+```js\n+app.use(cors({\n+  origin(ctx) {\n+    return ctx.get('Origin') || '*';\n+  },\n+}));\n+```\n+\n ## License\n \n [MIT](./LICENSE)"
+        },
+        {
+            "filename": "index.js",
+            "diff": "@@ -1,12 +1,11 @@\n-'use strict';\n-\n const vary = require('vary');\n \n /**\n  * CORS middleware\n  *\n  * @param {Object} [options]\n- *  - {String|Function(ctx)} origin `Access-Control-Allow-Origin`, default is request Origin header\n+ *  - {String|Function(ctx)} origin `Access-Control-Allow-Origin`, default is '*'\n+ *    If `credentials` set and return `true, the `origin` default value will set to the request `Origin` header\n  *  - {String|Array} allowMethods `Access-Control-Allow-Methods`, default is 'GET,HEAD,PUT,POST,DELETE,PATCH'\n  *  - {String|Array} exposeHeaders `Access-Control-Expose-Headers`\n  *  - {String|Array} allowHeaders `Access-Control-Allow-Headers`\n@@ -61,9 +60,11 @@ module.exports = function(options) {\n     let origin;\n     if (typeof options.origin === 'function') {\n       origin = await options.origin(ctx);\n-      if (!origin) return await next();\n+      if (!origin) {\n+        return await next();\n+      }\n     } else {\n-      origin = options.origin || requestOrigin;\n+      origin = options.origin || '*';\n     }\n \n     let credentials;"
+        },
+        {
+            "filename": "package.json",
+            "diff": "@@ -46,7 +46,7 @@\n     \"node\": \">= 14.0.0\"\n   },\n   \"ci\": {\n-    \"version\": \"14, 16, 18\",\n+    \"version\": \"14, 16, 18, 20\",\n     \"os\": \"linux\"\n   },\n   \"author\": \"fengmk2 <fengmk2@gmail.com> (http://github.com/fengmk2)\","
+        },
+        {
+            "filename": "test/cors.test.js",
+            "diff": "@@ -1,5 +1,3 @@\n-'use strict';\n-\n const assert = require('assert');\n const Koa = require('koa');\n const request = require('supertest');\n@@ -13,22 +11,19 @@ describe('cors.test.js', function() {\n       ctx.body = { foo: 'bar' };\n     });\n \n-    it('should not set `Access-Control-Allow-Origin` when request Origin header missing', function(done) {\n+    it('should set `Access-Control-Allow-Origin` to `*` when request Origin header missing', function(done) {\n       request(app.listen())\n         .get('/')\n         .expect({ foo: 'bar' })\n-        .expect(200, function(err, res) {\n-          assert(!err);\n-          assert(!res.headers['access-control-allow-origin']);\n-          done();\n-        });\n+        .expect('access-control-allow-origin', '*')\n+        .expect(200, done);\n     });\n \n-    it('should set `Access-Control-Allow-Origin` to request origin header', function(done) {\n+    it('should set `Access-Control-Allow-Origin` to `*`', function(done) {\n       request(app.listen())\n         .get('/')\n         .set('Origin', 'http://koajs.com')\n-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')\n+        .expect('Access-Control-Allow-Origin', '*')\n         .expect({ foo: 'bar' })\n         .expect(200, done);\n     });\n@@ -38,7 +33,7 @@ describe('cors.test.js', function() {\n         .options('/')\n         .set('Origin', 'http://koajs.com')\n         .set('Access-Control-Request-Method', 'PUT')\n-        .expect('Access-Control-Allow-Origin', 'http://koajs.com')\n+        .expect('Access-Control-Allow-Origin', '*')\n         .expect('Access-Control-Allow-Methods', 'GET,HEAD,PUT,POST,DELETE,PATCH')\n         .expect(204, done);\n     });\n@@ -87,6 +82,44 @@ describe('cors.test.js', function() {\n     });\n   });\n \n+  describe('options.origin set the request Origin header', function() {\n+    const app = new Koa();\n+    app.use(cors({\n+      origin(ctx) {\n+        return ctx.get('Origin') || '*';\n+      },\n+    }));\n+    app.use(function(ctx) {\n+      ctx.body = { foo: 'bar' };\n+    });\n+\n+    it('should set `Access-Control-Allow-Origin` to request `Origin` header', function(done) {\n+      request(app.listen())\n+        .get('/')\n+        .set('Origin', 'http://koajs.com')\n+        .expect('Access-Control-Allow-Origin', 'http://koajs.com')\n+        .expect({ foo: 'bar' })\n+        .expect(200, done);\n+    });\n+\n+    it('should set `Access-Control-Allow-Origin` to request `origin` header', function(done) {\n+      request(app.listen())\n+        .get('/')\n+        .set('origin', 'http://origin.koajs.com')\n+        .expect('Access-Control-Allow-Origin', 'http://origin.koajs.com')\n+        .expect({ foo: 'bar' })\n+        .expect(200, done);\n+    });\n+\n+    it('should set `Access-Control-Allow-Origin` to `*`, even if no Origin is passed on request', function(done) {\n+      request(app.listen())\n+        .get('/')\n+        .expect('Access-Control-Allow-Origin', '*')\n+        .expect({ foo: 'bar' })\n+        .expect(200, done);\n+    });\n+  });\n+\n   describe('options.secureContext=true', function() {\n     const app = new Koa();\n     app.use(cors({\n@@ -651,7 +684,11 @@ describe('cors.test.js', function() {\n   describe('options.headersKeptOnError', function() {\n     it('should keep CORS headers after an error', function(done) {\n       const app = new Koa();\n-      app.use(cors());\n+      app.use(cors({\n+        origin(ctx) {\n+          return ctx.get('Origin') || '*';\n+        },\n+      }));\n       app.use(function(ctx) {\n         ctx.body = { foo: 'bar' };\n         throw new Error('Whoops!');\n@@ -668,7 +705,11 @@ describe('cors.test.js', function() {\n \n     it('should not affect OPTIONS requests', function(done) {\n       const app = new Koa();\n-      app.use(cors());\n+      app.use(cors({\n+        origin(ctx) {\n+          return ctx.get('Origin') || '*';\n+        },\n+      }));\n       app.use(function(ctx) {\n         ctx.body = { foo: 'bar' };\n         throw new Error('Whoops!');\n@@ -684,7 +725,11 @@ describe('cors.test.js', function() {\n \n     it('should not keep unrelated headers', function(done) {\n       const app = new Koa();\n-      app.use(cors());\n+      app.use(cors({\n+        origin(ctx) {\n+          return ctx.get('Origin') || '*';\n+        },\n+      }));\n       app.use(function(ctx) {\n         ctx.body = { foo: 'bar' };\n         ctx.set('X-Example', 'Value');\n@@ -752,6 +797,7 @@ describe('cors.test.js', function() {\n         .expect(200, done);\n     });\n   });\n+\n   describe('other middleware has set vary header on Error', function() {\n     it('should append `Origin to other `Vary` header', function(done) {\n       const app = new Koa();"
+        }
+    ],
+    "commitTime": "2023-12-11 01:46:27"
+}

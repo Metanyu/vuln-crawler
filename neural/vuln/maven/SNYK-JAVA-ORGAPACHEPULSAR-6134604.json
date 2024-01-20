@@ -1,0 +1,93 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Michael Marshall"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-20 09:30:26",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06917",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEPULSAR-6134604",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-37544"
+        ],
+        "CWE": [
+            "CWE-287"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-21 09:08:07",
+    "remediation": "Upgrade org.apache.pulsar:pulsar-proxy to version 2.10.5, 2.11.2, 3.0.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Authentication",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Authentication through the /pingpong endpoint. An attacker can connect to the endpoint without requiring authentication, potentially leading to denial of service due to the WebSocket Proxy accepting any connections and excessive data transfer through misuse of the WebSocket ping/pong feature. "
+    },
+    "source_code": [
+        {
+            "filename": "pulsar-broker/src/main/java/org/apache/pulsar/broker/PulsarService.java",
+            "diff": "@@ -169,7 +169,6 @@\n import org.apache.pulsar.policies.data.loadbalancer.AdvertisedListener;\n import org.apache.pulsar.transaction.coordinator.TransactionMetadataStoreProvider;\n import org.apache.pulsar.websocket.WebSocketConsumerServlet;\n-import org.apache.pulsar.websocket.WebSocketPingPongServlet;\n import org.apache.pulsar.websocket.WebSocketProducerServlet;\n import org.apache.pulsar.websocket.WebSocketReaderServlet;\n import org.apache.pulsar.websocket.WebSocketService;\n@@ -1029,12 +1028,6 @@ private void addWebSocketServiceHandler(WebService webService,\n                     new ServletHolder(readerWebSocketServlet), true, attributeMap);\n             webService.addServlet(WebSocketReaderServlet.SERVLET_PATH_V2,\n                     new ServletHolder(readerWebSocketServlet), true, attributeMap);\n-\n-            final WebSocketServlet pingPongWebSocketServlet = new WebSocketPingPongServlet(webSocketService);\n-            webService.addServlet(WebSocketPingPongServlet.SERVLET_PATH,\n-                    new ServletHolder(pingPongWebSocketServlet), true, attributeMap);\n-            webService.addServlet(WebSocketPingPongServlet.SERVLET_PATH_V2,\n-                    new ServletHolder(pingPongWebSocketServlet), true, attributeMap);\n         }\n     }\n "
+        },
+        {
+            "filename": "pulsar-proxy/src/main/java/org/apache/pulsar/proxy/server/ProxyServiceStarter.java",
+            "diff": "@@ -49,7 +49,6 @@\n import org.apache.pulsar.common.util.DirectMemoryUtils;\n import org.apache.pulsar.proxy.stats.ProxyStats;\n import org.apache.pulsar.websocket.WebSocketConsumerServlet;\n-import org.apache.pulsar.websocket.WebSocketPingPongServlet;\n import org.apache.pulsar.websocket.WebSocketProducerServlet;\n import org.apache.pulsar.websocket.WebSocketReaderServlet;\n import org.apache.pulsar.websocket.WebSocketService;\n@@ -307,12 +306,6 @@ public static void addWebServerHandlers(WebServer server,\n                     new ServletHolder(readerWebSocketServlet));\n             server.addServlet(WebSocketReaderServlet.SERVLET_PATH_V2,\n                     new ServletHolder(readerWebSocketServlet));\n-\n-            final WebSocketServlet pingPongWebSocketServlet = new WebSocketPingPongServlet(webSocketService);\n-            server.addServlet(WebSocketPingPongServlet.SERVLET_PATH,\n-                    new ServletHolder(pingPongWebSocketServlet));\n-            server.addServlet(WebSocketPingPongServlet.SERVLET_PATH_V2,\n-                    new ServletHolder(pingPongWebSocketServlet));\n         }\n     }\n "
+        },
+        {
+            "filename": "pulsar-proxy/src/test/java/org/apache/pulsar/proxy/server/ProxyServiceStarterTest.java",
+            "diff": "@@ -76,18 +76,6 @@ private String computeWsBasePath() {\n         return String.format(\"ws://localhost:%d/ws\", serviceStarter.getServer().getListenPortHTTP().get());\n     }\n \n-    @Test\n-    public void testEnableWebSocketServer() throws Exception {\n-        HttpClient httpClient = new HttpClient();\n-        WebSocketClient webSocketClient = new WebSocketClient(httpClient);\n-        webSocketClient.start();\n-        MyWebSocket myWebSocket = new MyWebSocket();\n-        String webSocketUri = computeWsBasePath() + \"/pingpong\";\n-        Future<Session> sessionFuture = webSocketClient.connect(myWebSocket, URI.create(webSocketUri));\n-        System.out.println(\"uri\" + webSocketUri);\n-        sessionFuture.get().getRemote().sendPing(ByteBuffer.wrap(\"ping\".getBytes()));\n-        assertTrue(myWebSocket.getResponse().contains(\"ping\"));\n-    }\n \n     @Test\n     public void testProducer() throws Exception {"
+        },
+        {
+            "filename": "pulsar-websocket/src/main/java/org/apache/pulsar/websocket/PingPongHandler.java",
+            "diff": "@@ -1,50 +0,0 @@\n-/**\n- * Licensed to the Apache Software Foundation (ASF) under one\n- * or more contributor license agreements.  See the NOTICE file\n- * distributed with this work for additional information\n- * regarding copyright ownership.  The ASF licenses this file\n- * to you under the Apache License, Version 2.0 (the\n- * \"License\"); you may not use this file except in compliance\n- * with the License.  You may obtain a copy of the License at\n- *\n- *   http://www.apache.org/licenses/LICENSE-2.0\n- *\n- * Unless required by applicable law or agreed to in writing,\n- * software distributed under the License is distributed on an\n- * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n- * KIND, either express or implied.  See the License for the\n- * specific language governing permissions and limitations\n- * under the License.\n- */\n-package org.apache.pulsar.websocket;\n-\n-import java.io.IOException;\n-import java.nio.ByteBuffer;\n-import org.eclipse.jetty.util.BufferUtil;\n-import org.eclipse.jetty.websocket.api.WebSocketAdapter;\n-import org.eclipse.jetty.websocket.api.WebSocketPingPongListener;\n-import org.slf4j.Logger;\n-import org.slf4j.LoggerFactory;\n-\n-public class PingPongHandler extends WebSocketAdapter implements WebSocketPingPongListener {\n-\n-    private static final Logger log = LoggerFactory.getLogger(PingPongHandler.class);\n-\n-    @Override\n-    public void onWebSocketPing(ByteBuffer payload) {\n-        try {\n-            if (log.isDebugEnabled()) {\n-                log.debug(\"PING: {}\", BufferUtil.toDetailString(payload));\n-            }\n-            getRemote().sendPong(payload);\n-        } catch (IOException e) {\n-            log.warn(\"Failed to send pong: {}\", e.getMessage());\n-        }\n-    }\n-\n-    @Override\n-    public void onWebSocketPong(ByteBuffer payload) {\n-\n-    }\n-\n-}\n\\ No newline at end of file"
+        },
+        {
+            "filename": "pulsar-websocket/src/main/java/org/apache/pulsar/websocket/WebSocketPingPongServlet.java",
+            "diff": "@@ -1,44 +0,0 @@\n-/**\n- * Licensed to the Apache Software Foundation (ASF) under one\n- * or more contributor license agreements.  See the NOTICE file\n- * distributed with this work for additional information\n- * regarding copyright ownership.  The ASF licenses this file\n- * to you under the Apache License, Version 2.0 (the\n- * \"License\"); you may not use this file except in compliance\n- * with the License.  You may obtain a copy of the License at\n- *\n- *   http://www.apache.org/licenses/LICENSE-2.0\n- *\n- * Unless required by applicable law or agreed to in writing,\n- * software distributed under the License is distributed on an\n- * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n- * KIND, either express or implied.  See the License for the\n- * specific language governing permissions and limitations\n- * under the License.\n- */\n-package org.apache.pulsar.websocket;\n-\n-import org.eclipse.jetty.websocket.servlet.WebSocketServlet;\n-import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;\n-\n-public class WebSocketPingPongServlet extends WebSocketServlet {\n-    private static final long serialVersionUID = 1L;\n-\n-    public static final String SERVLET_PATH = \"/ws/pingpong\";\n-    public static final String SERVLET_PATH_V2 = \"/ws/v2/pingpong\";\n-\n-    private final transient WebSocketService service;\n-\n-    public WebSocketPingPongServlet(WebSocketService service) {\n-        this.service = service;\n-    }\n-\n-    @Override\n-    public void configure(WebSocketServletFactory factory) {\n-        factory.getPolicy().setMaxTextMessageSize(service.getConfig().getWebSocketMaxTextFrameSize());\n-        if (service.getConfig().getWebSocketSessionIdleTimeoutMillis() > 0) {\n-            factory.getPolicy().setIdleTimeout(service.getConfig().getWebSocketSessionIdleTimeoutMillis());\n-        }\n-        factory.setCreator((request, response) -> new PingPongHandler());\n-    }\n-}\n\\ No newline at end of file"
+        },
+        {
+            "filename": "pulsar-websocket/src/main/java/org/apache/pulsar/websocket/service/WebSocketServiceStarter.java",
+            "diff": "@@ -28,7 +28,6 @@\n import org.apache.pulsar.common.configuration.VipStatus;\n import org.apache.pulsar.common.util.CmdGenerateDocs;\n import org.apache.pulsar.websocket.WebSocketConsumerServlet;\n-import org.apache.pulsar.websocket.WebSocketPingPongServlet;\n import org.apache.pulsar.websocket.WebSocketProducerServlet;\n import org.apache.pulsar.websocket.WebSocketReaderServlet;\n import org.apache.pulsar.websocket.WebSocketService;\n@@ -90,16 +89,13 @@ public static void start(ProxyServer proxyServer, WebSocketService service) thro\n         proxyServer.addWebSocketServlet(WebSocketProducerServlet.SERVLET_PATH, new WebSocketProducerServlet(service));\n         proxyServer.addWebSocketServlet(WebSocketConsumerServlet.SERVLET_PATH, new WebSocketConsumerServlet(service));\n         proxyServer.addWebSocketServlet(WebSocketReaderServlet.SERVLET_PATH, new WebSocketReaderServlet(service));\n-        proxyServer.addWebSocketServlet(WebSocketPingPongServlet.SERVLET_PATH, new WebSocketPingPongServlet(service));\n \n         proxyServer.addWebSocketServlet(WebSocketProducerServlet.SERVLET_PATH_V2,\n                 new WebSocketProducerServlet(service));\n         proxyServer.addWebSocketServlet(WebSocketConsumerServlet.SERVLET_PATH_V2,\n                 new WebSocketConsumerServlet(service));\n         proxyServer.addWebSocketServlet(WebSocketReaderServlet.SERVLET_PATH_V2,\n                 new WebSocketReaderServlet(service));\n-        proxyServer.addWebSocketServlet(WebSocketPingPongServlet.SERVLET_PATH_V2,\n-                new WebSocketPingPongServlet(service));\n \n         proxyServer.addRestResource(ADMIN_PATH_V1, ATTRIBUTE_PROXY_SERVICE_NAME, service, WebSocketProxyStatsV1.class);\n         proxyServer.addRestResource(ADMIN_PATH_V2, ATTRIBUTE_PROXY_SERVICE_NAME, service, WebSocketProxyStatsV2.class);"
+        },
+        {
+            "filename": "pulsar-websocket/src/test/java/org/apache/pulsar/websocket/PingPongSupportTest.java",
+            "diff": "@@ -18,13 +18,16 @@\n  */\n package org.apache.pulsar.websocket;\n \n+import java.io.IOException;\n import java.net.URI;\n import java.nio.ByteBuffer;\n import java.util.ArrayList;\n import java.util.List;\n import java.util.concurrent.ArrayBlockingQueue;\n import java.util.concurrent.Future;\n+import javax.servlet.http.HttpServletRequest;\n import org.apache.pulsar.broker.ServiceConfiguration;\n+import org.apache.pulsar.broker.authentication.AuthenticationDataSource;\n import org.apache.pulsar.broker.web.WebExecutorThreadPool;\n import org.eclipse.jetty.client.HttpClient;\n import org.eclipse.jetty.server.Server;\n@@ -40,11 +43,18 @@\n import static org.mockito.Mockito.mock;\n import static org.mockito.Mockito.when;\n import static org.testng.Assert.assertTrue;\n+import org.eclipse.jetty.websocket.servlet.ServletUpgradeResponse;\n+import org.eclipse.jetty.websocket.servlet.WebSocketServlet;\n+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;\n import org.testng.annotations.AfterClass;\n import org.testng.annotations.BeforeClass;\n+import org.testng.annotations.DataProvider;\n import org.testng.annotations.Test;\n \n-public class PingPongHandlerTest {\n+/**\n+ * Test to ensure {@link AbstractWebSocketHandler} has ping/pong support\n+ */\n+public class PingPongSupportTest {\n \n     private static Server server;\n \n@@ -67,9 +77,9 @@ public static void setup() throws Exception {\n         when(config.getWebSocketMaxTextFrameSize()).thenReturn(1048576);\n         when(config.getWebSocketSessionIdleTimeoutMillis()).thenReturn(300000);\n \n-        ServletHolder servletHolder = new ServletHolder(\"ws-events\", new WebSocketPingPongServlet(service));\n+        ServletHolder servletHolder = new ServletHolder(\"ws-events\", new GenericWebSocketServlet(service));\n         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);\n-        context.setContextPath(WebSocketPingPongServlet.SERVLET_PATH);\n+        context.setContextPath(\"/ws\");\n         context.addServlet(servletHolder, \"/*\");\n         server.setHandler(context);\n         try {\n@@ -87,18 +97,60 @@ public static void tearDown() throws Exception {\n         executor.stop();\n     }\n \n-    @Test\n-    public void testPingPong() throws Exception {\n+    /**\n+     * We test these different endpoints because they are parsed in the AbstractWebSocketHandler. Technically, we are\n+     * not testing these implementations, but the ping/pong support is guaranteed as part of the framework.\n+     */\n+    @DataProvider(name = \"endpoint\")\n+    public static Object[][] cacheEnable() {\n+        return new Object[][] { { \"producer\" }, { \"consumer\" }, { \"reader\" } };\n+    }\n+\n+    @Test(dataProvider = \"endpoint\")\n+    public void testPingPong(String endpoint) throws Exception {\n         HttpClient httpClient = new HttpClient();\n         WebSocketClient webSocketClient = new WebSocketClient(httpClient);\n         webSocketClient.start();\n         MyWebSocket myWebSocket = new MyWebSocket();\n-        String webSocketUri = \"ws://localhost:8080/ws/pingpong\";\n+        String webSocketUri = \"ws://localhost:8080/ws/v2/\" + endpoint + \"/persistent/my-property/my-ns/my-topic\";\n         Future<Session> sessionFuture = webSocketClient.connect(myWebSocket, URI.create(webSocketUri));\n         sessionFuture.get().getRemote().sendPing(ByteBuffer.wrap(\"test\".getBytes()));\n         assertTrue(myWebSocket.getResponse().contains(\"test\"));\n     }\n \n+    public static class GenericWebSocketHandler extends AbstractWebSocketHandler {\n+\n+        public GenericWebSocketHandler(WebSocketService service, HttpServletRequest request, ServletUpgradeResponse response) {\n+            super(service, request, response);\n+        }\n+\n+        @Override\n+        protected Boolean isAuthorized(String authRole, AuthenticationDataSource authenticationData) throws Exception {\n+            return true;\n+        }\n+\n+        @Override\n+        public void close() throws IOException {\n+\n+        }\n+    }\n+\n+    public static class GenericWebSocketServlet extends WebSocketServlet {\n+\n+        private static final long serialVersionUID = 1L;\n+        private final WebSocketService service;\n+\n+        public GenericWebSocketServlet(WebSocketService service) {\n+            this.service = service;\n+        }\n+\n+        @Override\n+        public void configure(WebSocketServletFactory factory) {\n+            factory.setCreator((request, response) ->\n+                    new GenericWebSocketHandler(service, request.getHttpServletRequest(), response));\n+        }\n+    }\n+\n     @WebSocket\n     public static class MyWebSocket extends WebSocketAdapter implements WebSocketPingPongListener {\n "
+        }
+    ],
+    "commitTime": "2023-07-06 17:09:26"
+}

@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.3,
+    "disclosureTime": "2024-01-02 10:46:20",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMMATTERMOSTMATTERMOSTSERVERSERVERV8CHANNELSAPI4-6141156",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47858"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-02 13:02:47",
+    "remediation": "Upgrade github.com/mattermost/mattermost-server/server/v8/channels/api4 to version 8.1.7, 9.0.5, 9.1.4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Access Control involving user permissions when accessing archived public channels. An attacker with lower privileges can obtain details about archived public channels from other teams by sending a GET request to the /api/v4/teams/<team-id>/channels/deleted endpoint. "
+    },
+    "source_code": [
+        {
+            "filename": "server/channels/api4/channel.go",
+            "diff": "@@ -836,6 +836,11 @@ func getDeletedChannelsForTeam(c *Context, w http.ResponseWriter, r *http.Reques\n \t\treturn\n \t}\n \n+\tif !c.App.SessionHasPermissionToTeam(*c.AppContext.Session(), c.Params.TeamId, model.PermissionListTeamChannels) {\n+\t\tc.SetPermissionError(model.PermissionListTeamChannels)\n+\t\treturn\n+\t}\n+\n \tchannels, err := c.App.GetDeletedChannels(c.AppContext, c.Params.TeamId, c.Params.Page*c.Params.PerPage, c.Params.PerPage, c.AppContext.Session().UserId)\n \tif err != nil {\n \t\tc.Err = err"
+        },
+        {
+            "filename": "server/channels/api4/channel_test.go",
+            "diff": "@@ -939,6 +939,12 @@ func TestGetDeletedChannelsForTeam(t *testing.T) {\n \tchannels, _, err = client.GetDeletedChannelsForTeam(context.Background(), team.Id, 1, 1, \"\")\n \trequire.NoError(t, err)\n \trequire.Len(t, channels, 1, \"should be one channel per page\")\n+\n+\t// test non team member\n+\tth.SystemAdminClient.RemoveTeamMember(context.Background(), team.Id, th.BasicUser.Id)\n+\t_, resp, err := client.GetDeletedChannelsForTeam(context.Background(), team.Id, 0, 100, \"\")\n+\trequire.Error(t, err)\n+\tCheckForbiddenStatus(t, resp)\n }\n \n func TestGetPrivateChannelsForTeam(t *testing.T) {"
+        }
+    ],
+    "commitTime": "2023-11-22 19:00:23"
+}

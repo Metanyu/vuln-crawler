@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-10-01 06:32:17",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-HUEY-6138262",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-61327"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 13:18:50",
+    "remediation": "Upgrade huey to version 2.5.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "huey is a huey, a little task queue Affected versions of this package are vulnerable to Race Condition where a task is enqueued and executed before the corresponding database changes have been committed. "
+    },
+    "source_code": [
+        {
+            "filename": "huey/api.py",
+            "diff": "@@ -637,6 +637,9 @@ def flush_locks(self, *names):\n \n         return flushed\n \n+    def _result_handle(self, task):\n+        return Result(self, task)\n+\n     def result(self, id, blocking=False, timeout=None, backoff=1.15,\n                max_delay=1.0, revoke_on_timeout=False, preserve=False):\n         task_result = Result(self, Task(id=id))"
+        },
+        {
+            "filename": "huey/contrib/djhuey/__init__.py",
+            "diff": "@@ -5,6 +5,7 @@\n \n from django.conf import settings\n from django.db import close_old_connections\n+from django.db import transaction\n \n \n configuration_message = \"\"\"\n@@ -153,3 +154,36 @@ def decorator(fn):\n         ret.call_local = fn\n         return ret\n     return decorator\n+\n+\n+def on_commit_task(*args, **kwargs):\n+    \"\"\"\n+    This task will register a post-commit callback to enqueue the task. A\n+    result handle will still be returned immediately, however, even though\n+    the task may not (ever) be enqueued, subject to whether or not the\n+    transaction actually commits.\n+\n+    Because we have to setup the callback within the bit of code that performs\n+    the actual enqueueing, we cannot expose the full functionality of the\n+    TaskWrapper. If you anticipate wanting all these methods, you are probably\n+    best off decorating the same function twice, e.g.:\n+\n+        def update_data(pk):\n+            # Do some database operation.\n+            pass\n+\n+        my_task = task()(update_data)\n+        my_on_commit_task = on_commit_task()(update_data)\n+    \"\"\"\n+    def decorator(fn):\n+        task_wrapper = task(*args, **kwargs)(close_db(fn))\n+\n+        @wraps(fn)\n+        def inner(*a, **k):\n+            task = task_wrapper.s(*a, **k)\n+            def enqueue_on_commit():\n+                task_wrapper.huey.enqueue(task)\n+            transaction.on_commit(enqueue_on_commit)\n+            return HUEY._result_handle(task)\n+        return inner\n+    return decorator"
+        }
+    ],
+    "commitTime": "2023-03-24 23:29:13"
+}

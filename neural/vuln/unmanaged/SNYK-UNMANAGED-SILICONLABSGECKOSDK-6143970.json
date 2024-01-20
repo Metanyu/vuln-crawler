@@ -1,0 +1,42 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "PHYSICAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.8,
+    "disclosureTime": "2024-01-03 23:51:20",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SILICONLABSGECKOSDK-6143970",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-5138"
+        ],
+        "CWE": [
+            "CWE-909"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-04 15:47:06",
+    "remediation": "There is no fixed version for SiliconLabs/gecko_sdk . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Missing Initialization of Resource",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Missing Initialization of Resource due to the default configuration settings. An attacker with physical access to the device can compromise confidentiality, integrity, and availability by exploiting the lack of glitch detection. "
+    },
+    "source_code": []
+}

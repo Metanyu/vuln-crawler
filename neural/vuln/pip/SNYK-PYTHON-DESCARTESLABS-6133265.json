@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-11-01 06:29:58",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-DESCARTESLABS-6133265",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-61599"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 12:08:07",
+    "remediation": "Upgrade descarteslabs to version 0.4.7 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "descarteslabs is a Descartes Labs Python Client Affected versions of this package are vulnerable to Race Condition when checking whether the directory already exists and actually creating the directory. "
+    },
+    "source_code": [
+        {
+            "filename": "descarteslabs/auth/__init__.py",
+            "diff": "@@ -17,12 +17,13 @@\n from requests.packages.urllib3.util.retry import Retry\n from requests.adapters import HTTPAdapter\n \n-import random\n import base64\n-import json\n import datetime\n-import six\n+import errno\n+import json\n import os\n+import random\n+import six\n import stat\n \n from descarteslabs.exceptions import AuthError, OauthError\n@@ -43,6 +44,17 @@ def base64url_decode(input):\n     return base64.urlsafe_b64decode(input)\n \n \n+def makedirs_if_not_exists(path):\n+    if not os.path.exists(path):\n+        try:\n+            os.makedirs(path)\n+        except OSError as ex:\n+            if ex.errno == errno.EEXIST:\n+                pass\n+            else:\n+                raise\n+\n+\n class Auth:\n     def __init__(self, domain=\"https://iam.descarteslabs.com\",\n                  scope=None, leeway=500, token_info_path=DEFAULT_TOKEN_INFO_PATH,\n@@ -165,12 +177,10 @@ def _get_token(self, timeout=100):\n \n         token_info['jwt_token'] = self._token\n \n-        path = os.path.join(os.path.expanduser(\"~\"), '.descarteslabs')\n-\n-        if not os.path.exists(path):\n-            os.makedirs(path)\n+        token_info_directory = os.path.dirname(self.token_info_path)\n+        makedirs_if_not_exists(token_info_directory)\n \n-        os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)\n+        os.chmod(token_info_directory, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)\n \n         with open(self.token_info_path, 'w+') as fp:\n             json.dump(token_info, fp)"
+        },
+        {
+            "filename": "descarteslabs/scripts/parser/auth.py",
+            "diff": "@@ -20,7 +20,7 @@\n import six\n from six.moves import input\n \n-from descarteslabs.auth import Auth, base64url_decode, DEFAULT_TOKEN_INFO_PATH\n+from descarteslabs.auth import Auth, base64url_decode, makedirs_if_not_exists, DEFAULT_TOKEN_INFO_PATH\n \n import descarteslabs as dl\n \n@@ -41,12 +41,10 @@ def auth_handler(args):\n \n             token_info = json.loads(base64url_decode(s).decode('utf-8'))\n \n-            path = os.path.dirname(DEFAULT_TOKEN_INFO_PATH)\n+            token_info_directory = os.path.dirname(DEFAULT_TOKEN_INFO_PATH)\n+            makedirs_if_not_exists(token_info_directory)\n \n-            if not os.path.exists(path):\n-                os.makedirs(path)\n-\n-            os.chmod(path, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)\n+            os.chmod(token_info_directory, stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)\n \n             with open(DEFAULT_TOKEN_INFO_PATH, 'w+') as fp:\n                 json.dump(token_info, fp)"
+        }
+    ],
+    "commitTime": "2017-10-03 21:45:26"
+}

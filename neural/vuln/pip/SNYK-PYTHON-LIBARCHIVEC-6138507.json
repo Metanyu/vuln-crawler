@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-10-01 06:34:37",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-LIBARCHIVEC-6138507",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-23"
+        ],
+        "PVE": [
+            "PVE-2023-59300"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 14:18:21",
+    "remediation": "Upgrade libarchive-c to version 4.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Relative Path Traversal",
+    "vulnDescription": {
+        "Overview": "libarchive-c is a Python interface to libarchive Affected versions of this package are vulnerable to Relative Path Traversal due to unsafe defaults in the libarchive/extract.py file. "
+    },
+    "source_code": [
+        {
+            "filename": "libarchive/extract.py",
+            "diff": "@@ -1,5 +1,6 @@\n from contextlib import contextmanager\n from ctypes import byref, c_longlong, c_size_t, c_void_p\n+import os\n \n from .ffi import (\n     write_disk_new, write_disk_set_options, write_free, write_header,\n@@ -27,6 +28,12 @@\n EXTRACT_SECURE_NOABSOLUTEPATHS = 0x10000\n EXTRACT_CLEAR_NOCHANGE_FFLAGS = 0x20000\n \n+PREVENT_ESCAPE = (\n+    EXTRACT_SECURE_NOABSOLUTEPATHS |\n+    EXTRACT_SECURE_NODOTDOT |\n+    EXTRACT_SECURE_SYMLINKS\n+)\n+\n \n @contextmanager\n def new_archive_write_disk(flags):\n@@ -38,9 +45,16 @@ def new_archive_write_disk(flags):\n         write_free(archive_p)\n \n \n-def extract_entries(entries, flags=0):\n+def extract_entries(entries, flags=None):\n     \"\"\"Extracts the given archive entries into the current directory.\n     \"\"\"\n+    if flags is None:\n+        if os.getcwd() == '/':\n+            # If the current directory is the root, then trying to prevent\n+            # escaping is probably undesirable.\n+            flags = 0\n+        else:\n+            flags = PREVENT_ESCAPE\n     buff, size, offset = c_void_p(), c_size_t(), c_longlong()\n     buff_p, size_p, offset_p = byref(buff), byref(size), byref(offset)\n     with new_archive_write_disk(flags) as write_p:\n@@ -55,20 +69,20 @@ def extract_entries(entries, flags=0):\n             write_finish_entry(write_p)\n \n \n-def extract_fd(fd, flags=0):\n+def extract_fd(fd, flags=None):\n     \"\"\"Extracts an archive from a file descriptor into the current directory.\n     \"\"\"\n     with fd_reader(fd) as archive:\n         extract_entries(archive, flags)\n \n \n-def extract_file(filepath, flags=0):\n+def extract_file(filepath, flags=None):\n     \"\"\"Extracts an archive from a file into the current directory.\"\"\"\n     with file_reader(filepath) as archive:\n         extract_entries(archive, flags)\n \n \n-def extract_memory(buffer_, flags=0):\n+def extract_memory(buffer_, flags=None):\n     \"\"\"Extracts an archive from memory into the current directory.\"\"\"\n     with memory_reader(buffer_) as archive:\n         extract_entries(archive, flags)"
+        },
+        {
+            "filename": "tests/test_security_flags.py",
+            "diff": "@@ -3,35 +3,34 @@\n import pytest\n import os\n \n-from libarchive import extract_file\n-from libarchive.ffi import version_number\n+from libarchive import extract_file, file_reader\n from libarchive.extract import (\n     EXTRACT_SECURE_NOABSOLUTEPATHS, EXTRACT_SECURE_NODOTDOT,\n )\n from libarchive.exception import ArchiveError\n from . import data_dir\n \n \n-def run_test(flag, filename):\n+def run_test(flags):\n     archive_path = os.path.join(data_dir, 'flags.tar')\n     try:\n-        extract_file(archive_path)\n+        extract_file(archive_path, 0)\n         with pytest.raises(ArchiveError):\n-            extract_file(archive_path, flag)\n+            extract_file(archive_path, flags)\n     finally:\n-        if os.path.exists(filename):\n-            os.remove(filename)\n+        with file_reader(archive_path) as archive:\n+            for entry in archive:\n+                if os.path.exists(entry.pathname):\n+                    os.remove(entry.pathname)\n \n \n-def test_no_dot_dot():\n-    run_test(EXTRACT_SECURE_NODOTDOT, '../python-libarchive-c-test-dot-dot-file')\n+def test_extraction_is_secure_by_default():\n+    run_test(None)\n \n \n-def test_absolute():\n-    # EXTRACT_SECURE_NOABSOLUTEPATHS was only added in 3.1.900\n-    # 3.1.900 -> 3001009\n-    if version_number() >= 3001009:\n-        run_test(\n-            EXTRACT_SECURE_NOABSOLUTEPATHS,\n-            '/tmp/python-libarchive-c-test-absolute-file'\n-        )\n+def test_explicit_no_dot_dot():\n+    run_test(EXTRACT_SECURE_NODOTDOT)\n+\n+\n+def test_explicit_no_absolute_paths():\n+    run_test(EXTRACT_SECURE_NOABSOLUTEPATHS)"
+        }
+    ],
+    "commitTime": "2021-11-30 17:45:18"
+}

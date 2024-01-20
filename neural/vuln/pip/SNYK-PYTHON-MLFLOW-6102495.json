@@ -1,0 +1,91 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Mokrane Abdelmalek"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-07 05:44:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06932",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6102495",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6568"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-07 12:25:22",
+    "remediation": "Upgrade mlflow to version 2.9.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting'). An attacker can inject code into the Content-Type header of a POST request, which is then reflected back to the user without proper sanitization or escaping. This can lead to compromising user sessions, stealing sensitive information, or performing other malicious actions on the user's behalf. ",
+        "PoC": "from requests import post url = 'http://127.0.0.1:5000/api/2.0/mlflow/users/create' headers = { 'Content-Type': '<script>alert(document.domain)</script>'} resp = post(url, headers=headers).text print(resp) "
+    },
+    "source_code": [
+        {
+            "filename": "docs/source/auth/rest-api.rst",
+            "diff": "@@ -12,6 +12,8 @@ The API is hosted under the ``/api`` route on the MLflow tracking server. For ex\n experiments on a tracking server hosted at ``http://localhost:5000``, access\n ``http://localhost:5000/api/2.0/mlflow/users/create``.\n \n+.. important::\n+    The MLflow REST API requires content type ``application/json`` for all POST requests.\n \n .. contents:: Table of Contents\n     :local:"
+        },
+        {
+            "filename": "docs/source/rest-api.rst",
+            "diff": "@@ -11,14 +11,16 @@ The API is hosted under the ``/api`` route on the MLflow tracking server. For ex\n experiments on a tracking server hosted at ``http://localhost:5000``, make a POST request to\n ``http://localhost:5000/api/2.0/mlflow/experiments/search``.\n \n+.. important::\n+    The MLflow REST API requires content type ``application/json`` for all POST requests.\n+\n .. contents:: Table of Contents\n     :local:\n     :depth: 1\n \n ===========================\n \n \n-\n .. _mlflowMlflowServicecreateExperiment:\n \n Create Experiment"
+        },
+        {
+            "filename": "mlflow/server/auth/__init__.py",
+            "diff": "@@ -762,7 +762,11 @@ def create_user():\n         user = store.create_user(username, password)\n         return make_response({\"user\": user.to_json()})\n     else:\n-        return make_response(f\"Invalid content type: '{content_type}'\", 400)\n+        message = (\n+            \"Invalid content type. Must be one of: \"\n+            \"application/x-www-form-urlencoded, application/json\"\n+        )\n+        return make_response(message, 400)\n \n \n @catch_mlflow_exception"
+        },
+        {
+            "filename": "mlflow/server/handlers.py",
+            "diff": "@@ -91,6 +91,7 @@\n     UpdateExperiment,\n     UpdateRun,\n )\n+from mlflow.server.validation import _validate_content_type\n from mlflow.store.artifact.artifact_repo import MultipartUploadMixin\n from mlflow.store.artifact.artifact_repository_registry import get_artifact_repository\n from mlflow.store.db.db_types import DATABASE_ENGINES\n@@ -403,6 +404,7 @@ def _validate_param_against_schema(schema, param, value, proto_parsing_succeeded\n \n \n def _get_request_json(flask_request=request):\n+    _validate_content_type(flask_request, [\"application/json\"])\n     return flask_request.get_json(force=True, silent=True)\n \n \n@@ -1112,6 +1114,7 @@ def _default_history_bulk_impl():\n @_disable_if_artifacts_only\n def search_datasets_handler():\n     MAX_EXPERIMENT_IDS_PER_REQUEST = 20\n+    _validate_content_type(request, [\"application/json\"])\n     experiment_ids = request.json.get(\"experiment_ids\", [])\n     if not experiment_ids:\n         raise MlflowException(\n@@ -1179,6 +1182,8 @@ def assert_arg_exists(arg_name, arg):\n                 error_code=INVALID_PARAMETER_VALUE,\n             )\n \n+    _validate_content_type(request, [\"application/json\"])\n+\n     args = request.json\n     experiment_id = args.get(\"experiment_id\")\n     assert_arg_exists(\"experiment_id\", experiment_id)"
+        },
+        {
+            "filename": "mlflow/server/validation.py",
+            "diff": "@@ -0,0 +1,31 @@\n+from typing import List\n+\n+from mlflow.exceptions import MlflowException\n+from mlflow.protos.databricks_pb2 import INVALID_PARAMETER_VALUE\n+\n+\n+def _validate_content_type(flask_request, allowed_content_types: List[str]):\n+    \"\"\"\n+    Validates that the request content type is one of the allowed content types.\n+\n+    :param flask_request: Flask request object (flask.request)\n+    :param allowed_content_types: A list of allowed content types\n+    \"\"\"\n+    if flask_request.method not in [\"POST\", \"PUT\"]:\n+        return\n+\n+    if flask_request.content_type is None:\n+        raise MlflowException(\n+            message=\"Bad Request. Content-Type header is missing.\",\n+            error_code=INVALID_PARAMETER_VALUE,\n+        )\n+\n+    # Remove any parameters e.g. \"application/json; charset=utf-8\" -> \"application/json\"\n+    content_type = flask_request.content_type.split(\";\")[0]\n+    if content_type not in allowed_content_types:\n+        message = f\"Bad Request. Content-Type must be one of {allowed_content_types}.\"\n+\n+        raise MlflowException(\n+            message=message,\n+            error_code=INVALID_PARAMETER_VALUE,\n+        )"
+        },
+        {
+            "filename": "tests/server/test_handlers.py",
+            "diff": "@@ -156,6 +156,7 @@ def test_all_model_registry_endpoints_available():\n def test_can_parse_json():\n     request = mock.MagicMock()\n     request.method = \"POST\"\n+    request.content_type = \"application/json\"\n     request.get_json = mock.MagicMock()\n     request.get_json.return_value = {\"name\": \"hello\"}\n     msg = _get_request_message(CreateExperiment(), flask_request=request)\n@@ -165,12 +166,23 @@ def test_can_parse_json():\n def test_can_parse_post_json_with_unknown_fields():\n     request = mock.MagicMock()\n     request.method = \"POST\"\n+    request.content_type = \"application/json\"\n     request.get_json = mock.MagicMock()\n     request.get_json.return_value = {\"name\": \"hello\", \"WHAT IS THIS FIELD EVEN\": \"DOING\"}\n     msg = _get_request_message(CreateExperiment(), flask_request=request)\n     assert msg.name == \"hello\"\n \n \n+def test_can_parse_post_json_with_content_type_params():\n+    request = mock.MagicMock()\n+    request.method = \"POST\"\n+    request.content_type = \"application/json; charset=utf-8\"\n+    request.get_json = mock.MagicMock()\n+    request.get_json.return_value = {\"name\": \"hello\"}\n+    msg = _get_request_message(CreateExperiment(), flask_request=request)\n+    assert msg.name == \"hello\"\n+\n+\n def test_can_parse_get_json_with_unknown_fields():\n     request = mock.MagicMock()\n     request.method = \"GET\"\n@@ -184,12 +196,33 @@ def test_can_parse_get_json_with_unknown_fields():\n def test_can_parse_json_string():\n     request = mock.MagicMock()\n     request.method = \"POST\"\n+    request.content_type = \"application/json\"\n     request.get_json = mock.MagicMock()\n     request.get_json.return_value = '{\"name\": \"hello2\"}'\n     msg = _get_request_message(CreateExperiment(), flask_request=request)\n     assert msg.name == \"hello2\"\n \n \n+def test_can_block_post_request_with_invalid_content_type():\n+    request = mock.MagicMock()\n+    request.method = \"POST\"\n+    request.content_type = \"text/plain\"\n+    request.get_json = mock.MagicMock()\n+    request.get_json.return_value = {\"name\": \"hello\"}\n+    with pytest.raises(MlflowException, match=r\"Bad Request. Content-Type\"):\n+        _get_request_message(CreateExperiment(), flask_request=request)\n+\n+\n+def test_can_block_post_request_with_missing_content_type():\n+    request = mock.MagicMock()\n+    request.method = \"POST\"\n+    request.content_type = None\n+    request.get_json = mock.MagicMock()\n+    request.get_json.return_value = {\"name\": \"hello\"}\n+    with pytest.raises(MlflowException, match=r\"Bad Request. Content-Type\"):\n+        _get_request_message(CreateExperiment(), flask_request=request)\n+\n+\n def test_search_runs_default_view_type(mock_get_request_message, mock_tracking_store):\n     \"\"\"\n     Search Runs default view type is filled in as ViewType.ACTIVE_ONLY"
+        }
+    ],
+    "commitTime": "2023-11-30 00:38:30"
+}

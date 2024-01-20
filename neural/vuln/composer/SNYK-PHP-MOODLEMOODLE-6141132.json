@@ -1,0 +1,97 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2022-04-23 00:40:10",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.40808",
+        "probability": "0.00100"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-MOODLEMOODLE-6141132",
+    "identifiers": {
+        "CVE": [
+            "CVE-2012-1157"
+        ],
+        "CWE": [
+            "CWE-276"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-01 12:52:15",
+    "remediation": "Upgrade moodle/moodle to version 1.9.17 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "moodle/moodle is a learning platform. Affected versions of this package are vulnerable to Improper Access Control due to default settings that were too permissive. All repositories could be viewed by any authenticated user, potentially exposing sensitive information. "
+    },
+    "source_code": [
+        {
+            "filename": "repository/coursefiles/db/access.php",
+            "diff": "@@ -6,7 +6,10 @@\n         'captype' => 'read',\n         'contextlevel' => CONTEXT_MODULE,\n         'archetypes' => array(\n-            'user' => CAP_ALLOW\n+            'coursecreator' => CAP_ALLOW,\n+            'teacher' => CAP_ALLOW,\n+            'editingteacher' => CAP_ALLOW,\n+            'manager' => CAP_ALLOW\n         )\n     )\n );"
+        },
+        {
+            "filename": "repository/coursefiles/version.php",
+            "diff": "@@ -26,6 +26,6 @@\n \n defined('MOODLE_INTERNAL') || die();\n \n-$plugin->version   = 2011112900;        // The current plugin version (Date: YYYYMMDDXX)\n+$plugin->version   = 2012010100;        // The current plugin version (Date: YYYYMMDDXX)\n $plugin->requires  = 2011112900;        // Requires this Moodle version\n $plugin->component = 'repository_coursefiles'; // Full name of the plugin (used for diagnostics)"
+        },
+        {
+            "filename": "repository/filesystem/db/access.php",
+            "diff": "@@ -6,7 +6,10 @@\n         'captype' => 'read',\n         'contextlevel' => CONTEXT_MODULE,\n         'archetypes' => array(\n-            'user' => CAP_ALLOW\n+            'coursecreator' => CAP_ALLOW,\n+            'teacher' => CAP_ALLOW,\n+            'editingteacher' => CAP_ALLOW,\n+            'manager' => CAP_ALLOW\n         )\n     )\n );"
+        },
+        {
+            "filename": "repository/filesystem/version.php",
+            "diff": "@@ -26,6 +26,6 @@\n \n defined('MOODLE_INTERNAL') || die();\n \n-$plugin->version   = 2011112900;        // The current plugin version (Date: YYYYMMDDXX)\n+$plugin->version   = 2012010100;        // The current plugin version (Date: YYYYMMDDXX)\n $plugin->requires  = 2011112900;        // Requires this Moodle version\n $plugin->component = 'repository_filesystem'; // Full name of the plugin (used for diagnostics)"
+        },
+        {
+            "filename": "repository/local/db/access.php",
+            "diff": "@@ -6,7 +6,10 @@\n         'captype' => 'read',\n         'contextlevel' => CONTEXT_MODULE,\n         'archetypes' => array(\n-            'user' => CAP_ALLOW\n+            'coursecreator' => CAP_ALLOW,\n+            'teacher' => CAP_ALLOW,\n+            'editingteacher' => CAP_ALLOW,\n+            'manager' => CAP_ALLOW\n         )\n     )\n );"
+        },
+        {
+            "filename": "repository/local/version.php",
+            "diff": "@@ -26,6 +26,6 @@\n \n defined('MOODLE_INTERNAL') || die();\n \n-$plugin->version   = 2011112900;        // The current plugin version (Date: YYYYMMDDXX)\n+$plugin->version   = 2012010100;        // The current plugin version (Date: YYYYMMDDXX)\n $plugin->requires  = 2011112900;        // Requires this Moodle version\n $plugin->component = 'repository_local'; // Full name of the plugin (used for diagnostics)"
+        },
+        {
+            "filename": "repository/webdav/db/access.php",
+            "diff": "@@ -6,7 +6,10 @@\n         'captype' => 'read',\n         'contextlevel' => CONTEXT_MODULE,\n         'archetypes' => array(\n-            'user' => CAP_ALLOW\n+            'coursecreator' => CAP_ALLOW,\n+            'teacher' => CAP_ALLOW,\n+            'editingteacher' => CAP_ALLOW,\n+            'manager' => CAP_ALLOW\n         )\n     )\n );"
+        },
+        {
+            "filename": "repository/webdav/version.php",
+            "diff": "@@ -26,6 +26,6 @@\n \n defined('MOODLE_INTERNAL') || die();\n \n-$plugin->version   = 2011112900;        // The current plugin version (Date: YYYYMMDDXX)\n+$plugin->version   = 2012010100;        // The current plugin version (Date: YYYYMMDDXX)\n $plugin->requires  = 2011112900;        // Requires this Moodle version\n $plugin->component = 'repository_webdav'; // Full name of the plugin (used for diagnostics)"
+        }
+    ],
+    "commitTime": "2012-01-10 10:10:43"
+}

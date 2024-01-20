@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "George Pantela",
+        "Hubert Kario"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.4,
+    "disclosureTime": "2023-12-20 15:46:39",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOX-6138234",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6135"
+        ],
+        "CWE": [
+            "CWE-203"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:03:04",
+    "remediation": "Upgrade Firefox to version 121 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Observable Timing Discrepancy",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Observable Timing Discrepancy due to the multiple NSS NIST curves were susceptible to a side-channel attack. This attack could potentially allow an attacker to recover the private key. "
+    },
+    "source_code": []
+}

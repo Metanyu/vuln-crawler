@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Yuchuan Meng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-07 20:45:21",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBHEIF-6112472",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49463"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 13:06:02",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the find_exif_tag function in /libheif/exif.cc file. "
+    },
+    "source_code": [
+        {
+            "filename": "examples/encoder_png.cc",
+            "diff": "@@ -118,14 +118,15 @@ bool PngEncoder::Encode(const struct heif_image_handle* handle,\n     if (exifsize > 4) {\n       uint32_t skip = (exifdata[0]<<24) | (exifdata[1]<<16) | (exifdata[2]<<8) | exifdata[3];\n       skip += 4;\n+      if (skip < exifsize) {\n+        uint8_t* ptr = exifdata + skip;\n+        size_t size = exifsize - skip;\n \n-      uint8_t* ptr = exifdata + skip;\n-      size_t size = exifsize - skip;\n+        // libheif by default normalizes the image orientation, so that we have to set the EXIF Orientation to \"Horizontal (normal)\"\n+        modify_exif_orientation_tag_if_it_exists(ptr, (int)size, 1);\n \n-      // libheif by default normalizes the image orientation, so that we have to set the EXIF Orientation to \"Horizontal (normal)\"\n-      modify_exif_orientation_tag_if_it_exists(ptr, (int)size, 1);\n-\n-      png_set_eXIf_1(png_ptr, info_ptr, (png_uint_32)size, ptr);\n+        png_set_eXIf_1(png_ptr, info_ptr, (png_uint_32)size, ptr);\n+      }\n     }\n \n     free(exifdata);"
+        }
+    ],
+    "commitTime": "2023-12-01 05:50:06"
+}

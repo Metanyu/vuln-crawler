@@ -1,0 +1,106 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Ramshath MM"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 2.4,
+    "disclosureTime": "2023-12-25 19:45:36",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-CONCRETE5CONCRETE5-6139297",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49337"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-25 21:38:17",
+    "remediation": "Upgrade concrete5/concrete5 to version 9.2.3 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "concrete5/concrete5 is a concrete5 open source CMS. Affected versions of this package are vulnerable to Cross-site Scripting (XSS) via the Admin Dashboard endpoint /dashboard/system/basics/name . An attacker can manipulate web content or hijack user sessions by injecting malicious scripts into the web page. "
+    },
+    "source_code": [
+        {
+            "filename": "concrete/attributes/site/controller.php",
+            "diff": "@@ -56,7 +56,7 @@ public function form()\n         }\n         $sites = array('' => t('** Select Site'));\n         foreach($this->app->make('site')->getList() as $site) {\n-            $sites[$site->getSiteID()] = $site->getSiteName();\n+            $sites[$site->getSiteID()] = h($site->getSiteName());\n         }\n         $form = $this->app->make('helper/form');\n         print $form->select($this->field('siteID'), $sites, $siteID);\n@@ -66,7 +66,7 @@ public function getDisplayValue()\n     {\n         $site = $this->getValue();\n         if (is_object($site)) {\n-            return $site->getSiteName();\n+            return h($site->getSiteName());\n         }\n     }\n "
+        },
+        {
+            "filename": "concrete/authentication/concrete/controller.php",
+            "diff": "@@ -295,7 +295,7 @@ private function passwordUpgrade(?UserInfo $userInfo, ErrorList $error, bool $is\n                 }\n                 $mh->from($fromEmail, $fromName);\n             }\n-            $mh->addParameter('siteName', tc('SiteName', $this->app->make('site')->getSite()->getSiteName()));\n+            $mh->addParameter('siteName', h(tc('SiteName', $this->app->make('site')->getSite()->getSiteName())));\n             $mh->load('forgot_password');\n             $mh->setIsThrowOnFailure(true);\n             try {"
+        },
+        {
+            "filename": "concrete/blocks/top_navigation_bar/controller.php",
+            "diff": "@@ -126,7 +126,7 @@ public function getRequiredFeatures(): array\n     public function add()\n     {\n         $site = $this->app->make('site')->getSite();\n-        $brandingText = $site->getSiteName();\n+        $brandingText = h($site->getSiteName());\n         /** @var Detector $detector */\n         $detector = $this->app->make('multilingual/detector');\n \n@@ -250,7 +250,7 @@ public function view()\n         }\n         if ($this->includeBrandText && !$this->brandingText) {\n             $site = $this->app->make('site')->getSite();\n-            $brandingText = $site->getSiteName();\n+            $brandingText = h($site->getSiteName());\n             $this->set('brandingText', $brandingText);\n         }\n         if ($this->brandingTransparentLogo) {"
+        },
+        {
+            "filename": "concrete/controllers/single_page/dashboard/system/multisite/sites.php",
+            "diff": "@@ -218,7 +218,7 @@ protected function setCurrentSite(?Site $site): void\n             $menu = null;\n         } else {\n             $breadcrumb = $this->app->make(DashboardBreadcrumbFactory::class)->getBreadcrumb($this->getPageObject());\n-            $breadcrumb->add(new Item('', $site->getSiteName()));\n+            $breadcrumb->add(new Item('', h($site->getSiteName())));\n             $this->setBreadcrumb($breadcrumb);\n             $menu = new Element('dashboard/system/multisite/site/menu', '', $this->getPageObject(), ['site' => $site]);\n         }"
+        },
+        {
+            "filename": "concrete/controllers/single_page/dashboard/system/seo/bulk.php",
+            "diff": "@@ -116,7 +116,7 @@ protected function getSiteNameForPage(Page $page): string\n             }\n             $siteName = $this->getSiteNameForLocale($locale);\n         } else {\n-            $siteName = $this->app->make('site')->getSite()->getSiteName();\n+            $siteName = h($this->app->make('site')->getSite()->getSiteName());\n         }\n \n         return $siteName;"
+        },
+        {
+            "filename": "concrete/controllers/single_page/register.php",
+            "diff": "@@ -169,7 +169,7 @@ public function do_register()\n                                 'display');\n                     }\n                     $mh->addParameter('attribs', $attribValues);\n-                    $mh->addParameter('siteName', tc('SiteName', \\Core::make('site')->getSite()->getSiteName()));\n+                    $mh->addParameter('siteName', h(tc('SiteName', \\Core::make('site')->getSite()->getSiteName())));\n \n                     if ($config->get('concrete.email.register_notification.address')) {\n                         if ($config->get('concrete.email.register_notification.name')) {"
+        },
+        {
+            "filename": "concrete/elements/header_required.php",
+            "diff": "@@ -61,7 +61,7 @@\n                 }\n                 $seo->addTitleSegmentBefore($pageTitle);\n             }\n-            $seo->setSiteName(tc('SiteName', $site->getSiteName()));\n+            $seo->setSiteName(h(tc('SiteName', $site->getSiteName())));\n             $seo->setTitleFormat($appConfig->get('concrete.seo.title_format'));\n             $seo->setTitleSegmentSeparator($appConfig->get('concrete.seo.title_segment_separator'));\n             $pageTitle = $seo->getTitle();"
+        },
+        {
+            "filename": "concrete/single_pages/dashboard/system/express/entities/view_details.php",
+            "diff": "@@ -116,7 +116,7 @@\n                 <?php foreach ($sites as $site) { ?>\n                     <tr>\n                         <td>\n-                            <?php echo $site->getSiteName() ?>\n+                            <?php echo h($site->getSiteName()); ?>\n                         </td>\n \n                         <td style=\"white-space: nowrap\" class=\"text-center\">"
+        },
+        {
+            "filename": "concrete/single_pages/login.php",
+            "diff": "@@ -26,7 +26,7 @@\n $site = app('site')->getSite() ?? null;\n $siteName = '';\n if ($site) {\n-    $siteName = $site->getSiteName();\n+    $siteName = h($site->getSiteName());\n }\n \n ?>"
+        },
+        {
+            "filename": "concrete/src/Application/UserInterface/Sitemap/TreeCollection/Entry/Group/SiteGroup.php",
+            "diff": "@@ -15,7 +15,7 @@ public function __construct(Site $site)\n \n     public function getEntryGroupLabel()\n     {\n-        return $this->site->getSiteName();\n+        return h($this->site->getSiteName());\n     }\n \n     public function getEntryGroupIdentifier()"
+        },
+        {
+            "filename": "concrete/src/Application/UserInterface/Sitemap/TreeCollection/Entry/SiteEntry.php",
+            "diff": "@@ -19,7 +19,7 @@ public function __construct(Site $site)\n \n     public function getLabel()\n     {\n-        return $this->site->getSiteName();\n+        return h($this->site->getSiteName());\n     }\n \n     public function getSiteTreeID()"
+        },
+        {
+            "filename": "concrete/src/Entity/Attribute/Value/Value/SiteValue.php",
+            "diff": "@@ -39,7 +39,7 @@ public function getValue()\n     public function __toString()\n     {\n         if (is_object($this->site)) {\n-            return (string) $this->site->getSiteName();\n+            return (string) h($this->site->getSiteName());\n         }\n         return '';\n     }"
+        },
+        {
+            "filename": "concrete/src/Entity/Site/SiteTree.php",
+            "diff": "@@ -49,7 +49,7 @@ public function getSiteType()\n \n     public function getDisplayName()\n     {\n-        return $this->getLocale()->getSite()->getSiteName();\n+        return h($this->getLocale()->getSite()->getSiteName());\n     }\n \n }"
+        },
+        {
+            "filename": "concrete/src/Form/Service/Widget/SiteSelector.php",
+            "diff": "@@ -33,7 +33,7 @@ public function selectSite($fieldName, $siteID = false, $includeCurrent = false,\n         foreach(\\Core::make('site')->getList() as $site) {\n             $sp = new \\Permissions($site);\n             if ($sp->canViewSiteInSelector()) {\n-                $sites .= '<option ' . ($site->getSiteID() == $siteID ? 'selected' : '') . ' value=\"' . $site->getSiteID() . '\">' . $site->getSiteName() . '</option>';\n+                $sites .= '<option ' . ($site->getSiteID() == $siteID ? 'selected' : '') . ' value=\"' . $site->getSiteID() . '\">' . h($site->getSiteName()) . '</option>';\n             }\n         }\n "
+        },
+        {
+            "filename": "concrete/src/Install/InstallerOptions.php",
+            "diff": "@@ -251,7 +251,7 @@ public function setStartingPointHandle($value)\n      */\n     public function getSiteName()\n     {\n-        return $this->siteName;\n+        return h($this->siteName);\n     }\n \n     /**"
+        }
+    ],
+    "commitTime": "2023-11-09 23:29:12"
+}

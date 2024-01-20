@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "w3bspl01t3r"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5,
+    "disclosureTime": "2023-12-29 03:44:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12283",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-MLSHIFU-6140435",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7148"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-29 13:01:50",
+    "remediation": "There is no fixed version for ml.shifu:shifu . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Code Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Code Injection due to improper handling of the FilterExpression argument within the Java Expression Language Handler. An attacker can execute arbitrary code by manipulating the input to this argument. "
+    },
+    "source_code": []
+}

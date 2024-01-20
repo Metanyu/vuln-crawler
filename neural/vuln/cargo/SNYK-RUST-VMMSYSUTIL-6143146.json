@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Babis Chalios"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.7,
+    "disclosureTime": "2024-01-02 21:45:16",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-VMMSYSUTIL-6143146",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50711"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2024-01-03 16:09:31",
+    "remediation": "Upgrade vmm-sys-util to version 0.12.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "vmm-sys-util is a collection of modules that provides helpers and utilities used by multiple rust-vmm components. Affected versions of this package are vulnerable to Out-of-bounds Write due to a mismatch in the lengths of compared flexible arrays during the deserialization process. An attacker can cause out of bounds memory access through Rust-safe methods by providing a crafted input that has a header length not matching the flexible array length. "
+    },
+    "source_code": [
+        {
+            "filename": "Cargo.toml",
+            "diff": "@@ -1,6 +1,6 @@\n [package]\n name = \"vmm-sys-util\"\n-version = \"0.11.2\"\n+version = \"0.12.0\"\n authors = [\"Intel Virtualization Team <vmm-maintainers@intel.com>\"]\n description = \"A system utility set\"\n repository = \"https://github.com/rust-vmm/vmm-sys-util\"\n@@ -26,3 +26,4 @@ bitflags = \"1.0\"\n \n [dev-dependencies]\n serde_json = \"1.0.9\"\n+bincode = \"1.3.3\""
+        },
+        {
+            "filename": "src/fam.rs",
+            "diff": "@@ -99,7 +99,7 @@ impl fmt::Display for Error {\n ///         self.len as usize\n ///     }\n ///\n-///     fn set_len(&mut self, len: usize) {\n+///     unsafe fn set_len(&mut self, len: usize) {\n ///         self.len = len as u32\n ///     }\n ///\n@@ -135,7 +135,12 @@ pub unsafe trait FamStruct {\n     ///\n     /// These type of structures contain a member that holds the FAM length.\n     /// This method will set the value of that member.\n-    fn set_len(&mut self, len: usize);\n+    ///\n+    /// # Safety\n+    ///\n+    /// The caller needs to ensure that `len` here reflects the correct number of entries of the\n+    /// flexible array part of the struct.\n+    unsafe fn set_len(&mut self, len: usize);\n \n     /// Get max allowed FAM length\n     ///\n@@ -220,7 +225,11 @@ impl<T: Default + FamStruct> FamStructWrapper<T> {\n             // SAFETY: Safe as long T follows the requirements of being POD.\n             mem_allocator.push(unsafe { mem::zeroed() })\n         }\n-        mem_allocator[0].set_len(num_elements);\n+        // SAFETY: The flexible array part of the struct has `num_elements` capacity. We just\n+        // initialized this in `mem_allocator`.\n+        unsafe {\n+            mem_allocator[0].set_len(num_elements);\n+        }\n \n         Ok(FamStructWrapper { mem_allocator })\n     }\n@@ -276,8 +285,8 @@ impl<T: Default + FamStruct> FamStructWrapper<T> {\n         &self.mem_allocator[0]\n     }\n \n-    /// Get a mut reference to the actual [`FamStruct`](trait.FamStruct.html) instance.\n-    pub fn as_mut_fam_struct(&mut self) -> &mut T {\n+    // Get a mut reference to the actual [`FamStruct`](trait.FamStruct.html) instance.\n+    fn as_mut_fam_struct(&mut self) -> &mut T {\n         &mut self.mem_allocator[0]\n     }\n \n@@ -395,7 +404,11 @@ impl<T: Default + FamStruct> FamStructWrapper<T> {\n             self.mem_allocator[i] = unsafe { mem::zeroed() }\n         }\n         // Update the len of the underlying `FamStruct`.\n-        self.as_mut_fam_struct().set_len(len);\n+        // SAFETY: We just adjusted the memory for the underlying `mem_allocator` to hold `len`\n+        // entries.\n+        unsafe {\n+            self.as_mut_fam_struct().set_len(len);\n+        }\n \n         // If the len needs to be decreased, deallocate unnecessary memory\n         if additional_elements < 0 {\n@@ -540,13 +553,23 @@ where\n             {\n                 use serde::de::Error;\n \n-                let header = seq\n+                let header: X = seq\n                     .next_element()?\n                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;\n                 let entries: Vec<X::Entry> = seq\n                     .next_element()?\n                     .ok_or_else(|| de::Error::invalid_length(1, &self))?;\n \n+                if header.len() != entries.len() {\n+                    let msg = format!(\n+                        \"Mismatch between length of FAM specified in FamStruct header ({}) \\\n+                         and actual size of FAM ({})\",\n+                        header.len(),\n+                        entries.len()\n+                    );\n+                    return Err(V::Error::custom(msg));\n+                }\n+\n                 let mut result: Self::Value = FamStructWrapper::from_entries(entries.as_slice())\n                     .map_err(|e| V::Error::custom(format!(\"{:?}\", e)))?;\n                 result.mem_allocator[0] = header;\n@@ -570,7 +593,7 @@ macro_rules! generate_fam_struct_impl {\n                 self.$field_name as usize\n             }\n \n-            fn set_len(&mut self, len: usize) {\n+            unsafe fn set_len(&mut self, len: usize) {\n                 self.$field_name = len as $field_type;\n             }\n \n@@ -603,7 +626,7 @@ mod tests {\n     const MAX_LEN: usize = 100;\n \n     #[repr(C)]\n-    #[derive(Default, PartialEq, Eq)]\n+    #[derive(Default, Debug, PartialEq, Eq)]\n     pub struct __IncompleteArrayField<T>(::std::marker::PhantomData<T>, [T; 0]);\n     impl<T> __IncompleteArrayField<T> {\n         #[inline]\n@@ -1078,4 +1101,29 @@ mod tests {\n         assert_eq!(wrapper2.as_mut_fam_struct().flags, 2);\n         assert_eq!(wrapper2.as_slice(), [0, 0, 0, 3, 14, 0, 0, 1]);\n     }\n+\n+    #[cfg(feature = \"with-serde\")]\n+    #[test]\n+    fn test_bad_deserialize() {\n+        #[repr(C)]\n+        #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]\n+        struct Foo {\n+            pub len: u32,\n+            pub padding: u32,\n+            pub entries: __IncompleteArrayField<u32>,\n+        }\n+\n+        generate_fam_struct_impl!(Foo, u32, entries, u32, len, 100);\n+\n+        let state = FamStructWrapper::<Foo>::new(0).unwrap();\n+        let mut bytes = bincode::serialize(&state).unwrap();\n+\n+        // The `len` field of the header is the first to be serialized.\n+        // Writing at position 0 of the serialized data should change its value.\n+        bytes[0] = 255;\n+\n+        assert!(\n+            matches!(bincode::deserialize::<FamStructWrapper<Foo>>(&bytes).map_err(|boxed| *boxed), Err(bincode::ErrorKind::Custom(s)) if s == *\"Mismatch between length of FAM specified in FamStruct header (255) and actual size of FAM (0)\")\n+        );\n+    }\n }"
+        }
+    ],
+    "commitTime": "2024-01-02 11:02:43"
+}

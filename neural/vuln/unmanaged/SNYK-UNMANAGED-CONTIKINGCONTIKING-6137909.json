@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Scepticz",
+        "SWW13",
+        "Diff-fusion"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-05-11 08:25:16",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.37112",
+        "probability": "0.00088"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137909",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-31129"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 07:56:46",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference in the message handling code for IPv6 router solicitations. Contiki-NG contains an implementation of IPv6 Neighbor Discovery (ND) in the module os/net/ipv6/uip-nd6.c . The ND protocol includes a message type called Router Solicitation (RS), which is used to locate routers and update their address information via the SLLAO (Source Link-Layer Address Option). If the indicated source address changes, a given neighbor entry is set to the STALE state. The message handler does not check for RS messages with an SLLAO that indicates a link-layer address change that a neighbor entry can actually be created for the indicated address. "
+    },
+    "source_code": []
+}

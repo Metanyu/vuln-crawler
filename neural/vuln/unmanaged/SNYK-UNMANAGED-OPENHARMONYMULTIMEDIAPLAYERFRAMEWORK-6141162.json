@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4,
+    "disclosureTime": "2024-01-02 08:46:13",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05744",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-OPENHARMONYMULTIMEDIAPLAYERFRAMEWORK-6141162",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48360"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-02 13:21:29",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free which can cause a crash. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-06 09:30:17",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14046",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMMATTERMOSTMATTERMOSTSERVERV8-6129519",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6459"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-17 13:43:11",
+    "remediation": "Upgrade github.com/mattermost/mattermost/server/v8 to version 8.1.5 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure via the /metrics endpoint which groups calls by id and reports that id in the response, potentially revealing sensitive channelIDs to unauthorized actors. "
+    },
+    "source_code": []
+}

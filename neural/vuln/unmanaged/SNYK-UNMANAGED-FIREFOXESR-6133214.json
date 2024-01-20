@@ -1,0 +1,95 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Yangkang of 360 ATA Team"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.33321",
+        "probability": "0.00079"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOXESR-6133214",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6861"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 14:58:34",
+    "remediation": "Upgrade Firefox-ESR to version 115.6 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the nsWindow::PickerOpen method in headless mode. An attacker can cause a buffer overflow and potentially execute arbitrary code or cause a crash by manipulating the data processed by this method. "
+    },
+    "source_code": []
+}

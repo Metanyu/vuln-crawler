@@ -1,0 +1,48 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "AdamKorcz"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.8,
+    "disclosureTime": "2024-01-03 16:14:39",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCUBEFSCUBEFSBLOBSTOREACCESS-6143560",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46741"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 14:50:21",
+    "remediation": "Upgrade github.com/cubefs/cubefs/blobstore/access to version 3.3.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to configuration keys being leaked in plaintext in the logs. An attacker that has successfully retrieved a secret key from the logs can delete blogs from the blob store or read sensitive data from the logs and escalate privileges. Note: The attacker can either be an internal user with limited privileges to read the log, or it can be an external user who has escalated privileges sufficiently to access the logs. "
+    },
+    "source_code": [
+        {
+            "filename": "blobstore/access/server.go",
+            "diff": "@@ -78,8 +78,6 @@ func initWithRegionMagic(regionMagic string) {\n \t\tlog.Warn(\"no region magic setting, using default secret keys for checksum\")\n \t\treturn\n \t}\n-\n-\tlog.Info(\"using magic secret keys for checksum with:\", regionMagic)\n \tb := sha1.Sum([]byte(regionMagic))\n \tinitTokenSecret(b[:8])\n \tinitLocationSecret(b[:8])"
+        }
+    ],
+    "commitTime": "2023-10-20 03:18:12"
+}

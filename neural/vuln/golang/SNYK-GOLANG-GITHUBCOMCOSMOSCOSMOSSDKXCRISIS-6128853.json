@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "ahook"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-07-06 20:13:03",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCOSMOSCOSMOSSDKXCRISIS-6128853",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-400"
+        ],
+        "GO": [
+            "GO-2023-1881"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-15 13:16:05",
+    "remediation": "There is no fixed version for github.com/cosmos/cosmos-sdk/x/crisis . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') due to improper handling of the ConstantFee parameter when processing transactions in the x/crisis module. An attacker can avoid paying the required fees by crafting a transaction that triggers an invariant check in the module. This allows the validator node to be spammed and can lead to an increase of the CPU usage by up to 20%. "
+    },
+    "source_code": []
+}

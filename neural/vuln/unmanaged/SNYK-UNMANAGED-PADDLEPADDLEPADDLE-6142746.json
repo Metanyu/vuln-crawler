@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Tong Liu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2024-01-03 09:45:12",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-PADDLEPADDLEPADDLE-6142746",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-38674"
+        ],
+        "CWE": [
+            "CWE-369"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 17:04:33",
+    "remediation": "Upgrade paddlepaddle/paddle to version 2.6.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Divide By Zero",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Divide By Zero via the paddle.nanmedian function. An attacker can cause a runtime crash. "
+    },
+    "source_code": [
+        {
+            "filename": "paddle/phi/kernels/cpu/nanmedian_kernel.cc",
+            "diff": "@@ -116,6 +116,14 @@ void ProcessMedianKernel(const Context& dev_ctx,\n   auto x_dim = x.dims();\n   int64_t x_rank = x_dim.size();\n   int64_t stride = x_dim[x_rank - 1];\n+\n+  PADDLE_ENFORCE_NE(\n+      stride,\n+      0,\n+      phi::errors::InvalidArgument(\"The input Tensor x's shape[-1] should not \"\n+                                   \"be 0, but shape is %s now.\",\n+                                   x_dim));\n+\n   int64_t pre_dim = numel / stride;\n   int64_t i = 0;\n "
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/matrix_rank_tol_kernel.cu",
+            "diff": "@@ -340,6 +340,18 @@ void MatrixRankTolKernel(const Context& dev_ctx,\n   auto dim_out = out->dims();\n   int rows = dim_x[dim_x.size() - 2];\n   int cols = dim_x[dim_x.size() - 1];\n+  PADDLE_ENFORCE_NE(\n+      rows,\n+      0,\n+      phi::errors::InvalidArgument(\"The input Tensor x's shape[-2] should not \"\n+                                   \"be 0, but shape is %s now.\",\n+                                   dim_x));\n+  PADDLE_ENFORCE_NE(\n+      cols,\n+      0,\n+      phi::errors::InvalidArgument(\"The input Tensor x's shape[-1] should not \"\n+                                   \"be 0, but shape is %s now.\",\n+                                   dim_x));\n   int k = std::min(rows, cols);\n   auto numel = x.numel();\n   int batches = numel / (rows * cols);"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/nanmedian_kernel.cu",
+            "diff": "@@ -149,6 +149,14 @@ void ProcessMedianKernel(const Context& dev_ctx,\n   auto x_dim = x.dims();\n   int64_t x_rank = x_dim.size();\n   int64_t stride = x_dim[x_rank - 1];\n+\n+  PADDLE_ENFORCE_NE(\n+      stride,\n+      0,\n+      phi::errors::InvalidArgument(\"The input Tensor x's shape[-1] should not \"\n+                                   \"be 0, but shape is %s now.\",\n+                                   x_dim));\n+\n   int64_t pre_dim = numel / stride;\n   int64_t i = 0;\n "
+        }
+    ],
+    "commitTime": "2023-07-25 05:56:45"
+}

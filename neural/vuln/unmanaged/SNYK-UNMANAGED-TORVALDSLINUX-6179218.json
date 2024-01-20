@@ -1,0 +1,66 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "torvalds/linux"
+        }
+    ],
+    "credit": [
+        "Jann Horn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:H/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T13:49:04.069355Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "description": "## Overview Affected versions of this package are vulnerable to Out-of-bounds Write in the Transport Layer Security functionality via the `splice` function with a `ktls` socket as the destination. An attacker can crash the system or potentially escalate their privileges by exploiting this vulnerability. ## Remediation Upgrade `torvalds/linux` to version 6.7-rc5 or higher. ## References - [Git Commit](https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c5a595000e267) - [GitHub Commit](https://github.com/torvalds/linux/commit/c5a595000e2677e865a39f249c056bc05d6e55fd) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2253908) ",
+    "disclosureTime": "2023-12-07T06:30:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6179218",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0646"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "torvalds/linux",
+    "publicationTime": "2024-01-18T15:20:40.734406Z",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc5 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,6.7-rc5)"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write in the Transport Layer Security functionality via the splice function with a ktls socket as the destination. An attacker can crash the system or potentially escalate their privileges by exploiting this vulnerability. ",
+        "References": [
+            "https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/commit/?id=c5a595000e267",
+            "https://github.com/torvalds/linux/commit/c5a595000e2677e865a39f249c056bc05d6e55fd",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2253908"
+        ]
+    },
+    "vulnerableVersions": "[,6.7-rc5)"
+}

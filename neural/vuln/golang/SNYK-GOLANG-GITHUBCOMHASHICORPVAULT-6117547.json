@@ -1,0 +1,97 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-09 00:35:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06910",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMHASHICORPVAULT-6117547",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6337"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 08:34:30",
+    "remediation": "Upgrade github.com/hashicorp/vault to version 1.13.12, 1.14.8, 1.15.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling via the handling of large unauthenticated and authenticated HTTP requests. An attacker can cause memory exhaustion of the host, which may lead to the application crashing by sending specially crafted large HTTP requests. "
+    },
+    "source_code": [
+        {
+            "filename": "helper/forwarding/util.go",
+            "diff": "@@ -7,9 +7,7 @@ import (\n \t\"bytes\"\n \t\"crypto/tls\"\n \t\"crypto/x509\"\n-\t\"errors\"\n \t\"io\"\n-\t\"io/ioutil\"\n \t\"net/http\"\n \t\"net/url\"\n \t\"os\"\n@@ -63,19 +61,7 @@ func GenerateForwardedHTTPRequest(req *http.Request, addr string) (*http.Request\n \n func GenerateForwardedRequest(req *http.Request) (*Request, error) {\n \tvar reader io.Reader = req.Body\n-\tctx := req.Context()\n-\tmaxRequestSize := ctx.Value(\"max_request_size\")\n-\tif maxRequestSize != nil {\n-\t\tmax, ok := maxRequestSize.(int64)\n-\t\tif !ok {\n-\t\t\treturn nil, errors.New(\"could not parse max_request_size from request context\")\n-\t\t}\n-\t\tif max > 0 {\n-\t\t\treader = io.LimitReader(req.Body, max)\n-\t\t}\n-\t}\n-\n-\tbody, err := ioutil.ReadAll(reader)\n+\tbody, err := io.ReadAll(reader)\n \tif err != nil {\n \t\treturn nil, err\n \t}"
+        },
+        {
+            "filename": "http/handler.go",
+            "diff": "@@ -237,12 +237,13 @@ func handler(props *vault.HandlerProperties) http.Handler {\n \tcorsWrappedHandler := wrapCORSHandler(helpWrappedHandler, core)\n \tquotaWrappedHandler := rateLimitQuotaWrapping(corsWrappedHandler, core)\n \tgenericWrappedHandler := genericWrapping(core, quotaWrappedHandler, props)\n+\twrappedHandler := wrapMaxRequestSizeHandler(genericWrappedHandler, props)\n \n \t// Wrap the handler with PrintablePathCheckHandler to check for non-printable\n \t// characters in the request path.\n-\tprintablePathCheckHandler := genericWrappedHandler\n+\tprintablePathCheckHandler := wrappedHandler\n \tif !props.DisablePrintableCheck {\n-\t\tprintablePathCheckHandler = cleanhttp.PrintablePathCheckHandler(genericWrappedHandler, nil)\n+\t\tprintablePathCheckHandler = cleanhttp.PrintablePathCheckHandler(wrappedHandler, nil)\n \t}\n \n \treturn printablePathCheckHandler\n@@ -321,18 +322,12 @@ func handleAuditNonLogical(core *vault.Core, h http.Handler) http.Handler {\n // are performed.\n func wrapGenericHandler(core *vault.Core, h http.Handler, props *vault.HandlerProperties) http.Handler {\n \tvar maxRequestDuration time.Duration\n-\tvar maxRequestSize int64\n \tif props.ListenerConfig != nil {\n \t\tmaxRequestDuration = props.ListenerConfig.MaxRequestDuration\n-\t\tmaxRequestSize = props.ListenerConfig.MaxRequestSize\n \t}\n \tif maxRequestDuration == 0 {\n \t\tmaxRequestDuration = vault.DefaultMaxRequestDuration\n \t}\n-\tif maxRequestSize == 0 {\n-\t\tmaxRequestSize = DefaultMaxRequestSize\n-\t}\n-\n \t// Swallow this error since we don't want to pollute the logs and we also don't want to\n \t// return an HTTP error here. This information is best effort.\n \thostname, _ := os.Hostname()\n@@ -366,12 +361,6 @@ func wrapGenericHandler(core *vault.Core, h http.Handler, props *vault.HandlerPr\n \t\t} else {\n \t\t\tctx, cancelFunc = context.WithTimeout(ctx, maxRequestDuration)\n \t\t}\n-\n-\t\t// if maxRequestSize < 0, no need to set context value\n-\t\t// Add a size limiter if desired\n-\t\tif maxRequestSize > 0 {\n-\t\t\tctx = context.WithValue(ctx, \"max_request_size\", maxRequestSize)\n-\t\t}\n \t\tctx = context.WithValue(ctx, \"original_request_path\", r.URL.Path)\n \t\tr = r.WithContext(ctx)\n \t\tr = r.WithContext(namespace.ContextWithNamespace(r.Context(), namespace.RootNamespace))\n@@ -717,25 +706,6 @@ func parseJSONRequest(perfStandby bool, r *http.Request, w http.ResponseWriter,\n \t// Limit the maximum number of bytes to MaxRequestSize to protect\n \t// against an indefinite amount of data being read.\n \treader := r.Body\n-\tctx := r.Context()\n-\tmaxRequestSize := ctx.Value(\"max_request_size\")\n-\tif maxRequestSize != nil {\n-\t\tmax, ok := maxRequestSize.(int64)\n-\t\tif !ok {\n-\t\t\treturn nil, errors.New(\"could not parse max_request_size from request context\")\n-\t\t}\n-\t\tif max > 0 {\n-\t\t\t// MaxBytesReader won't do all the internal stuff it must unless it's\n-\t\t\t// given a ResponseWriter that implements the internal http interface\n-\t\t\t// requestTooLarger.  So we let it have access to the underlying\n-\t\t\t// ResponseWriter.\n-\t\t\tinw := w\n-\t\t\tif myw, ok := inw.(logical.WrappingResponseWriter); ok {\n-\t\t\t\tinw = myw.Wrapped()\n-\t\t\t}\n-\t\t\treader = http.MaxBytesReader(inw, r.Body, max)\n-\t\t}\n-\t}\n \tvar origBody io.ReadWriter\n \tif perfStandby {\n \t\t// Since we're checking PerfStandby here we key on origBody being nil\n@@ -757,16 +727,6 @@ func parseJSONRequest(perfStandby bool, r *http.Request, w http.ResponseWriter,\n //\n // A nil map will be returned if the format is empty or invalid.\n func parseFormRequest(r *http.Request) (map[string]interface{}, error) {\n-\tmaxRequestSize := r.Context().Value(\"max_request_size\")\n-\tif maxRequestSize != nil {\n-\t\tmax, ok := maxRequestSize.(int64)\n-\t\tif !ok {\n-\t\t\treturn nil, errors.New(\"could not parse max_request_size from request context\")\n-\t\t}\n-\t\tif max > 0 {\n-\t\t\tr.Body = ioutil.NopCloser(io.LimitReader(r.Body, max))\n-\t\t}\n-\t}\n \tif err := r.ParseForm(); err != nil {\n \t\treturn nil, err\n \t}"
+        },
+        {
+            "filename": "http/handler_test.go",
+            "diff": "@@ -4,6 +4,7 @@\n package http\n \n import (\n+\t\"bytes\"\n \t\"context\"\n \t\"crypto/tls\"\n \t\"encoding/json\"\n@@ -14,16 +15,19 @@ import (\n \t\"net/textproto\"\n \t\"net/url\"\n \t\"reflect\"\n+\t\"runtime\"\n \t\"strings\"\n \t\"testing\"\n \n \t\"github.com/go-test/deep\"\n \t\"github.com/hashicorp/go-cleanhttp\"\n \t\"github.com/hashicorp/vault/helper/namespace\"\n \t\"github.com/hashicorp/vault/helper/versions\"\n+\t\"github.com/hashicorp/vault/internalshared/configutil\"\n \t\"github.com/hashicorp/vault/sdk/helper/consts\"\n \t\"github.com/hashicorp/vault/sdk/logical\"\n \t\"github.com/hashicorp/vault/vault\"\n+\t\"github.com/stretchr/testify/require\"\n )\n \n func TestHandler_parseMFAHandler(t *testing.T) {\n@@ -887,3 +891,59 @@ func TestHandler_Parse_Form(t *testing.T) {\n \t\tt.Fatal(diff)\n \t}\n }\n+\n+// TestHandler_MaxRequestSize verifies that a request larger than the\n+// MaxRequestSize fails\n+func TestHandler_MaxRequestSize(t *testing.T) {\n+\tt.Parallel()\n+\tcluster := vault.NewTestCluster(t, &vault.CoreConfig{}, &vault.TestClusterOptions{\n+\t\tDefaultHandlerProperties: vault.HandlerProperties{\n+\t\t\tListenerConfig: &configutil.Listener{\n+\t\t\t\tMaxRequestSize: 1024,\n+\t\t\t},\n+\t\t},\n+\t\tHandlerFunc: Handler,\n+\t\tNumCores:    1,\n+\t})\n+\tcluster.Start()\n+\tdefer cluster.Cleanup()\n+\n+\tclient := cluster.Cores[0].Client\n+\t_, err := client.KVv2(\"secret\").Put(context.Background(), \"foo\", map[string]interface{}{\n+\t\t\"bar\": strings.Repeat(\"a\", 1025),\n+\t})\n+\n+\trequire.ErrorContains(t, err, \"error parsing JSON\")\n+}\n+\n+// TestHandler_MaxRequestSize_Memory sets the max request size to 1024 bytes,\n+// and creates a 1MB request. The test verifies that less than 1MB of memory is\n+// allocated when the request is sent. This test shouldn't be run in parallel,\n+// because it modifies GOMAXPROCS\n+func TestHandler_MaxRequestSize_Memory(t *testing.T) {\n+\tln, addr := TestListener(t)\n+\tcore, _, token := vault.TestCoreUnsealed(t)\n+\tTestServerWithListenerAndProperties(t, ln, addr, core, &vault.HandlerProperties{\n+\t\tCore: core,\n+\t\tListenerConfig: &configutil.Listener{\n+\t\t\tAddress:        addr,\n+\t\t\tMaxRequestSize: 1024,\n+\t\t},\n+\t})\n+\tdefer ln.Close()\n+\n+\tdata := bytes.Repeat([]byte{0x1}, 1024*1024)\n+\n+\treq, err := http.NewRequest(\"POST\", addr+\"/v1/sys/unseal\", bytes.NewReader(data))\n+\trequire.NoError(t, err)\n+\treq.Header.Set(consts.AuthHeaderName, token)\n+\n+\tclient := cleanhttp.DefaultClient()\n+\tdefer runtime.GOMAXPROCS(runtime.GOMAXPROCS(1))\n+\tvar start, end runtime.MemStats\n+\truntime.GC()\n+\truntime.ReadMemStats(&start)\n+\tclient.Do(req)\n+\truntime.ReadMemStats(&end)\n+\trequire.Less(t, end.TotalAlloc-start.TotalAlloc, uint64(1024*1024))\n+}"
+        },
+        {
+            "filename": "http/util.go",
+            "diff": "@@ -6,13 +6,13 @@ package http\n import (\n \t\"bytes\"\n \t\"context\"\n-\t\"errors\"\n \t\"fmt\"\n-\t\"io/ioutil\"\n+\t\"io\"\n \t\"net\"\n \t\"net/http\"\n \t\"strings\"\n \n+\t\"github.com/hashicorp/go-multierror\"\n \t\"github.com/hashicorp/vault/sdk/logical\"\n \n \t\"github.com/hashicorp/vault/helper/namespace\"\n@@ -34,6 +34,27 @@ var (\n \tadjustResponse = func(core *vault.Core, w http.ResponseWriter, req *logical.Request) {}\n )\n \n+func wrapMaxRequestSizeHandler(handler http.Handler, props *vault.HandlerProperties) http.Handler {\n+\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tvar maxRequestSize int64\n+\t\tif props.ListenerConfig != nil {\n+\t\t\tmaxRequestSize = props.ListenerConfig.MaxRequestSize\n+\t\t}\n+\t\tif maxRequestSize == 0 {\n+\t\t\tmaxRequestSize = DefaultMaxRequestSize\n+\t\t}\n+\t\tctx := r.Context()\n+\t\toriginalBody := r.Body\n+\t\tif maxRequestSize > 0 {\n+\t\t\tr.Body = http.MaxBytesReader(w, r.Body, maxRequestSize)\n+\t\t}\n+\t\tctx = logical.CreateContextOriginalBody(ctx, originalBody)\n+\t\tr = r.WithContext(ctx)\n+\n+\t\thandler.ServeHTTP(w, r)\n+\t})\n+}\n+\n func rateLimitQuotaWrapping(handler http.Handler, core *vault.Core) http.Handler {\n \treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n \t\tns, err := namespace.FromContext(r.Context())\n@@ -52,14 +73,6 @@ func rateLimitQuotaWrapping(handler http.Handler, core *vault.Core) http.Handler\n \t\t}\n \t\tmountPath := strings.TrimPrefix(core.MatchingMount(r.Context(), path), ns.Path)\n \n-\t\t// Clone body, so we do not close the request body reader\n-\t\tbodyBytes, err := ioutil.ReadAll(r.Body)\n-\t\tif err != nil {\n-\t\t\trespondError(w, http.StatusInternalServerError, errors.New(\"failed to read request body\"))\n-\t\t\treturn\n-\t\t}\n-\t\tr.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))\n-\n \t\tquotaReq := &quotas.Request{\n \t\t\tType:          quotas.TypeRateLimit,\n \t\t\tPath:          path,\n@@ -79,7 +92,18 @@ func rateLimitQuotaWrapping(handler http.Handler, core *vault.Core) http.Handler\n \t\t// If any role-based quotas are enabled for this namespace/mount, just\n \t\t// do the role resolution once here.\n \t\tif requiresResolveRole {\n-\t\t\trole := core.DetermineRoleFromLoginRequestFromBytes(r.Context(), mountPath, bodyBytes)\n+\t\t\tbuf := bytes.Buffer{}\n+\t\t\tteeReader := io.TeeReader(r.Body, &buf)\n+\t\t\trole := core.DetermineRoleFromLoginRequestFromReader(r.Context(), mountPath, teeReader)\n+\n+\t\t\t// Reset the body if it was read\n+\t\t\tif buf.Len() > 0 {\n+\t\t\t\tr.Body = io.NopCloser(&buf)\n+\t\t\t\toriginalBody, ok := logical.ContextOriginalBodyValue(r.Context())\n+\t\t\t\tif ok {\n+\t\t\t\t\tr = r.WithContext(logical.CreateContextOriginalBody(r.Context(), newMultiReaderCloser(&buf, originalBody)))\n+\t\t\t\t}\n+\t\t\t}\n \t\t\t// add an entry to the context to prevent recalculating request role unnecessarily\n \t\t\tr = r.WithContext(context.WithValue(r.Context(), logical.CtxKeyRequestRole{}, role))\n \t\t\tquotaReq.Role = role\n@@ -138,3 +162,25 @@ func parseRemoteIPAddress(r *http.Request) string {\n \n \treturn ip\n }\n+\n+type multiReaderCloser struct {\n+\treaders []io.Reader\n+\tio.Reader\n+}\n+\n+func newMultiReaderCloser(readers ...io.Reader) *multiReaderCloser {\n+\treturn &multiReaderCloser{\n+\t\treaders: readers,\n+\t\tReader:  io.MultiReader(readers...),\n+\t}\n+}\n+\n+func (m *multiReaderCloser) Close() error {\n+\tvar err error\n+\tfor _, r := range m.readers {\n+\t\tif c, ok := r.(io.Closer); ok {\n+\t\t\terr = multierror.Append(err, c.Close())\n+\t\t}\n+\t}\n+\treturn err\n+}"
+        },
+        {
+            "filename": "sdk/logical/request.go",
+            "diff": "@@ -6,6 +6,7 @@ package logical\n import (\n \t\"context\"\n \t\"fmt\"\n+\t\"io\"\n \t\"net/http\"\n \t\"strings\"\n \t\"time\"\n@@ -453,3 +454,14 @@ type CtxKeyRequestRole struct{}\n func (c CtxKeyRequestRole) String() string {\n \treturn \"request-role\"\n }\n+\n+type ctxKeyOriginalBody struct{}\n+\n+func ContextOriginalBodyValue(ctx context.Context) (io.ReadCloser, bool) {\n+\tvalue, ok := ctx.Value(ctxKeyOriginalBody{}).(io.ReadCloser)\n+\treturn value, ok\n+}\n+\n+func CreateContextOriginalBody(parent context.Context, body io.ReadCloser) context.Context {\n+\treturn context.WithValue(parent, ctxKeyOriginalBody{}, body)\n+}"
+        },
+        {
+            "filename": "vault/core.go",
+            "diff": "@@ -4059,22 +4059,24 @@ func (c *Core) LoadNodeID() (string, error) {\n \treturn hostname, nil\n }\n \n-// DetermineRoleFromLoginRequestFromBytes will determine the role that should be applied to a quota for a given\n-// login request, accepting a byte payload\n-func (c *Core) DetermineRoleFromLoginRequestFromBytes(ctx context.Context, mountPoint string, payload []byte) string {\n-\tdata := make(map[string]interface{})\n-\terr := jsonutil.DecodeJSON(payload, &data)\n-\tif err != nil {\n-\t\t// Cannot discern a role from a request we cannot parse\n+// DetermineRoleFromLoginRequest will determine the role that should be applied to a quota for a given\n+// login request\n+func (c *Core) DetermineRoleFromLoginRequest(ctx context.Context, mountPoint string, data map[string]interface{}) string {\n+\tc.authLock.RLock()\n+\tdefer c.authLock.RUnlock()\n+\tmatchingBackend := c.router.MatchingBackend(ctx, mountPoint)\n+\tif matchingBackend == nil || matchingBackend.Type() != logical.TypeCredential {\n+\t\t// Role based quotas do not apply to this request\n \t\treturn \"\"\n \t}\n-\n-\treturn c.DetermineRoleFromLoginRequest(ctx, mountPoint, data)\n+\treturn c.doResolveRoleLocked(ctx, mountPoint, matchingBackend, data)\n }\n \n-// DetermineRoleFromLoginRequest will determine the role that should be applied to a quota for a given\n-// login request\n-func (c *Core) DetermineRoleFromLoginRequest(ctx context.Context, mountPoint string, data map[string]interface{}) string {\n+// DetermineRoleFromLoginRequestFromReader will determine the role that should\n+// be applied to a quota for a given login request. The reader will only be\n+// consumed if the matching backend for the mount point exists and is a secret\n+// backend\n+func (c *Core) DetermineRoleFromLoginRequestFromReader(ctx context.Context, mountPoint string, reader io.Reader) string {\n \tc.authLock.RLock()\n \tdefer c.authLock.RUnlock()\n \tmatchingBackend := c.router.MatchingBackend(ctx, mountPoint)\n@@ -4083,6 +4085,17 @@ func (c *Core) DetermineRoleFromLoginRequest(ctx context.Context, mountPoint str\n \t\treturn \"\"\n \t}\n \n+\tdata := make(map[string]interface{})\n+\terr := jsonutil.DecodeJSONFromReader(reader, &data)\n+\tif err != nil {\n+\t\treturn \"\"\n+\t}\n+\treturn c.doResolveRoleLocked(ctx, mountPoint, matchingBackend, data)\n+}\n+\n+// doResolveRoleLocked does a login and resolve role request on the matching\n+// backend. Callers should have a read lock on c.authLock\n+func (c *Core) doResolveRoleLocked(ctx context.Context, mountPoint string, matchingBackend logical.Backend, data map[string]interface{}) string {\n \tresp, err := matchingBackend.HandleRequest(ctx, &logical.Request{\n \t\tMountPoint: mountPoint,\n \t\tPath:       \"login\","
+        },
+        {
+            "filename": "vault/logical_system_raft.go",
+            "diff": "@@ -570,7 +570,8 @@ func (b *SystemBackend) handleStorageRaftSnapshotWrite(force bool, makeSealer fu\n \t\tif !ok {\n \t\t\treturn logical.ErrorResponse(\"raft storage is not in use\"), logical.ErrInvalidRequest\n \t\t}\n-\t\tif req.HTTPRequest == nil || req.HTTPRequest.Body == nil {\n+\t\tbody, ok := logical.ContextOriginalBodyValue(ctx)\n+\t\tif !ok {\n \t\t\treturn nil, errors.New(\"no reader for request\")\n \t\t}\n \n@@ -583,7 +584,7 @@ func (b *SystemBackend) handleStorageRaftSnapshotWrite(force bool, makeSealer fu\n \t\t// don't have to hold the full snapshot in memory. We also want to do\n \t\t// the restore in two parts so we can restore the snapshot while the\n \t\t// stateLock is write locked.\n-\t\tsnapFile, cleanup, metadata, err := raftStorage.WriteSnapshotToTemp(req.HTTPRequest.Body, sealer)\n+\t\tsnapFile, cleanup, metadata, err := raftStorage.WriteSnapshotToTemp(body, sealer)\n \t\tswitch {\n \t\tcase err == nil:\n \t\tcase strings.Contains(err.Error(), \"failed to open the sealed hashes\"):"
+        },
+        {
+            "filename": "vault/request_handling.go",
+            "diff": "@@ -578,6 +578,10 @@ func (c *Core) switchedLockHandleRequest(httpCtx context.Context, req *logical.R\n \tif ok {\n \t\tctx = context.WithValue(ctx, logical.CtxKeyRequestRole{}, requestRole)\n \t}\n+\tbody, ok := logical.ContextOriginalBodyValue(httpCtx)\n+\tif ok {\n+\t\tctx = logical.CreateContextOriginalBody(ctx, body)\n+\t}\n \tresp, err = c.handleCancelableRequest(ctx, req)\n \treq.SetTokenEntry(nil)\n \tcancel()"
+        }
+    ],
+    "commitTime": "2023-12-05 01:45:28"
+}

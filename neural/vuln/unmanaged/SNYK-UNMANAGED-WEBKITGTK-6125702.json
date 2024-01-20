@@ -1,0 +1,96 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-12 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.20583",
+        "probability": "0.00055"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-WEBKITGTK-6125702",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-42883"
+        ],
+        "CWE": [
+            "CWE-119",
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 14:35:40",
+    "remediation": "Upgrade webkitgtk to version 7617.1.4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Restriction of Operations within the Bounds of a Memory Buffer via the processing of a malicious image. An attacker can cause the application to crash or become unresponsive by submitting a specially crafted image file. "
+    },
+    "source_code": []
+}

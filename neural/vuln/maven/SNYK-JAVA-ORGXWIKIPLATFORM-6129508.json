@@ -1,0 +1,76 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.6,
+    "disclosureTime": "2023-12-16 00:39:39",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23549",
+        "probability": "0.00060"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGXWIKIPLATFORM-6129508",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50722"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-17 11:48:10",
+    "remediation": "Upgrade org.xwiki.platform:xwiki-platform-administration-ui to version 14.10.15, 15.5.2, 15.7-rc-1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the XWiki.ConfigurableClass . Exploiting this vulnerability allows complete remote code execution with programming rights, thus compromising the confidentiality, integrity, and availability of the entire XWiki installation by tricking an admin user into visiting a crafted URL or embedding the URL as an image source in wiki content. This is only exploitable if the user visiting the crafted URL has edit rights on at least one configuration section. ",
+        "PoC": " <xwiki-host>/xwiki/bin/view/%22%3E%7B%7B%2Fhtml%7D%7D%7B%7Basync%20context%3D%22request/parameters%22%7D%7D%7B%7Bvelocity%7D%7D%23evaluate(%24request/eval)/?sheet=XWiki.ConfigurableClass&xpage=view&eval=$services.logging.getLogger(%22attacker%22).error(%22Attack%20success%20$hasProgramming%22) Where <xwiki-host> is the URL of your XWiki installation. ",
+        "Workaround": "The vulnerability can be mitigated by manually applying the patch to the document XWiki.ConfigurableClass . "
+    },
+    "source_code": [
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-administration/xwiki-platform-administration-ui/src/main/resources/XWiki/ConfigurableClass.xml",
+            "diff": "@@ -407,7 +407,7 @@ $xwiki.jsfx.use('js/xwiki/actionbuttons/actionButtons.js', true)\n   #if($globaladmin)\n     #set($queryString = \"editor=globaladmin&amp;amp;section=\")\n   #else\n-    #set($queryString = \"space=${currentSpace}&amp;amp;section=\")\n+    #set($queryString = \"space=$escapetool.url($currentSpace)&amp;amp;section=\")\n     #if($request.getParameter('editor'))\n       #set($queryString = \"editor=$escapetool.url($request.getParameter('editor'))&amp;amp;$queryString\")\n     #end"
+        },
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-administration/xwiki-platform-administration-ui/src/test/java/org/xwiki/administration/ConfigurableClassPageTest.java",
+            "diff": "@@ -19,10 +19,13 @@\n  */\n package org.xwiki.administration;\n \n+import java.net.URI;\n+import java.nio.charset.StandardCharsets;\n import java.util.List;\n import java.util.Map;\n import java.util.Objects;\n \n+import org.apache.http.client.utils.URLEncodedUtils;\n import org.jsoup.nodes.Document;\n import org.junit.jupiter.api.BeforeEach;\n import org.junit.jupiter.api.Test;\n@@ -54,6 +57,7 @@\n import com.xpn.xwiki.objects.BaseObject;\n \n import static org.junit.jupiter.api.Assertions.assertEquals;\n+import static org.junit.jupiter.api.Assertions.fail;\n import static org.mockito.ArgumentMatchers.any;\n import static org.mockito.ArgumentMatchers.anyInt;\n import static org.mockito.ArgumentMatchers.anyString;\n@@ -208,4 +212,39 @@ void escapeNonViewableSections() throws Exception\n         assertEquals(String.format(\"xe.admin.configurable.noViewAccessSomeApplications [[%s]]\", MY_SECTION_SERIALIZED),\n             errorMessage);\n     }\n+\n+    @Test\n+    void escapeSectionLink() throws Exception\n+    {\n+        // Create a new section document.\n+        XWikiDocument mySectionDoc = new XWikiDocument(MY_SECTION);\n+        BaseObject object = mySectionDoc.newXObject(CONFIGURABLE_CLASS, this.context);\n+        object.setStringValue(\"displayInCategory\", \"other\");\n+        object.setStringValue(\"displayInSection\", \"other\");\n+        object.set(\"scope\", \"WIKI+ALL_SPACES\", this.context);\n+        this.xwiki.saveDocument(mySectionDoc, this.context);\n+\n+        // Make sure the section document is returned by the query and the user has access to edit.\n+        when(this.query.execute()).thenReturn(List.of(MY_SECTION_SERIALIZED)).thenReturn(List.of());\n+        when(this.oldcore.getMockRightService()\n+            .hasAccessLevel(eq(\"edit\"), any(), any(), any())).thenReturn(true);\n+\n+        // Set a new document with space \">{{/html}}{{noscript /}} as context document to check escaping of the\n+        // current space.\n+        String spaceName = \"\\\">{{/html}}{{noscript /}}\";\n+        DocumentReference docRef = new DocumentReference(WIKI_NAME, spaceName, \"WebHome\");\n+        XWikiDocument contextDoc = new XWikiDocument(docRef);\n+        this.xwiki.saveDocument(contextDoc, this.context);\n+        this.context.setDoc(contextDoc);\n+\n+        XWikiDocument doc = loadPage(CONFIGURABLE_CLASS);\n+        Document htmlPage = renderHTMLPage(doc);\n+        String link = Objects.requireNonNull(htmlPage.selectFirst(\"li.other a\")).attr(\"href\");\n+        URI uri = new URI(link);\n+        // Parse the query parameters and check the space name.\n+        URLEncodedUtils.parse(uri, StandardCharsets.UTF_8).stream()\n+            .filter(pair -> pair.getName().equals(\"space\"))\n+            .findFirst()\n+            .ifPresentOrElse(pair -> assertEquals(spaceName, pair.getValue()), () -> fail(\"No space parameter in URL\"));\n+    }\n }"
+        }
+    ],
+    "commitTime": "2023-08-02 15:08:18"
+}

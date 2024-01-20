@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "@kevin-mizu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 10,
+    "disclosureTime": "2023-12-12 05:44:32",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16501",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6117546",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6709"
+        ],
+        "CWE": [
+            "CWE-1336"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-12 08:26:58",
+    "remediation": "Upgrade mlflow to version 2.9.2 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Special Elements Used in a Template Engine",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Improper Neutralization of Special Elements Used in a Template Engine. An attacker can execute arbitrary code or commands by injecting malicious input into the template system. Note: In order for this vulnerability to be exploited, the user must load a recipe configuration that he found on the internet. ",
+        "PoC": "import os from mlflow.recipes import Recipe os.chdir(\"./recipes\") regression_recipe = Recipe(profile=\"local\") "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/recipes/cards/__init__.py",
+            "diff": "@@ -120,9 +120,10 @@ def to_html(self) -> str:\n \n         :return: a HTML string\n         \"\"\"\n-        import jinja2\n+        from jinja2 import BaseLoader\n+        from jinja2.sandbox import SandboxedEnvironment\n \n-        j2_env = jinja2.Environment(loader=jinja2.BaseLoader()).from_string(self.template)\n+        j2_env = SandboxedEnvironment(loader=BaseLoader()).from_string(self.template)\n         return j2_env.render({**self._context})\n \n "
+        }
+    ],
+    "commitTime": "2023-12-14 02:01:34"
+}

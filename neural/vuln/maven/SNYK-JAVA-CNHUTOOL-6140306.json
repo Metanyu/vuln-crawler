@@ -1,0 +1,57 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "PoppingSnack"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-27 21:42:51",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-CNHUTOOL-6140306",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51075"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-28 12:43:43",
+    "remediation": "Upgrade cn.hutool:hutool-core to version 5.8.24 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Resource Exhaustion",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Resource Exhaustion via the StrSplitter.splitByRegex function. An attacker can cause a system to become unresponsive by manipulating the first two parameters. Note: If the first two parameters are \"\", no matter how the last two parameters are set, the executing program will enter an infinite loop. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -2,7 +2,7 @@\n # \ud83d\ude80Changelog\n \n -------------------------------------------------------------------------------------------------------------\n-# 5.8.24(2023-12-11)\n+# 5.8.24(2023-12-12)\n \n ### \ud83d\udc23\u65b0\u7279\u6027\n * \u3010cache \u3011      Cache\u589e\u52a0get\u91cd\u8f7d\uff0c\u53ef\u81ea\u5b9a\u4e49\u8d85\u65f6\u65f6\u95f4\uff08issue#I8G0DL@Gitee\uff09\n@@ -18,6 +18,7 @@\n * \u3010extra \u3011      \u4fee\u590dArchiver \u6700\u540e\u4e00\u4e2a Entry \u4e3a\u7a7a\u6587\u4ef6\u5939\u65f6\u672a\u5173\u95ed Entry\u95ee\u9898\uff08pr#1123@Gitee\uff09\n * \u3010core  \u3011      \u4fee\u590dImgUtil.convert png\u8f6cjpg\u5728jdk9+\u4e2d\u5931\u8d25\u95ee\u9898\uff08issue#I8L8UA@Gitee\uff09\n * \u3010cache \u3011      \u4fee\u590dStampedCache\u7684get\u65b9\u6cd5\u975e\u539f\u5b50\u95ee\u9898\uff08issue#I8MEIX@Gitee\uff09\n+* \u3010core  \u3011      \u4fee\u590dStrSplitter.splitByRegex\u4f7f\u7528\u7a7a\u53c2\u6570\u5bfc\u81f4\u7684OOM\u95ee\u9898\uff08issue#3421@Github\uff09\n \n -------------------------------------------------------------------------------------------------------------\n # 5.8.23(2023-11-12)"
+        },
+        {
+            "filename": "hutool-core/src/main/java/cn/hutool/core/text/finder/PatternFinder.java",
+            "diff": "@@ -49,9 +49,16 @@ public TextFinder setNegative(boolean negative) {\n \t@Override\n \tpublic int start(int from) {\n \t\tif (matcher.find(from)) {\n+\t\t\tfinal int end = matcher.end();\n \t\t\t// \u53ea\u6709\u5339\u914d\u5230\u7684\u5b57\u7b26\u4e32\u7ed3\u5c3e\u5728limit\u8303\u56f4\u5185\uff0c\u624d\u7b97\u627e\u5230\n-\t\t\tif(matcher.end() <= getValidEndIndex()){\n-\t\t\t\treturn matcher.start();\n+\t\t\tif(end <= getValidEndIndex()){\n+\t\t\t\tfinal int start = matcher.start();\n+\t\t\t\tif(start == end){\n+\t\t\t\t\t// issue#3421\uff0c\u5982\u679c\u5339\u914d\u7a7a\u4e32\uff0c\u6309\u7167\u672a\u5339\u914d\u5bf9\u5f85\uff0c\u907f\u514d\u6b7b\u5faa\u73af\n+\t\t\t\t\treturn INDEX_NOT_FOUND;\n+\t\t\t\t}\n+\n+\t\t\t\treturn start;\n \t\t\t}\n \t\t}\n \t\treturn INDEX_NOT_FOUND;"
+        },
+        {
+            "filename": "hutool-core/src/test/java/cn/hutool/core/text/split/StrSplitterTest.java",
+            "diff": "@@ -1,5 +1,6 @@\n package cn.hutool.core.text.split;\n \n+import cn.hutool.core.collection.ListUtil;\n import cn.hutool.core.text.StrSplitter;\n import org.junit.Assert;\n import org.junit.Test;\n@@ -15,49 +16,49 @@ public class StrSplitterTest {\n \n \t@Test\n \tpublic void splitByCharTest(){\n-\t\tString str1 = \"a, ,efedsfs,   ddf\";\n-\t\tList<String> split = StrSplitter.split(str1, ',', 0, true, true);\n+\t\tfinal String str1 = \"a, ,efedsfs,   ddf\";\n+\t\tfinal List<String> split = StrSplitter.split(str1, ',', 0, true, true);\n \n \t\tAssert.assertEquals(\"ddf\", split.get(2));\n \t\tAssert.assertEquals(3, split.size());\n \t}\n \n \t@Test\n \tpublic void splitByStrTest(){\n-\t\tString str1 = \"aabbccaaddaaee\";\n-\t\tList<String> split = StrSplitter.split(str1, \"aa\", 0, true, true);\n+\t\tfinal String str1 = \"aabbccaaddaaee\";\n+\t\tfinal List<String> split = StrSplitter.split(str1, \"aa\", 0, true, true);\n \t\tAssert.assertEquals(\"ee\", split.get(2));\n \t\tAssert.assertEquals(3, split.size());\n \t}\n \n \t@Test\n \tpublic void splitByBlankTest(){\n-\t\tString str1 = \"aa bbccaa     ddaaee\";\n-\t\tList<String> split = StrSplitter.split(str1, 0);\n+\t\tfinal String str1 = \"aa bbccaa     ddaaee\";\n+\t\tfinal List<String> split = StrSplitter.split(str1, 0);\n \t\tAssert.assertEquals(\"ddaaee\", split.get(2));\n \t\tAssert.assertEquals(3, split.size());\n \t}\n \n \t@Test\n \tpublic void splitPathTest(){\n-\t\tString str1 = \"/use/local/bin\";\n-\t\tList<String> split = StrSplitter.splitPath(str1, 0);\n+\t\tfinal String str1 = \"/use/local/bin\";\n+\t\tfinal List<String> split = StrSplitter.splitPath(str1, 0);\n \t\tAssert.assertEquals(\"bin\", split.get(2));\n \t\tAssert.assertEquals(3, split.size());\n \t}\n \n \t@Test\n \tpublic void splitMappingTest() {\n-\t\tString str = \"1.2.\";\n-\t\tList<Long> split = StrSplitter.split(str, '.', 0, true, true, Long::parseLong);\n+\t\tfinal String str = \"1.2.\";\n+\t\tfinal List<Long> split = StrSplitter.split(str, '.', 0, true, true, Long::parseLong);\n \t\tAssert.assertEquals(2, split.size());\n \t\tAssert.assertEquals(Long.valueOf(1L), split.get(0));\n \t\tAssert.assertEquals(Long.valueOf(2L), split.get(1));\n \t}\n \n \t@Test\n \tpublic void splitEmptyTest(){\n-\t\tString str = \"\";\n+\t\tfinal String str = \"\";\n \t\tfinal String[] split = str.split(\",\");\n \t\tfinal String[] strings = StrSplitter.splitToArray(str, \",\", -1, false, false);\n \t\tAssert.assertNotNull(strings);\n@@ -66,7 +67,7 @@ public void splitEmptyTest(){\n \n \t@Test\n \tpublic void splitNullTest(){\n-\t\tString str = null;\n+\t\tfinal String str = null;\n \t\tfinal String[] strings = StrSplitter.splitToArray(str, \",\", -1, false, false);\n \t\tAssert.assertNotNull(strings);\n \t\tAssert.assertEquals(0, strings.length);\n@@ -77,7 +78,7 @@ public void splitNullTest(){\n \t */\n \t@Test\n \tpublic void splitByRegexTest(){\n-\t\tString text = \"01  821   34567890182345617821\";\n+\t\tfinal String text = \"01  821   34567890182345617821\";\n \t\tList<String> strings = StrSplitter.splitByRegex(text, \"21\", 0, false, true);\n \t\tAssert.assertEquals(2, strings.size());\n \t\tAssert.assertEquals(\"01  8\", strings.get(0));\n@@ -89,4 +90,19 @@ public void splitByRegexTest(){\n \t\tAssert.assertEquals(\"   345678901823456178\", strings.get(1));\n \t\tAssert.assertEquals(\"\", strings.get(2));\n \t}\n+\n+\t@Test\n+\tpublic void issue3421Test() {\n+\t\tList<String> strings = StrSplitter.splitByRegex(\"\", \"\", 0, false, false);\n+\t\tAssert.assertEquals(ListUtil.of(\"\"), strings);\n+\n+\t\tstrings = StrSplitter.splitByRegex(\"aaa\", \"\", 0, false, false);\n+\t\tAssert.assertEquals(ListUtil.of(\"aaa\"), strings);\n+\n+\t\tstrings = StrSplitter.splitByRegex(\"\", \"aaa\", 0, false, false);\n+\t\tAssert.assertEquals(ListUtil.of(\"\"), strings);\n+\n+\t\tstrings = StrSplitter.splitByRegex(\"\", \"\", 0, false, true);\n+\t\tAssert.assertEquals(ListUtil.of(), strings);\n+\t}\n }"
+        }
+    ],
+    "commitTime": "2023-12-11 20:29:20"
+}

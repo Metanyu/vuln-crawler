@@ -1,0 +1,91 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Joshua Rogers"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.6,
+    "disclosureTime": "2023-12-14 18:46:02",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.45825",
+        "probability": "0.00119"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-SQUID-6128854",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50269"
+        ],
+        "CWE": [
+            "CWE-674"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 13:14:04",
+    "remediation": "Upgrade squid to version 6.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Recursion",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Recursion via the follow_x_forwarded_for option. A recursive call will be made for as many commas as there are (between each comma must be any valid hostname, AKA any ASCII7 characters). ",
+        "Workaround": "Users can remove all follow_x_forwarded_for lines from squid.conf "
+    },
+    "source_code": [
+        {
+            "filename": "src/ClientRequestContext.h",
+            "diff": "@@ -78,8 +78,13 @@ class ClientRequestContext : public RefCountable\n #if USE_OPENSSL\n     bool sslBumpCheckDone = false;\n #endif\n-    ErrorState *error = nullptr; ///< saved error page for centralized/delayed processing\n+\n     bool readNextRequest = false; ///< whether Squid should read after error handling\n+    ErrorState *error = nullptr; ///< saved error page for centralized/delayed processing\n+\n+#if FOLLOW_X_FORWARDED_FOR\n+    size_t currentXffHopNumber = 0; ///< number of X-Forwarded-For header values processed so far\n+#endif\n };\n \n #endif /* SQUID_CLIENTREQUESTCONTEXT_H */"
+        },
+        {
+            "filename": "src/client_side_request.cc",
+            "diff": "@@ -74,6 +74,11 @@\n #endif\n \n #if FOLLOW_X_FORWARDED_FOR\n+\n+#if !defined(SQUID_X_FORWARDED_FOR_HOP_MAX)\n+#define SQUID_X_FORWARDED_FOR_HOP_MAX 64\n+#endif\n+\n static void clientFollowXForwardedForCheck(Acl::Answer answer, void *data);\n #endif /* FOLLOW_X_FORWARDED_FOR */\n \n@@ -438,8 +443,16 @@ clientFollowXForwardedForCheck(Acl::Answer answer, void *data)\n                 /* override the default src_addr tested if we have to go deeper than one level into XFF */\n                 Filled(calloutContext->acl_checklist)->src_addr = request->indirect_client_addr;\n             }\n-            calloutContext->acl_checklist->nonBlockingCheck(clientFollowXForwardedForCheck, data);\n-            return;\n+            if (++calloutContext->currentXffHopNumber < SQUID_X_FORWARDED_FOR_HOP_MAX) {\n+                calloutContext->acl_checklist->nonBlockingCheck(clientFollowXForwardedForCheck, data);\n+                return;\n+            }\n+            const auto headerName = Http::HeaderLookupTable.lookup(Http::HdrType::X_FORWARDED_FOR).name;\n+            debugs(28, DBG_CRITICAL, \"ERROR: Ignoring trailing \" << headerName << \" addresses\" <<\n+                   Debug::Extra << \"addresses allowed by follow_x_forwarded_for: \" << calloutContext->currentXffHopNumber <<\n+                   Debug::Extra << \"last/accepted address: \" << request->indirect_client_addr <<\n+                   Debug::Extra << \"ignored trailing addresses: \" << request->x_forwarded_for_iterator);\n+            // fall through to resume clientAccessCheck() processing\n         }\n     }\n "
+        }
+    ],
+    "commitTime": "2023-11-30 15:32:47"
+}

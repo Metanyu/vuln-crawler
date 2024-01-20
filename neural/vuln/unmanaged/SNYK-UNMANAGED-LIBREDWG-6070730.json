@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Eugene Lim"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-10-16 21:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-LIBREDWG-6070730",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-26157"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-01 09:04:41",
+    "remediation": "Upgrade libredwg to version 0.12.5.6384 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) due to an out-of-bounds read involving section->num_pages in decode_r2007.c . "
+    },
+    "source_code": [
+        {
+            "filename": "src/decode_r2007.c",
+            "diff": "@@ -798,6 +798,12 @@ read_data_section (Bit_Chain *sec_dat, Bit_Chain *dat,\n   for (i = 0; i < (int)section->num_pages; i++)\n     {\n       r2007_section_page *section_page = section->pages[i];\n+      if (!section_page)\n+        {\n+          free (decomp);\n+          LOG_ERROR (\"Failed to find section page %d\", (int)i)\n+          return DWG_ERR_PAGENOTFOUND;\n+        }\n       page = get_page (pages_map, section_page->id);\n       if (page == NULL)\n         {\n@@ -954,12 +960,11 @@ read_sections_map (Bit_Chain *dat, int64_t size_comp, int64_t size_uncomp,\n       LOG_TRACE (\"\\n\")\n       section->type = dwg_section_wtype (section->name);\n \n-      if (section->num_pages <= 0)\n-        continue;\n-      if (section->num_pages > 0xf0000)\n+      if (section->num_pages <= 0 || section->num_pages > 0xf0000)\n         {\n           LOG_ERROR (\"Invalid num_pages %zu, skip\",\n                      (size_t)section->num_pages);\n+          section->num_pages = 0;\n           continue;\n         }\n "
+        }
+    ],
+    "commitTime": "2023-10-05 13:21:41"
+}

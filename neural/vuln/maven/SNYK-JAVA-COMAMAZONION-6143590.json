@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2024-01-03 23:51:14",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMAMAZONION-6143590",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21634"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-04 12:53:54",
+    "remediation": "Upgrade com.amazon.ion:ion-java to version 1.10.5 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling via the deserialization of Ion text encoded data or the IonValue model processing. An attacker can cause a StackOverflowError by crafting malicious Ion data that triggers excessive resource consumption when loaded or processed. This is only exploitable if the application deserializes Ion data from an untrusted source or data that could have been tampered with. ",
+        "Workaround": "This vulnerability can be mitigated by not loading data from untrusted sources or that could have been tampered with. "
+    },
+    "source_code": []
+}

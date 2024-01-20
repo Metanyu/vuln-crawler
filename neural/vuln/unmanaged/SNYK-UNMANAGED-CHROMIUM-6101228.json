@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Ahmed ElMasry"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-06 02:44:23",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.32031",
+        "probability": "0.00077"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CHROMIUM-6101228",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6511"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-06 13:55:05",
+    "remediation": "Upgrade chromium to version 120.0.6099.62 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Access Restriction Bypass",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Access Restriction Bypass. Inappropriate implementation in Autofill allowed a remote attacker to bypass Autofill restrictions via a crafted HTML page. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-06-16 09:32:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.35315",
+        "probability": "0.00084"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137921",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-34101"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:30:35",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read when processing ICMP DAO packets in the dao_input_storing function, the Contiki-NG OS does not verify that the packet buffer is big enough to contain the bytes it needs before accessing them. Up to 16 bytes can be read out of bounds in the dao_input_storing function. An attacker can truncate an ICMP packet to contain insufficient data, leading to an out-of-bounds read on these lines. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,122 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-08 20:46:01",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14147",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-EVERSHOP-6117578",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46495"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-12 10:48:36",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "evershop is an A shopping cart platform with Express, React and MySQL Affected versions of this package are vulnerable to Cross-site Scripting (XSS) via a crafted request to the sortBy parameter. An attacker can obtain sensitive information by injecting malicious scripts. "
+    },
+    "source_code": [
+        {
+            "filename": "package.json",
+            "diff": "@@ -18,7 +18,6 @@\n   ],\n   \"scripts\": {\n     \"dev\": \"evershop dev\",\n-    \"dev:debug\": \"evershop dev --debug\",\n     \"setup\": \"evershop install\",\n     \"build\": \"evershop build\",\n     \"start\": \"evershop start\","
+        },
+        {
+            "filename": "packages/evershop/src/components/common/form/fields/Ckeditor.jsx",
+            "diff": "@@ -120,7 +120,9 @@ function FileBrowser({\n       .then((res) => res.json())\n       .then((response) => {\n         if (!response.error) {\n-          setFolders(folders.concat(response.data.name));\n+          // Get the first level folder, incase of recursive folder creation\n+          const recursiveFolders = folder.split('/');\n+          setFolders([...new Set(folders.concat(recursiveFolders[0]))]);\n         } else {\n           setError(response.error.message);\n         }"
+        },
+        {
+            "filename": "packages/evershop/src/components/frontStore/catalog/product/list/List.jsx",
+            "diff": "@@ -69,6 +69,7 @@ ProductList.propTypes = {\n   products: PropTypes.arrayOf(\n     PropTypes.shape({\n       name: PropTypes.string,\n+      sku: PropTypes.string,\n       productId: PropTypes.number,\n       url: PropTypes.string,\n       price: PropTypes.shape({"
+        },
+        {
+            "filename": "packages/evershop/src/lib/log/debuger.js",
+            "diff": "@@ -1,43 +1,45 @@\n const { green, red, blue, yellow, white } = require('kleur');\n+const isDevelopmentMode = require('../util/isDevelopmentMode');\n \n // Define logger function\n function debug(level, message) {\n-  if (!process.argv.includes('--debug')) {\n-    return; // Do not output message to console or file\n-  }\n-  let logMessage = ``;\n-  let textMessage = `${message}`;\n-  // If message is an exception object, include the stack trace\n-  if (message instanceof Error) {\n-    textMessage = `${message.message}\\n${message.stack}`;\n-  }\n-  // Switch color based on level\n-  switch (level) {\n-    case 'critical':\n-      logMessage += red(`[debug] \u274c ${textMessage}`);\n-      break;\n-    case 'warning':\n-      logMessage += yellow(`[debug] \u26a0\ufe0f ${textMessage}`);\n-      break;\n-    case 'info':\n-      logMessage += blue(`[debug] \u2139\ufe0f ${textMessage}`);\n-      break;\n-    case 'success':\n-      logMessage += green(`[debug] \u2705 ${textMessage}`);\n-      break;\n-    default:\n-      logMessage += white(`[debug] - ${textMessage}`);\n-      break;\n-  }\n+  if (isDevelopmentMode() || process.argv.includes('--debug')) {\n+    let logMessage = ``;\n+    let textMessage = `${message}`;\n+    // If message is an exception object, include the stack trace\n+    if (message instanceof Error) {\n+      textMessage = `${message.message}\\n${message.stack}`;\n+    }\n+    // Switch color based on level\n+    switch (level) {\n+      case 'critical':\n+        logMessage += red(`[debug] \u274c ${textMessage}`);\n+        break;\n+      case 'warning':\n+        logMessage += yellow(`[debug] \u26a0\ufe0f ${textMessage}`);\n+        break;\n+      case 'info':\n+        logMessage += blue(`[debug] \u2139\ufe0f ${textMessage}`);\n+        break;\n+      case 'success':\n+        logMessage += green(`[debug] \u2705 ${textMessage}`);\n+        break;\n+      default:\n+        logMessage += white(`[debug] - ${textMessage}`);\n+        break;\n+    }\n \n-  // If message is added to a group, store it in the group\n-  if (this.group && Array.isArray(this.group.messages)) {\n-    this.group.messages.push(logMessage);\n-    return; // Do not output message to console or file\n-  }\n+    // If message is added to a group, store it in the group\n+    if (this.group && Array.isArray(this.group.messages)) {\n+      this.group.messages.push(logMessage);\n+      return; // Do not output message to console or file\n+    }\n \n-  // eslint-disable-next-line no-console\n-  console.log(logMessage);\n+    // eslint-disable-next-line no-console\n+    console.log(logMessage);\n+  } else {\n+     // Do not output message to console or file\n+  }\n }\n \n function error(e) {"
+        },
+        {
+            "filename": "packages/evershop/src/lib/util/buildFilterFromUrl.js",
+            "diff": "@@ -48,7 +48,7 @@ module.exports.buildFilterFromUrl = (query) => {\n       filtersFromUrl.push({\n         key: 'sortBy',\n         operation: '=',\n-        value: sortBy\n+        value: sortBy.toString()\n       });\n     }\n "
+        },
+        {
+            "filename": "packages/evershop/src/modules/base/pages/global/[response]errorHandler.js",
+            "diff": "@@ -1,3 +1,4 @@\n+const { encode } = require('html-entities');\n const {\n   INTERNAL_SERVER_ERROR\n } = require('@evershop/evershop/src/lib/util/httpStatus');\n@@ -30,6 +31,6 @@ module.exports = async (err, request, response, delegate, next) => {\n       }\n     });\n   } else {\n-    response.status(500).send(err.message);\n+    response.status(500).send(encode(err.message));\n   }\n };"
+        },
+        {
+            "filename": "packages/evershop/src/modules/catalog/pages/frontStore/categoryView/[index]filters.js",
+            "diff": "@@ -83,7 +83,7 @@ module.exports = async (request, response, delegate, next) => {\n       filtersFromUrl.push({\n         key: 'sortBy',\n         operation: '=',\n-        value: sortBy\n+        value: sortBy.toString()\n       });\n     }\n "
+        },
+        {
+            "filename": "packages/evershop/src/modules/catalog/pages/frontStore/homepage/FeaturedProducts.jsx",
+            "diff": "@@ -26,6 +26,7 @@ FeaturedProducts.propTypes = {\n       items: PropTypes.arrayOf(\n         PropTypes.shape({\n           productId: PropTypes.number.isRequired,\n+          sku: PropTypes.string.isRequired,\n           name: PropTypes.string.isRequired,\n           price: PropTypes.shape({\n             regular: PropTypes.shape({\n@@ -62,6 +63,7 @@ export const query = `\n         items {\n           productId\n           name\n+          sku\n           price {\n             regular {\n               value"
+        },
+        {
+            "filename": "packages/evershop/src/modules/catalog/pages/frontStore/productView/Form.jsx",
+            "diff": "@@ -50,10 +50,7 @@ function ToastMessage({ thumbnail, name, qty, count, cartUrl, toastId }) {\n           <div className=\"name\">\n             <span className=\"font-bold\">{name}</span>\n           </div>\n-          <div>\n-            Qty:\n-            {qty}\n-          </div>\n+          <div>{_('QTY: ${qty}', { qty })}</div>\n         </div>\n       </div>\n       <a className=\"add-cart-popup-button\" href={cartUrl}>\n@@ -92,7 +89,7 @@ function AddToCart({ stockAvaibility, loading = false, error }) {\n           validationRules={['notEmpty']}\n           className=\"qty\"\n           name=\"qty\"\n-          placeholder=\"Qty\"\n+          placeholder={_('Qty')}\n           formId=\"productForm\"\n         />\n       </div>\n@@ -113,7 +110,7 @@ function AddToCart({ stockAvaibility, loading = false, error }) {\n           />\n         )}\n         {stockAvaibility === false && (\n-          <Button title=\"SOLD OUT\" onAction={() => {}} />\n+          <Button title={_('SOLD OUT')} onAction={() => {}} />\n         )}\n       </div>\n     </div>\n@@ -151,7 +148,7 @@ export default function ProductForm({ product, action }) {\n           <ToastMessage\n             thumbnail={response.data.item.thumbnail}\n             name={product.name}\n-            qty={1}\n+            qty={response.data.item.qty}\n             count={response.data.count}\n             cartUrl=\"/cart\"\n             toastId={toastId}"
+        },
+        {
+            "filename": "packages/evershop/src/modules/cms/api/fileBrowser/browser.js",
+            "diff": "@@ -10,6 +10,16 @@ const {\n // eslint-disable-next-line no-unused-vars\n module.exports = (request, response, delegate, next) => {\n   const path = request.params[0] || '';\n+  // Validate the path to avoid Relative Path Traversal attack\n+  if (path && /^(?!\\/|.*\\/{2,})[a-zA-Z0-9_\\-/]+$/.test(path) === false) {\n+    response.status(INVALID_PAYLOAD).json({\n+      error: {\n+        status: INVALID_PAYLOAD,\n+        message: 'Invalid path'\n+      }\n+    });\n+    return;\n+  }\n   if (!existsSync(join(CONSTANTS.MEDIAPATH, path))) {\n     response.status(INVALID_PAYLOAD).json({\n       error: {"
+        },
+        {
+            "filename": "packages/evershop/src/modules/cms/api/fileDelete/deleteFile.js",
+            "diff": "@@ -9,6 +9,19 @@ const {\n // eslint-disable-next-line no-unused-vars\n module.exports = (request, response, delegate, next) => {\n   const path = request.params[0] || '';\n+  // Validate the path to avoid Relative Path Traversal attack\n+  if (\n+    // eslint-disable-next-line no-useless-escape\n+    /^(?!(\\/|\\.{2,}\\/))[a-zA-Z0-9_\\-/]*\\.[a-zA-Z0-9_\\-]+$/.test(path) === false\n+  ) {\n+    response.status(INVALID_PAYLOAD).json({\n+      error: {\n+        status: INVALID_PAYLOAD,\n+        message: 'Invalid path'\n+      }\n+    });\n+    return;\n+  }\n   if (!existsSync(join(CONSTANTS.MEDIAPATH, path))) {\n     response.status(INVALID_PAYLOAD).json({\n       error: {"
+        },
+        {
+            "filename": "packages/evershop/src/modules/cms/api/folderCreate/createFolder.js",
+            "diff": "@@ -8,7 +8,17 @@ const {\n \n // eslint-disable-next-line no-unused-vars\n module.exports = (request, response, delegate, next) => {\n-  const { path } = request.body;\n+  const { path } = request.body || '';\n+  // Validate the path to avoid Relative Path Traversal attack\n+  if (/^(?!\\/|.*\\/{2,})[a-zA-Z0-9_\\-/]+$/.test(path) === false) {\n+    response.status(INVALID_PAYLOAD).json({\n+      error: {\n+        status: INVALID_PAYLOAD,\n+        message: 'Invalid path'\n+      }\n+    });\n+    return;\n+  }\n   if (existsSync(join(CONSTANTS.MEDIAPATH, path))) {\n     response.status(INVALID_PAYLOAD).json({\n       error: {"
+        },
+        {
+            "filename": "packages/evershop/src/modules/graphql/pages/global/[buildQuery]graphql[notification].js",
+            "diff": "@@ -2,8 +2,12 @@ const { execute } = require('graphql');\n const { parse } = require('graphql');\n const { validate } = require('graphql/validation');\n const isDevelopmentMode = require('@evershop/evershop/src/lib/util/isDevelopmentMode');\n+const { debug } = require('@evershop/evershop/src/lib/log/debuger');\n let schema = require('../../services/buildSchema');\n const { getContext } = require('../../services/contextHelper');\n+const {\n+  graphqlErrorMessageFormat\n+} = require('../../services/graphqlErrorMessageFormat');\n \n module.exports = async function graphql(request, response, delegate, next) {\n   // TODO: Should we wait for previous async middlewares?\n@@ -23,6 +27,15 @@ module.exports = async function graphql(request, response, delegate, next) {\n         // Validate the query\n         const validationErrors = validate(schema, document);\n         if (validationErrors.length > 0) {\n+          const formatedErrorMessage = graphqlErrorMessageFormat(\n+            graphqlQuery,\n+            validationErrors[0].locations[0].line,\n+            validationErrors[0].locations[0].column\n+          );\n+          debug(\n+            'critical',\n+            `GraphQL validation error: ${formatedErrorMessage}`\n+          );\n           next(validationErrors[0]);\n         } else {\n           if (isDevelopmentMode()) {"
+        },
+        {
+            "filename": "packages/evershop/src/modules/graphql/services/graphqlErrorMessageFormat.js",
+            "diff": "@@ -0,0 +1,38 @@\n+module.exports.graphqlErrorMessageFormat = function graphqlErrorMessageFormat(\n+  inputString,\n+  lineNumber,\n+  columnNumber\n+) {\n+  if (!inputString) {\n+    return '';\n+  }\n+  const lines = inputString.split('\\n');\n+  if (lineNumber <= 0 || lineNumber > lines.length) {\n+    return 'Invalid line number';\n+  }\n+\n+  const zeroBasedLineNumber = lineNumber - 1;\n+  const line = lines[zeroBasedLineNumber];\n+  if (columnNumber <= 0 || columnNumber > line.length) {\n+    return 'Invalid column number for the given line';\n+  }\n+  const zeroBasedColumnNumber = columnNumber - 1;\n+  const startIndex = zeroBasedColumnNumber;\n+  let endIndex = line.indexOf(')', startIndex);\n+\n+  if (endIndex === -1) {\n+    endIndex = line.length; // If the special character is not found, highlight until the end of the line\n+  }\n+\n+  const ANSI_RESET = '\\x1b[0m';\n+  const ANSI_HIGHLIGHT = '\\x1b[33m';\n+\n+  // Apply highlighting to the text\n+  const highlightedText = line.substring(startIndex, endIndex);\n+  const highlightedLine = line.replace(\n+    highlightedText,\n+    `${ANSI_HIGHLIGHT}${highlightedText}${ANSI_RESET}`\n+  );\n+\n+  return highlightedLine;\n+};"
+        }
+    ],
+    "commitTime": "2023-09-27 02:34:51"
+}

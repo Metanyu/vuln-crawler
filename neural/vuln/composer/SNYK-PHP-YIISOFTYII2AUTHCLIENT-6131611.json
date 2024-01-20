@@ -1,0 +1,60 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "rhertogh"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.4,
+    "disclosureTime": "2023-12-18 20:01:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-YIISOFTYII2AUTHCLIENT-6131611",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50708"
+        ],
+        "CWE": [
+            "CWE-208"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-19 14:49:55",
+    "remediation": "Upgrade yiisoft/yii2-authclient to version 2.2.15 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Timing Attack",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Timing Attack due to the use of regular string comparison for the state and nonce parameters. An attacker can potentially measure the time it takes for the comparison to occur and use this information to infer the correct value by performing a timing attack. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -6,6 +6,7 @@ Yii Framework 2 authclient extension Change Log\n \n - Bug #364: Use issuer claim from OpenID Configuration (radwouters)\n - Enh #367: Throw more specific `ClientErrorResponseException` when the response code in `BaseOAuth::sendRequest()` is a 4xx (rhertogh)\n+- Enh GHSA-w8vh-p74j-x9xp: Improved security for OAuth1, OAuth2 and OpenID Connect clients by using timing attack safe string comparsion (rhertogh)\n - Enh GHSA-rw54-6826-c8j5: Improved security for OAuth2 client by requiring an `authCodeVerifier` if PKCE is enabled and clearing it after usage (rhertogh)\n \n "
+        },
+        {
+            "filename": "src/OAuth1.php",
+            "diff": "@@ -155,7 +155,7 @@ public function fetchAccessToken($oauthToken = null, OAuthToken $requestToken =\n             }\n         }\n \n-        if (strcmp($requestToken->getToken(), $oauthToken) !== 0) {\n+        if (!Yii::$app->getSecurity()->compareString($requestToken->getToken(), $oauthToken)) {\n             throw new HttpException(400, 'Invalid auth state parameter.');\n         }\n "
+        },
+        {
+            "filename": "src/OAuth2.php",
+            "diff": "@@ -118,7 +118,11 @@ public function fetchAccessToken($authCode, array $params = [])\n             $authState = $this->getState('authState');\n             $incomingRequest = Yii::$app->getRequest();\n             $incomingState = $incomingRequest->get('state', $incomingRequest->post('state'));\n-            if (!isset($incomingState) || empty($authState) || strcmp($incomingState, $authState) !== 0) {\n+            if (\n+                !isset($incomingState)\n+                || empty($authState)\n+                || !Yii::$app->getSecurity()->compareString($incomingState, $authState)\n+            ) {\n                 throw new HttpException(400, 'Invalid auth state parameter.');\n             }\n             $this->removeState('authState');"
+        },
+        {
+            "filename": "src/OpenIdConnect.php",
+            "diff": "@@ -417,7 +417,11 @@ protected function createToken(array $tokenConfig = [])\n \n             if ($this->getValidateAuthNonce()) {\n                 $authNonce = $this->getState('authNonce');\n-                if (!isset($jwsData['nonce']) || empty($authNonce) || strcmp($jwsData['nonce'], $authNonce) !== 0) {\n+                if (\n+                    !isset($jwsData['nonce'])\n+                    || empty($authNonce)\n+                    || !Yii::$app->getSecurity()->compareString($jwsData['nonce'], $authNonce)\n+                ) {\n                     throw new HttpException(400, 'Invalid auth nonce');\n                 } else {\n                     $this->removeState('authNonce');"
+        }
+    ],
+    "commitTime": "2023-12-16 15:11:39"
+}

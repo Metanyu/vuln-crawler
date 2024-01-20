@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.1,
+    "disclosureTime": "2023-12-18 00:44:41",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12302",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-REDPANDADATAREDPANDA-6129721",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50976"
+        ],
+        "CWE": [
+            "CWE-285"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 13:14:40",
+    "remediation": "Upgrade redpanda-data/redpanda to version 23.1.21, 23.2.18 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Authorization",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Authorization due to missing authorization checks in the Transactions API. An attacker can gain unauthorized access or perform unauthorized actions by sending crafted requests to the API. "
+    },
+    "source_code": [
+        {
+            "filename": "src/v/kafka/protocol/add_partitions_to_txn.h",
+            "diff": "@@ -48,6 +48,29 @@ struct add_partitions_to_txn_response final {\n \n     add_partitions_to_txn_response_data data;\n \n+    add_partitions_to_txn_response() = default;\n+    add_partitions_to_txn_response(\n+      const add_partitions_to_txn_request& request, error_code error)\n+      : add_partitions_to_txn_response(\n+        request, [error](auto) { return error; }) {}\n+\n+    add_partitions_to_txn_response(\n+      const add_partitions_to_txn_request& request,\n+      std::function<error_code(const model::topic&)> err_fn) {\n+        data.results.reserve(request.data.topics.size());\n+        for (const auto& topic : request.data.topics) {\n+            add_partitions_to_txn_topic_result t_result{.name = topic.name};\n+            t_result.results.reserve(topic.partitions.size());\n+            for (const auto& partition : topic.partitions) {\n+                t_result.results.push_back(\n+                  add_partitions_to_txn_partition_result{\n+                    .partition_index = partition,\n+                    .error_code = err_fn(topic.name),\n+                  });\n+            }\n+            data.results.push_back(std::move(t_result));\n+        }\n+    }\n     void encode(response_writer& writer, api_version version) {\n         data.encode(writer, version);\n     }"
+        },
+        {
+            "filename": "src/v/kafka/server/handlers/txn_offset_commit.cc",
+            "diff": "@@ -27,6 +27,11 @@ struct txn_offset_commit_ctx {\n     txn_offset_commit_request request;\n     ss::smp_service_group ssg;\n \n+    absl::flat_hash_map<\n+      model::topic,\n+      std::vector<txn_offset_commit_response_partition>>\n+      unauthorized_tps;\n+\n     // topic partitions found not to existent prior to processing. responses for\n     // these are patched back into the final response after processing.\n     absl::flat_hash_map<\n@@ -47,6 +52,12 @@ ss::future<response_ptr> txn_offset_commit(txn_offset_commit_ctx& octx) {\n     return octx.rctx.groups()\n       .txn_offset_commit(std::move(octx.request))\n       .then([&octx](txn_offset_commit_response resp) {\n+          for (auto& topic : octx.unauthorized_tps) {\n+              resp.data.topics.push_back(txn_offset_commit_response_topic{\n+                .name = topic.first,\n+                .partitions = std::move(topic.second),\n+              });\n+          }\n           if (unlikely(!octx.nonexistent_tps.empty())) {\n               /*\n                * copy over partitions for topics that had some partitions\n@@ -84,6 +95,18 @@ ss::future<response_ptr> txn_offset_commit_handler::handle(\n     request.decode(ctx.reader(), ctx.header().version);\n     log_request(ctx.header(), request);\n \n+    if (!ctx.authorized(\n+          security::acl_operation::write,\n+          transactional_id{request.data.transactional_id})) {\n+        return ctx.respond(txn_offset_commit_response{\n+          request, error_code::transactional_id_authorization_failed});\n+    } else if (!ctx.authorized(\n+                 security::acl_operation::read,\n+                 group_id{request.data.group_id})) {\n+        return ctx.respond(txn_offset_commit_response{\n+          request, error_code::group_authorization_failed});\n+    }\n+\n     txn_offset_commit_ctx octx(std::move(ctx), std::move(request), ssg);\n \n     /*\n@@ -108,7 +131,17 @@ ss::future<response_ptr> txn_offset_commit_handler::handle(\n         const auto topic_name = model::topic(it->name);\n         model::topic_namespace_view tn(model::kafka_namespace, topic_name);\n \n-        if (octx.rctx.metadata_cache().contains(tn)) {\n+        if (!octx.rctx.authorized(security::acl_operation::read, topic_name)) {\n+            auto& parts = octx.unauthorized_tps[it->name];\n+            parts.reserve(it->partitions.size());\n+            absl::c_transform(\n+              it->partitions, parts.begin(), [](const auto& part) {\n+                  return txn_offset_commit_response_partition{\n+                    .partition_index = part.partition_index,\n+                    .error_code = error_code::topic_authorization_failed};\n+              });\n+            it->partitions.clear();\n+        } else if (octx.rctx.metadata_cache().contains(tn)) {\n             /*\n              * check if each partition exists\n              */"
+        },
+        {
+            "filename": "src/v/kafka/server/server.cc",
+            "diff": "@@ -44,6 +44,7 @@\n #include \"kafka/server/response.h\"\n #include \"kafka/server/usage_manager.h\"\n #include \"net/connection.h\"\n+#include \"security/acl.h\"\n #include \"security/errc.h\"\n #include \"security/exceptions.h\"\n #include \"security/gssapi_authenticator.h\"\n@@ -383,7 +384,8 @@ ss::future<response_ptr> sasl_authenticate_handler::handle(\n     } catch (security::scram_exception& e) {\n         vlog(\n           klog.warn,\n-          \"[{}:{}]  Error processing SASL authentication request for {}: {}\",\n+          \"[{}:{}]  Error processing SASL authentication request for {}: \"\n+          \"{}\",\n           ctx.connection()->client_host(),\n           ctx.connection()->client_port(),\n           ctx.header().client_id.value_or(std::string_view(\"unset-client-id\")),\n@@ -612,6 +614,16 @@ ss::future<response_ptr> end_txn_handler::handle(\n         end_txn_request request;\n         request.decode(ctx.reader(), ctx.header().version);\n         log_request(ctx.header(), request);\n+\n+        if (!ctx.authorized(\n+              security::acl_operation::write,\n+              transactional_id{request.data.transactional_id})) {\n+            end_txn_response response;\n+            response.data.error_code\n+              = error_code::transactional_id_authorization_failed;\n+            return ctx.respond(response);\n+        }\n+\n         cluster::end_tx_request tx_request{\n           .transactional_id = request.data.transactional_id,\n           .producer_id = request.data.producer_id,\n@@ -663,6 +675,21 @@ add_offsets_to_txn_handler::handle(request_context ctx, ss::smp_service_group) {\n         request.decode(ctx.reader(), ctx.header().version);\n         log_request(ctx.header(), request);\n \n+        if (!ctx.authorized(\n+              security::acl_operation::write,\n+              transactional_id{request.data.transactional_id})) {\n+            add_offsets_to_txn_response response;\n+            response.data.error_code\n+              = error_code::transactional_id_authorization_failed;\n+            return ctx.respond(response);\n+        } else if (!ctx.authorized(\n+                     security::acl_operation::read,\n+                     group_id{request.data.group_id})) {\n+            add_offsets_to_txn_response response;\n+            response.data.error_code = error_code::group_authorization_failed;\n+            return ctx.respond(response);\n+        }\n+\n         cluster::add_offsets_tx_request tx_request{\n           .transactional_id = request.data.transactional_id,\n           .producer_id = request.data.producer_id,\n@@ -715,11 +742,37 @@ ss::future<response_ptr> add_partitions_to_txn_handler::handle(\n         request.decode(ctx.reader(), ctx.header().version);\n         log_request(ctx.header(), request);\n \n+        if (!ctx.authorized(\n+              security::acl_operation::write,\n+              transactional_id{request.data.transactional_id})) {\n+            add_partitions_to_txn_response response{\n+              request, error_code::transactional_id_authorization_failed};\n+            return ctx.respond(std::move(response));\n+        }\n+\n+        absl::flat_hash_set<model::topic> unauthorized_topics;\n+        for (const auto& topic : request.data.topics) {\n+            if (!ctx.authorized(security::acl_operation::write, topic.name)) {\n+                unauthorized_topics.emplace(topic.name);\n+            }\n+        }\n+\n+        if (!unauthorized_topics.empty()) {\n+            add_partitions_to_txn_response response{\n+              request, [&unauthorized_topics](const auto& tp) {\n+                  return unauthorized_topics.contains(tp)\n+                           ? error_code::topic_authorization_failed\n+                           : error_code::operation_not_attempted;\n+              }};\n+            return ctx.respond(response);\n+        }\n+\n         cluster::add_paritions_tx_request tx_request{\n           .transactional_id = request.data.transactional_id,\n           .producer_id = request.data.producer_id,\n           .producer_epoch = request.data.producer_epoch};\n         tx_request.topics.reserve(request.data.topics.size());\n+\n         for (auto& topic : request.data.topics) {\n             cluster::add_paritions_tx_request::topic tx_topic{\n               .name = std::move(topic.name),\n@@ -809,8 +862,8 @@ offset_fetch_handler::handle(request_context ctx, ss::smp_service_group) {\n           resp.data.topics.end(),\n           [&ctx](const offset_fetch_response_topic& topic) {\n               /*\n-               * quiet authz failures. this is checking for visibility across\n-               * all topics not specifically requested topics.\n+               * quiet authz failures. this is checking for visibility\n+               * across all topics not specifically requested topics.\n                */\n               return ctx.authorized(\n                 security::acl_operation::describe,\n@@ -1079,8 +1132,8 @@ ss::future<response_ptr> init_producer_id_handler::handle(\n             model::producer_identity expected_pid = model::producer_identity{\n               request.data.producer_id, request.data.producer_epoch};\n \n-            // Provided pid in init_producer_id request can not be {x >= 0, -1}\n-            // or {-1, x >= 0}.\n+            // Provided pid in init_producer_id request can not be {x >= 0,\n+            // -1} or {-1, x >= 0}.\n             const bool is_invalid_pid =\n               [](model::producer_identity expected_pid) {\n                   if (expected_pid == model::unknown_pid) {\n@@ -1283,8 +1336,9 @@ offset_commit_handler::handle(request_context ctx, ss::smp_service_group ssg) {\n         offset_commit_request request;\n         ss::smp_service_group ssg;\n \n-        // topic partitions found not to existent prior to processing. responses\n-        // for these are patched back into the final response after processing.\n+        // topic partitions found not to existent prior to processing.\n+        // responses for these are patched back into the final response\n+        // after processing.\n         absl::flat_hash_map<\n           model::topic,\n           std::vector<offset_commit_response_partition>>\n@@ -1308,18 +1362,19 @@ offset_commit_handler::handle(request_context ctx, ss::smp_service_group ssg) {\n     offset_commit_ctx octx(std::move(ctx), std::move(request), ssg);\n \n     /*\n-     * offset commit will operate normally on topic-partitions in the request\n-     * that exist, while returning partial errors for those that do not exist.\n-     * in order to deal with this we filter out nonexistent topic-partitions,\n-     * and pass those that exist on to the group membership layer.\n+     * offset commit will operate normally on topic-partitions in the\n+     * request that exist, while returning partial errors for those that do\n+     * not exist. in order to deal with this we filter out nonexistent\n+     * topic-partitions, and pass those that exist on to the group\n+     * membership layer.\n      *\n-     * TODO: the filtering is expensive for large requests. there are two things\n-     * that can be done to speed this up. first, the metadata cache should\n-     * provide an interface for efficiently searching for topic-partitions.\n-     * second, the code generator should be extended to allow the generated\n-     * structures to contain extra fields. in this case, we could introduce a\n-     * flag to mark topic-partitions to be ignored by the group membership\n-     * subsystem.\n+     * TODO: the filtering is expensive for large requests. there are two\n+     * things that can be done to speed this up. first, the metadata cache\n+     * should provide an interface for efficiently searching for\n+     * topic-partitions. second, the code generator should be extended to\n+     * allow the generated structures to contain extra fields. in this case,\n+     * we could introduce a flag to mark topic-partitions to be ignored by\n+     * the group membership subsystem.\n      */\n     for (auto it = octx.request.data.topics.begin();\n          it != octx.request.data.topics.end();) {\n@@ -1431,8 +1486,8 @@ offset_commit_handler::handle(request_context ctx, ss::smp_service_group ssg) {\n           return stages.result.then([&octx](offset_commit_response resp) {\n               if (unlikely(!octx.nonexistent_tps.empty())) {\n                   /*\n-                   * copy over partitions for topics that had some partitions\n-                   * that were processed normally.\n+                   * copy over partitions for topics that had some\n+                   * partitions that were processed normally.\n                    */\n                   for (auto& topic : resp.data.topics) {\n                       auto it = octx.nonexistent_tps.find(topic.name);"
+        }
+    ],
+    "commitTime": "2023-11-22 15:53:47"
+}

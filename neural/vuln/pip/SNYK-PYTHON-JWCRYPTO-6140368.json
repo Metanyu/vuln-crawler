@@ -1,0 +1,55 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Jianjun Chen",
+        "Jingcheng Yang"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-28 16:36:59",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-JWCRYPTO-6140368",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6681"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-28 18:01:37",
+    "remediation": "Upgrade jwcrypto to version 1.5.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling due to an unbounded PBES2 Count value in the PBKDF2 algorithm. An attacker can cause a denial of service by supplying a large PBES2 Count value, leading to excessive computation. This is only exploitable if applications allow the use of the PBKDF2 algorithm. ",
+        "Workaround": "Applications that do not need to use PBKDF2 should simply specify the algorithms used and exclude it from the list. "
+    },
+    "source_code": [
+        {
+            "filename": "jwcrypto/jwa.py",
+            "diff": "@@ -28,6 +28,8 @@\n \n # Implements RFC 7518 - JSON Web Algorithms (JWA)\n \n+default_max_pbkdf2_iterations = 16384\n+\n \n class JWAAlgorithm(metaclass=ABCMeta):\n \n@@ -588,6 +590,9 @@ def __init__(self):\n         self.aeskwmap = {128: _A128KW, 192: _A192KW, 256: _A256KW}\n \n     def _get_key(self, alg, key, p2s, p2c):\n+        if p2c > default_max_pbkdf2_iterations:\n+            raise ValueError('Invalid p2c value, too large')\n+\n         if not isinstance(key, JWK):\n             # backwards compatibility for old interface\n             if isinstance(key, bytes):"
+        },
+        {
+            "filename": "jwcrypto/tests.py",
+            "diff": "@@ -2099,6 +2099,18 @@ def test_pbes2_hs256_aeskw_custom_params(self):\n         key = jwk.JWK.from_password('password')\n         self.assertRaises(ValueError, enc.add_recipient, key)\n \n+        # Test p2c iteration checks\n+        maxiter = jwa.default_max_pbkdf2_iterations\n+        p2cenc = jwe.JWE(plaintext='plain',\n+                         protected={\"alg\": \"PBES2-HS256+A128KW\",\n+                                    \"enc\": \"A256CBC-HS512\",\n+                                    \"p2c\": maxiter + 1,\n+                                    \"p2s\": base64url_encode(\"A\" * 16)})\n+        with self.assertRaisesRegex(ValueError, 'too large'):\n+            p2cenc.add_recipient(key)\n+        jwa.default_max_pbkdf2_iterations += 2\n+        p2cenc.add_recipient(key)\n+\n \n class JWATests(unittest.TestCase):\n     def test_jwa_create(self):"
+        }
+    ],
+    "commitTime": "2023-12-26 19:43:14"
+}

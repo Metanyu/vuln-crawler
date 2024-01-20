@@ -1,0 +1,112 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Wenbo Shen",
+        "Rui Chang",
+        "crane"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-21 00:55:24",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGGRAILS-6134598",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46131"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-21 08:43:34",
+    "remediation": "Upgrade org.grails:grails-encoder to version 3.3.17, 4.1.3, 5.3.4, 6.1.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption via specially crafted web requests that lead to data binding issues. An attacker can cause a JVM crash or denial of service by sending such requests to the application. "
+    },
+    "source_code": [
+        {
+            "filename": "grails-databinding/src/main/groovy/grails/databinding/BindInitializer.java",
+            "diff": "@@ -36,7 +36,7 @@ class Contact{\n } \n class User {\n     &#064;BindInitializer({\n-        obj -> new Contact(account:obj.account)\n+        obj -&gt; new Contact(account:obj.account)\n     })\n     Contact contact\n     Account account"
+        },
+        {
+            "filename": "grails-databinding/src/main/groovy/grails/databinding/BindUsing.java",
+            "diff": "@@ -28,15 +28,15 @@\n  * When the annotation is applied to a field, the value assigned to the\n  * annotation should be a Closure which accepts 2 parameters.  The first\n  * parameter is the object that data binding is being applied to.  The second\n- * parameter is a {@link org.grails.databinding.DataBindingSource} containing the values being bound to the object.\n+ * parameter is a {@link grails.databinding.DataBindingSource} containing the values being bound to the object.\n  * The value returned by the Closure will be bound to the field.  The\n  * following code demonstrates using this technique to bind an upper\n  * case version of the value in the DataBindingSource to the field.\n  *\n <pre>\n class SomeClass {\n     &#064;BindUsing({\n-        obj, source -> source['name']?.toUpperCase()\n+        obj, source -&gt; source['name']?.toUpperCase()\n     })\n     String name\n }"
+        },
+        {
+            "filename": "grails-databinding/src/main/groovy/grails/databinding/SimpleDataBinder.groovy",
+            "diff": "@@ -22,6 +22,7 @@ import grails.databinding.initializers.ValueInitializer\n import groovy.transform.CompileStatic\n import groovy.transform.TypeCheckingMode\n import groovy.util.slurpersupport.GPathResult\n+import org.codehaus.groovy.reflection.CachedMethod\n import org.grails.databinding.ClosureValueConverter\n import org.grails.databinding.ClosureValueInitializer\n import org.grails.databinding.IndexedPropertyReferenceDescriptor\n@@ -81,7 +82,7 @@ class SimpleDataBinder implements DataBinder {\n         Float,\n         Double,\n         Character\n-    ]\n+    ] as List<Class>\n \n     static final INDEXED_PROPERTY_REGEX = /(.*)\\[\\s*([^\\s]*)\\s*\\]\\s*$/\n \n@@ -260,14 +261,14 @@ class SimpleDataBinder implements DataBinder {\n     }\n \n     protected boolean isOkToBind(String propName, List whiteList, List blackList) {\n-        'class' != propName && 'classLoader' != propName && 'protectionDomain' != propName && 'metaClass' != propName && !blackList?.contains(propName) && (!whiteList || whiteList.contains(propName) || whiteList.find { it -> it?.toString()?.startsWith(propName + '.')})\n+        'class' != propName && 'classLoader' != propName && 'protectionDomain' != propName && 'metaClass' != propName && 'metaPropertyValues' != propName && 'properties' != propName && !blackList?.contains(propName) && (!whiteList || whiteList.contains(propName) || whiteList.find { it -> it?.toString()?.startsWith(propName + '.')})\n     }\n \n     protected boolean isOkToBind(MetaProperty property, List whitelist, List blacklist) {\n         isOkToBind(property.name, whitelist, blacklist) &&\n                 (property.type != null) &&\n                 !Modifier.isStatic(property.modifiers) &&\n-                !(ClassLoader.class.isAssignableFrom(property.type) || ProtectionDomain.class.isAssignableFrom(property.type))\n+                !(ClassLoader.class.isAssignableFrom(property.type) || ProtectionDomain.class.isAssignableFrom(property.type) || MetaProperty.class.isAssignableFrom(property.type) || CachedMethod.class.isAssignableFrom(property.type))\n     }\n \n     protected IndexedPropertyReferenceDescriptor getIndexedPropertyReferenceDescriptor(propName) {\n@@ -498,7 +499,7 @@ class SimpleDataBinder implements DataBinder {\n      * @see BindingFormat\n      */\n     protected ValueConverter getFormattedConverter(Field field, String formattingValue) {\n-        def converter\n+        ValueConverter converter\n         def formattedConverter = formattedValueConversionHelpers[field.type]\n         if (formattedConverter) {\n             converter = { SimpleMapDataBindingSource source ->\n@@ -517,7 +518,7 @@ class SimpleDataBinder implements DataBinder {\n         Field field = null\n         try {\n             field = clazz.getDeclaredField(fieldName)\n-        } catch (NoSuchFieldException nsfe) {\n+        } catch (NoSuchFieldException ignored) {\n             def superClass = clazz.getSuperclass()\n             if(superClass != Object) {\n                 field = getField(superClass, fieldName)\n@@ -527,7 +528,7 @@ class SimpleDataBinder implements DataBinder {\n     }\n \n     protected ValueConverter getValueConverterForField(obj, String propName) {\n-        def converter\n+        ValueConverter converter\n         try {\n             def field = getField(obj.getClass(), propName)\n             if (field) {\n@@ -545,9 +546,9 @@ class SimpleDataBinder implements DataBinder {\n                     }\n                 }\n             }\n-        } catch (Exception e) {\n+            return converter\n+        } catch (Exception ignored) {\n         }\n-        converter\n     }\n     \n     /**\n@@ -556,11 +557,9 @@ class SimpleDataBinder implements DataBinder {\n      */\n     protected Class getValueOfBindUsing(Annotation annotation) {\n         assert annotation instanceof BindUsing\n-        def value\n-        if(annotation instanceof BindUsing) {\n-            value = ((BindUsing)annotation).value()\n+        if (annotation instanceof BindUsing) {\n+            return ((BindUsing) annotation).value()\n         }\n-        value\n     }\n     \n     /**\n@@ -569,21 +568,19 @@ class SimpleDataBinder implements DataBinder {\n      */\n     protected String getFormatString(Annotation annotation) {\n         assert annotation instanceof BindingFormat\n-        String formatString\n-        if(annotation instanceof BindingFormat) {\n-            formatString = ((BindingFormat)annotation).value()\n+        if (annotation instanceof BindingFormat) {\n+            return ((BindingFormat) annotation).value()\n         }\n-        formatString\n     }\n \n     protected ValueConverter getValueConverterForClass(obj, String propName) {\n-        def converter\n+        ValueConverter converter\n         def objClass = obj.getClass()\n         def annotation = objClass.getAnnotation(BindUsing)\n         if (annotation) {\n             def valueClass = getValueOfBindUsing(annotation)\n             if (BindingHelper.isAssignableFrom(valueClass)) {\n-                BindingHelper dataConverter = (BindingHelper)valueClass.newInstance()\n+                BindingHelper dataConverter = (BindingHelper) valueClass.getDeclaredConstructor().newInstance()\n                 converter = new ClosureValueConverter(converterClosure: { DataBindingSource it -> dataConverter.getPropertyValue(obj, propName, it) })\n             }\n         }\n@@ -762,7 +759,7 @@ class SimpleDataBinder implements DataBinder {\n     }\n \n     protected ValueInitializer getValueInitializerForField(obj, String propName) {\n-        def initializer\n+        ValueInitializer initializer\n         try {\n             def field = getField(obj.getClass(), propName)\n             if (field) {\n@@ -819,7 +816,7 @@ class SimpleDataBinder implements DataBinder {\n             bind obj, new SimpleMapDataBindingSource(value)\n             return obj\n         } else if (Enum.isAssignableFrom(typeToConvertTo) && value instanceof String) {\n-            return convertStringToEnum(typeToConvertTo, value)\n+            return convertStringToEnum((Class<? extends Enum>) typeToConvertTo, value)\n         }\n         typeToConvertTo.newInstance value\n     }"
+        },
+        {
+            "filename": "grails-databinding/src/main/groovy/grails/databinding/StructuredBindingEditor.java",
+            "diff": "@@ -21,14 +21,14 @@\n  * into an object.  Typically a structured editor will pull\n  * several values out of the Map that are necessary to initialize\n  * the state of the object.\n-<pre>\n+<code>\n class Address {\n     String state\n     String city\n }\n class StructuredAddressBindingEditor implements StructuredBindingEditor {\n \n-    public Object getPropertyValue(Object obj, String propertyName, Map<String, Object> source) {\n+    public Object getPropertyValue(Object obj, String propertyName, Map&lt;String, Object&gt; source) {\n         def address = new Address()\n \n         address.state = source[propertyName + '_someState']\n@@ -58,7 +58,7 @@ binder.registerStructuredEditor Address, new StructuredAddressBindingEditor()\n assert resident.workAddress\n assert resident.workAddress.state == \"Scott's Work State\"\n assert resident.workAddress.city == null\n-</pre>\n+</code>\n  *\n  * @author Jeff Brown\n  * @since 3.0"
+        },
+        {
+            "filename": "grails-databinding/src/main/groovy/grails/databinding/converters/FormattedValueConverter.java",
+            "diff": "@@ -41,8 +41,8 @@ Class getTargetType() {\n  * @author Jeff Brown\n  * @since 3.0\n  * @see grails.databinding.BindingFormat\n- * @see org.grails.databinding.SimpleDataBinder\n- * @see org.grails.databinding.SimpleDataBinder#registerFormattedValueConverter(FormattedValueConverter)\n+ * @see grails.databinding.SimpleDataBinder\n+ * @see grails.databinding.SimpleDataBinder#registerFormattedValueConverter(FormattedValueConverter)\n  */\n public interface FormattedValueConverter {\n     /**"
+        },
+        {
+            "filename": "grails-encoder/src/main/groovy/org/grails/buffer/GrailsPrintWriter.java",
+            "diff": "@@ -93,7 +93,7 @@ protected Writer unwrapWriter(Writer writer) {\n     }\n \n     /**\n-     * Provides Groovy << left shift operator, but intercepts call to make sure\n+     * Provides Groovy &lt;&lt; left shift operator, but intercepts call to make sure\n      * nulls are converted to \"\" strings\n      *\n      * @param obj The value"
+        },
+        {
+            "filename": "grails-encoder/src/main/groovy/org/grails/buffer/StreamCharBuffer.java",
+            "diff": "@@ -81,12 +81,12 @@\n  *\n  * <p>\n  * StreamCharBuffer keeps the buffer in a linked list of \"chunks\". The main\n- * difference compared to JDK in-memory buffers (StringBuffer, StringBuilder &\n+ * difference compared to JDK in-memory buffers (StringBuffer, StringBuilder and\n  * StringWriter) is that the buffer can be held in several smaller buffers\n  * (\"chunks\" here). In JDK in-memory buffers, the buffer has to be expanded\n  * whenever it gets filled up. The old buffer's data is copied to the new one\n  * and the old one is discarded. In StreamCharBuffer, there are several ways to\n- * prevent unnecessary allocation & copy operations. The StreamCharBuffer\n+ * prevent unnecessary allocation and copy operations. The StreamCharBuffer\n  * contains a linked list of different type of chunks: char arrays,\n  * java.lang.String chunks and other StreamCharBuffers as sub chunks. A\n  * StringChunk is appended to the linked list whenever a java.lang.String of a\n@@ -101,13 +101,11 @@\n  *\n  * for example this line of code in a taglib would just append the buffer\n  * returned from the body closure evaluation to the buffer of the taglib:<br>\n- * <code>\n- * out << body()\n- * </code><br>\n+ * <code>out &lt;&lt; body()</code>\n+ * <br>\n  * other example:<br>\n- * <code>\n- * out << g.render(template: '/some/template', model:[somebean: somebean])\n- * </code><br>\n+ * <code>out &lt;&lt; g.render(template: '/some/template', model:[somebean: somebean])</code>\n+ * <br>\n  * There's no extra java.lang.String generation overhead.\n  *\n  * </p>\n@@ -128,8 +126,8 @@\n  *\n  * <p>\n  * There's also several other options for reading data:<br>\n- * {@link #readAsCharArray()} reads the buffer to a char[] array<br>\n- * {@link #readAsString()} reads the buffer and wraps the char[] data as a\n+ * readAsCharArray()reads the buffer to a char[] array<br>\n+ * readAsString() reads the buffer and wraps the char[] data as a\n  * String<br>\n  * {@link #writeTo(Writer)} writes the buffer to a java.io.Writer<br>\n  * {@link #toCharArray()} returns the buffer as a char[] array, caches the\n@@ -156,13 +154,13 @@\n  * <p>\n  * StreamCharBuffer keeps the buffer in a linked link of \"chunks\".<br>\n  * The main difference compared to JDK in-memory buffers (StringBuffer,\n- * StringBuilder & StringWriter) is that the buffer can be held in several\n+ * StringBuilder and StringWriter) is that the buffer can be held in several\n  * smaller buffers (\"chunks\" here).<br>\n  * In JDK in-memory buffers, the buffer has to be expanded whenever it gets\n  * filled up. The old buffer's data is copied to the new one and the old one is\n  * discarded.<br>\n  * In StreamCharBuffer, there are several ways to prevent unnecessary allocation\n- * & copy operations.\n+ * and copy operations.\n  * </p>\n  * <p>\n  * There can be several different type of chunks: char arrays ("
+        },
+        {
+            "filename": "grails-web-common/src/main/groovy/org/grails/databinding/bindingsource/DataBindingSourceCreationException.java",
+            "diff": "@@ -21,7 +21,7 @@\n  * Thrown if an unrecoverable problem occurs creating a DataBindingSource.\n  *\n  * @since 2.3\n- * @see org.grails.databinding.DataBindingSource\n+ * @see grails.databinding.DataBindingSource\n  * @see DataBindingSourceCreator\n  */\n public class DataBindingSourceCreationException extends RuntimeException {"
+        },
+        {
+            "filename": "grails-web-common/src/main/groovy/org/grails/web/json/JSONObject.java",
+            "diff": "@@ -75,7 +75,7 @@ of this software and associated documentation files (the \"Software\"), to deal\n  * <code>{ } [ ] / \\ : , = ; #</code> and if they do not look like numbers\n  * and if they are not the reserved words <code>true</code>,\n  * <code>false</code>, or <code>null</code>.</li>\n- * <li>Keys can be followed by <code>=</code> or <code>=></code> as well as\n+ * <li>Keys can be followed by <code>=</code> or <code>=$gt;</code> as well as\n  * by <code>:</code>.</li>\n  * <li>Values can be followed by <code>;</code> <small>(semicolon)</small> as\n  * well as by <code>,</code> <small>(comma)</small>.</li>\n@@ -796,7 +796,7 @@ public JSONObject putOpt(String key, Object value) throws JSONException {\n \n     /**\n      * Produce a string in double quotes with backslash sequences in all the\n-     * right places. A backslash will be inserted within </, allowing JSON\n+     * right places. A backslash will be inserted within &lt;/, allowing JSON\n      * text to be delivered in HTML. In JSON text, a string cannot contain a\n      * control character or an unescaped quote or backslash.\n      *"
+        },
+        {
+            "filename": "grails-web-common/src/main/groovy/org/grails/web/servlet/mvc/GrailsWebRequest.java",
+            "diff": "@@ -257,7 +257,7 @@ public GrailsParameterMap getOriginalParams() {\n     }\n \n     /**\n-     * Reset params by re-reading & initializing parameters from request\n+     * Reset params by re-reading and initializing parameters from request\n      */\n     public void resetParams() {\n         params = (GrailsParameterMap)getOriginalParams().clone();"
+        },
+        {
+            "filename": "grails-web-common/src/main/groovy/org/grails/web/servlet/view/AbstractGrailsView.java",
+            "diff": "@@ -80,9 +80,9 @@ private void renderWithinGrailsWebRequest(Map<String, Object> model, HttpServlet\n     /**\n      * Renders a page with the specified TemplateEngine, mode and response.\n      * @param model The model to use\n-     * @param request The HttpServletRequest\n-     * @param response The HttpServletResponse instance\n-     * @param engine The TemplateEngine to use\n+     * @param webRequest The {@link org.grails.web.servlet.mvc.GrailsWebRequest}\n+     * @param request The {@link javax.servlet.http.HttpServletRequest}\n+     * @param response The {@link javax.servlet.http.HttpServletResponse} instance\n      *\n      * @throws java.io.IOException Thrown when an error occurs writing the response\n      */"
+        }
+    ],
+    "commitTime": "2023-12-06 13:22:43"
+}

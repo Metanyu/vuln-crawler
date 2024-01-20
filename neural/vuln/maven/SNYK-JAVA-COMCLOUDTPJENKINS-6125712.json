@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMCLOUDTPJENKINS-6125712",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50776"
+        ],
+        "CWE": [
+            "CWE-312"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 14:49:35",
+    "remediation": "There is no fixed version for com.cloudtp.jenkins:paaslane-estimate . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cleartext Storage of Sensitive Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cleartext Storage of Sensitive Information due to the storage of authentication tokens in an unencrypted format within config.xml files on the Jenkins controller. An attacker can gain unauthorized access to these tokens by having Item/Extended Read permission or by accessing the Jenkins controller file system. "
+    },
+    "source_code": []
+}

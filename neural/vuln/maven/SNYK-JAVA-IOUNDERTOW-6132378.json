@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-12 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12307",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-IOUNDERTOW-6132378",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-5379"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-20 14:30:04",
+    "remediation": "There is no fixed version for io.undertow:undertow-parent . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Overview": "io.undertow:undertow-parent is an Undertow Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling. An attacker can disrupt service availability by repeatedly sending AJP requests that exceed the configured max-header-size attribute in ajp-listener , leading to the server closing the TCP connection without returning an AJP response. Note: This is only exploitable if the max-header-size is set to 64 KB or less. "
+    },
+    "source_code": []
+}

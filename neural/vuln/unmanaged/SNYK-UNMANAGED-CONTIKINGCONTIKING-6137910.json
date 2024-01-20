@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2022-11-11 08:01:59",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14501",
+        "probability": "0.00048"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137910",
+    "identifiers": {
+        "CVE": [
+            "CVE-2022-41873"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 07:59:16",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read due to an integer truncation issue leading to only the lowest byte of the channel ID to be checked. A crafted channel ID leads to out-of-bounds memory to be read and written with attacker-controlled data. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/mac/ble/ble-l2cap.c",
+            "diff": "@@ -105,9 +105,9 @@ get_channel_for_addr(const linkaddr_t *peer_addr)\n static l2cap_channel_t *\n get_channel_for_cid(uint16_t own_cid)\n {\n-  uint8_t i = own_cid - L2CAP_FLOW_CHANNEL;\n+  int16_t i = own_cid - L2CAP_FLOW_CHANNEL;\n   if(i >= 0 && i < l2cap_channel_count) {\n-    return &l2cap_channels[own_cid - L2CAP_FLOW_CHANNEL];\n+    return &l2cap_channels[i];\n   } else {\n     return NULL;\n   }"
+        }
+    ],
+    "commitTime": "2022-07-21 14:22:49"
+}

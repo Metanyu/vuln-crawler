@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMZINTOW-6125790",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50773"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 15:03:20",
+    "remediation": "There is no fixed version for com.zintow:dingding-json-pusher . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to improper masking of sensitive information on the job configuration form. An attacker can observe and capture access tokens by viewing the form. "
+    },
+    "source_code": []
+}

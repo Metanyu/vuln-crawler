@@ -1,0 +1,54 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "hott-box"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.3,
+    "disclosureTime": "2023-12-15 23:43:30",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGOWASP-6129516",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-532"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-17 12:31:32",
+    "remediation": "Upgrade org.owasp:dependency-check-core to version 9.0.6 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Information Exposure Through Log Files",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure Through Log Files due to the logging of sensitive information in debug mode. An attacker with access to debug logs could potentially retrieve the nvdApiKey and use it to perform actions with a higher rate limit against the NVD API. "
+    },
+    "source_code": [
+        {
+            "filename": "core/src/main/resources/dependencycheck.properties",
+            "diff": "@@ -27,7 +27,7 @@ data.version=5.4\n odc.analysis.timeout=180\n \n # define which settings are masked when logged\n-odc.settings.mask=.*password.*,.*token.*\n+odc.settings.mask=.*password.*,.*token.*,.*api.key.*\n \n data.connection_string=jdbc:h2:file:%s;AUTOCOMMIT=ON;CACHE_SIZE=65536;RETENTION_TIME=1000;MAX_COMPACT_TIME=10000;\n #data.connection_string=jdbc:mysql://localhost:3306/dependencycheck"
+        },
+        {
+            "filename": "core/src/test/resources/dependencycheck.properties",
+            "diff": "@@ -23,7 +23,7 @@ data.version=5.4\n odc.analysis.timeout=20\n \n # define which settings are masked when logged\n-odc.settings.mask=.*password.*,.*token.*\n+odc.settings.mask=.*password.*,.*token.*,.*api.key.*\n \n data.connection_string=jdbc:h2:file:%s;AUTOCOMMIT=ON;CACHE_SIZE=65536;\n #data.connection_string=jdbc:mysql://localhost:3306/dependencycheck"
+        },
+        {
+            "filename": "utils/src/test/resources/dependencycheck.properties",
+            "diff": "@@ -23,7 +23,7 @@ data.version=5.3\n odc.analysis.timeout=20\n \n # define which settings are masked when logged\n-odc.settings.mask=.*password.*,.*token.*\n+odc.settings.mask=.*password.*,.*token.*,.*api.key.*\n \n data.connection_string=jdbc:h2:file:%s;AUTOCOMMIT=ON;CACHE_SIZE=65536;\n #data.connection_string=jdbc:mysql://localhost:3306/dependencycheck"
+        }
+    ],
+    "commitTime": "2023-12-15 11:38:28"
+}

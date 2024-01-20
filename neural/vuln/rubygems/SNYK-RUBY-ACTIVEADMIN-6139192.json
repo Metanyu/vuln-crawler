@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.1,
+    "disclosureTime": "2023-12-24 04:49:01",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUBY-ACTIVEADMIN-6139192",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51763"
+        ],
+        "CWE": [
+            "CWE-1236"
+        ]
+    },
+    "language": "ruby",
+    "malicious": false,
+    "packageManager": "rubygems",
+    "publicationTime": "2023-12-24 08:31:59",
+    "remediation": "Upgrade activeadmin to version 3.2.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Formula Elements in a CSV File",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Formula Elements in a CSV File in csv_builder.rb . An attacker can inject malicious formulas into CSV exports by submitting crafted input to the CSV export feature. "
+    },
+    "source_code": [
+        {
+            "filename": "lib/active_admin/csv_builder.rb",
+            "diff": "@@ -51,7 +51,7 @@ def build(controller, csv)\n       csv << bom if bom\n \n       if column_names\n-        csv << CSV.generate_line(columns.map { |c| encode c.name, options }, **csv_options)\n+        csv << CSV.generate_line(columns.map { |c| sanitize(encode(c.name, options)) }, **csv_options)\n       end\n \n       controller.send(:in_paginated_batches) do |resource|\n@@ -70,7 +70,7 @@ def exec_columns(view_context = nil)\n \n     def build_row(resource, columns, options)\n       columns.map do |column|\n-        encode call_method_or_proc_on(resource, column.data), options\n+        sanitize(encode(call_method_or_proc_on(resource, column.data), options))\n       end\n     end\n \n@@ -86,6 +86,10 @@ def encode(content, options)\n       end\n     end\n \n+    def sanitize(content)\n+      Sanitizer.sanitize(content)\n+    end\n+\n     def method_missing(method, *args, &block)\n       if @view_context.respond_to? method\n         @view_context.public_send method, *args, &block\n@@ -120,4 +124,21 @@ def column_transitive_options\n       @column_transitive_options ||= @options.slice(*COLUMN_TRANSITIVE_OPTIONS)\n     end\n   end\n+\n+  # Prevents CSV Injection according to https://owasp.org/www-community/attacks/CSV_Injection\n+  module Sanitizer\n+    extend self\n+\n+    ATTACK_CHARACTERS = ['=', '+', '-', '@', \"\\t\", \"\\r\"].freeze\n+\n+    def sanitize(value)\n+      return \"'#{value}\" if require_sanitization?(value)\n+\n+      value\n+    end\n+\n+    def require_sanitization?(value)\n+      value.is_a?(String) && value.starts_with?(*ATTACK_CHARACTERS)\n+    end\n+  end\n end"
+        },
+        {
+            "filename": "spec/unit/csv_builder_spec.rb",
+            "diff": "@@ -277,4 +277,52 @@ def view_context\n       end\n     end\n   end\n+\n+  context 'csv injection' do\n+    let(:dummy_controller) do\n+      class DummyController\n+        def in_paginated_batches(&block)\n+          Post.all.each(&block)\n+        end\n+\n+        def view_context\n+          MethodOrProcHelper\n+        end\n+      end\n+      DummyController.new\n+    end\n+\n+    let(:builder) do\n+      ActiveAdmin::CSVBuilder.new do\n+        column(:id)\n+        column(:title)\n+      end\n+    end\n+\n+    ['=', '+', '-', '@', \"\\t\", \"\\r\"].each do |char|\n+      it \"prepends a single quote when column starts with a #{char} character\" do\n+        attack = \"#{char}1+2\"\n+\n+        escaped_attack = \"'#{attack}\"\n+        escaped_attack = \"\\\"#{escaped_attack}\\\"\" if char == \"\\r\"\n+\n+        post = Post.create!(title: attack)\n+        receiver = []\n+        builder.build dummy_controller, receiver\n+        line = receiver.last\n+        expect(line).to eq \"#{post.id},#{escaped_attack}\\n\"\n+      end\n+\n+      it \"accounts for the field separator when character #{char} is used to inject a formula\" do\n+        attack = \"#{char}1+2'\\\" ;,#{char}1+2\"\n+        escaped_attack = \"\\\"'#{attack.gsub('\"', '\"\"')}\\\"\"\n+\n+        post = Post.create!(title: attack)\n+        receiver = []\n+        builder.build dummy_controller, receiver\n+        line = receiver.last\n+        expect(line).to eq \"#{post.id},#{escaped_attack}\\n\"\n+      end\n+    end\n+  end\n end"
+        }
+    ],
+    "commitTime": "2023-12-10 01:38:32"
+}

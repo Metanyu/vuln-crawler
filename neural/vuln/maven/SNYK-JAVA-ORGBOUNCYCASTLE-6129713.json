@@ -1,0 +1,94 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Amazon AWS Security Team"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-11-23 16:44:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16610",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGBOUNCYCASTLE-6129713",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-33202"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-18 08:14:32",
+    "remediation": "Upgrade org.bouncycastle:bc-fips to version 1.0.2.4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') within the org.bouncycastle.openssl.PEMParser class. Parsing a file that has crafted ASN.1 data through the PEMParser causes an OutOfMemoryError . ",
+        "Workaround": "The attack can be avoided by filtering PEM requests containing EXTERNAL tagged encodings. "
+    },
+    "source_code": [
+        {
+            "filename": "core/src/main/java/org/bouncycastle/asn1/ASN1External.java",
+            "diff": "@@ -94,9 +94,11 @@ public static ASN1External getInstance(ASN1TaggedObject taggedObject, boolean ex\n         externalContent = obj.getObject();\n     }\n \n-    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)\n+    ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor,\n+        DERTaggedObject externalData)\n     {\n-        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(), externalData.toASN1Primitive());\n+        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(),\n+            externalData.getObject());\n     }\n \n     ASN1External(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference, ASN1Primitive dataValueDescriptor, int encoding, ASN1Primitive externalData)\n@@ -105,7 +107,7 @@ public static ASN1External getInstance(ASN1TaggedObject taggedObject, boolean ex\n         setIndirectReference(indirectReference);\n         setDataValueDescriptor(dataValueDescriptor);\n         setEncoding(encoding);\n-        setExternalContent(externalData.toASN1Primitive());\n+        setExternalContent(externalData);\n     }\n \n     ASN1Primitive toDERObject()"
+        },
+        {
+            "filename": "core/src/main/java/org/bouncycastle/asn1/DERExternal.java",
+            "diff": "@@ -56,8 +56,7 @@ public DERExternal(DERSequence sequence)\n     public DERExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference,\n         ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)\n     {\n-        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(),\n-            externalData.toASN1Primitive());\n+        super(directReference, indirectReference, dataValueDescriptor, externalData);\n     }\n \n     /**"
+        },
+        {
+            "filename": "core/src/main/java/org/bouncycastle/asn1/DLExternal.java",
+            "diff": "@@ -56,8 +56,7 @@ public DLExternal(DLSequence sequence)\n     public DLExternal(ASN1ObjectIdentifier directReference, ASN1Integer indirectReference,\n         ASN1Primitive dataValueDescriptor, DERTaggedObject externalData)\n     {\n-        this(directReference, indirectReference, dataValueDescriptor, externalData.getTagNo(),\n-            externalData.toASN1Primitive());\n+        super(directReference, indirectReference, dataValueDescriptor, externalData);\n     }\n \n     /**"
+        }
+    ],
+    "commitTime": "2021-11-05 06:17:32"
+}

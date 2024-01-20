@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2021-06-18 21:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.38509",
+        "probability": "0.00091"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137933",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-21257"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:53:44",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write. Contiki-NG is an open-source, cross-platform operating system for internet of things devices. The RPL-Classic and RPL-Lite implementations in the Contiki-NG operating system versions prior to 4.6 do not validate the address pointer in the RPL source routing header This makes it possible for an attacker to cause out-of-bounds writes with packets injected into the network stack. Specifically, the problem lies in the rpl_ext_header_srh_update function in the two rpl-ext-header.c modules for RPL-Classic and RPL-Lite respectively. The addr_ptr variable is calculated using an unvalidated CMPR field value from the source routing header. An out-of-bounds write can be triggered on line 151 in os/net/routing/rpl-lite/rpl-ext-header.c and line 261 in os/net/routing/rpl-classic/rpl-ext-header.c, which contain the following memcpy call with addr_ptr as destination. The problem has been patched in Contiki-NG 4.6. Users can apply a patch out-of-band as a workaround. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/routing/rpl-classic/rpl-ext-header.c",
+            "diff": "@@ -240,8 +240,16 @@ rpl_ext_header_srh_update(void)\n       return 0;\n     } else {\n       uint8_t i = path_len - segments_left; /* The index of the next address to be visited */\n-      uint8_t *addr_ptr = ((uint8_t *)rh_header) + RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));\n       uint8_t cmpr = segments_left == 1 ? cmpre : cmpri;\n+      ptrdiff_t rh_offset = (uint8_t *)rh_header - uip_buf;\n+      size_t addr_offset = RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));\n+\n+      if(rh_offset + addr_offset + 16 - cmpr > UIP_BUFSIZE) {\n+        LOG_ERR(\"Invalid SRH address pointer\\n\");\n+        return 0;\n+      }\n+\n+      uint8_t *addr_ptr = ((uint8_t *)rh_header) + addr_offset;\n \n       /* As per RFC6554: swap the IPv6 destination address and address[i] */\n "
+        },
+        {
+            "filename": "os/net/routing/rpl-lite/rpl-ext-header.c",
+            "diff": "@@ -130,8 +130,16 @@ rpl_ext_header_srh_update(void)\n     return 0;\n   } else {\n     uint8_t i = path_len - segments_left; /* The index of the next address to be visited */\n-    uint8_t *addr_ptr = ((uint8_t *)rh_header) + RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));\n     uint8_t cmpr = segments_left == 1 ? cmpre : cmpri;\n+    ptrdiff_t rh_offset = (uint8_t *)rh_header - uip_buf;\n+    size_t addr_offset = RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));\n+\n+    if(rh_offset + addr_offset + 16 - cmpr > UIP_BUFSIZE) {\n+      LOG_ERR(\"Invalid SRH address pointer\\n\");\n+      return 0;\n+    }\n+\n+    uint8_t *addr_ptr = ((uint8_t *)rh_header) + addr_offset;\n \n     /* As per RFC6554: swap the IPv6 destination address with address[i] */\n "
+        }
+    ],
+    "commitTime": "2020-11-13 00:27:34"
+}

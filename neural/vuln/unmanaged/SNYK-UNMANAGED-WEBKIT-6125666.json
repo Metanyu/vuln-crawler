@@ -1,0 +1,125 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Pwn2car"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-12 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.56594",
+        "probability": "0.00190"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-WEBKIT-6125666",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-42890"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 15:34:15",
+    "remediation": "Upgrade webkit to version 7617.1.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation when processing malicious web content. An attacker can execute unauthorized code or commands by convincing a user to visit a specially crafted web page, potentially leading to memory corruption and arbitrary code execution on the target system. "
+    },
+    "source_code": [
+        {
+            "filename": "LayoutTests/http/tests/security/resources/network-load-sw.js",
+            "diff": "@@ -0,0 +1,33 @@\n+async function wait_for_performance_entries(url) {\n+  let entries = performance.getEntriesByName(url);\n+  if (entries.length > 0) {\n+    return entries;\n+  }\n+  return new Promise((resolve) => {\n+    new PerformanceObserver((list) => {\n+      const entries = list.getEntriesByName(url);\n+      if (entries.length > 0) {\n+        resolve(entries);\n+      }\n+    }).observe({ entryTypes: ['resource'] });\n+  });\n+}\n+\n+self.addEventListener('activate', event => {\n+    event.waitUntil(self.registration.navigationPreload.enable());\n+  });\n+  \n+self.theHTML = \"<script>window.top.postMessage('')</script>\";\n+\n+self.addEventListener('fetch', event => {\n+    let headers;\n+    event.respondWith(\n+      event.preloadResponse\n+          .then(response => {\n+            headers = response.headers;\n+            return response.text()\n+          })\n+          .then(_ => wait_for_performance_entries(event.request.url))\n+          .then(entries =>\n+            new Response( self.theHTML, { headers: {'Content-Type': 'text/html' }})));\n+  });"
+        },
+        {
+            "filename": "LayoutTests/http/tests/security/resources/network-load-swasdf.py",
+            "diff": "@@ -0,0 +1,9 @@\n+#!/usr/bin/env python3\n+\n+import os\n+import sys\n+\n+sys.stdout.write(\n+    'Status: 302\\r\\n'\n+    'Location: network-load-swasdf\\r\\n\\r\\n'\n+)"
+        },
+        {
+            "filename": "LayoutTests/http/tests/security/resources/network-load.js",
+            "diff": "@@ -0,0 +1,52 @@\n+(function (global_scope)\n+{\n+    function promise_test(func, name, properties) {\n+        var test = new Test(name, properties);\n+        tests.promise_tests = Promise.resolve();\n+        tests.promise_tests = tests.promise_tests.then(function() {\n+            return new Promise(function(resolve) {\n+                var promise = test.step(func, test, test);\n+                Promise.resolve(promise)\n+                });\n+        });\n+    }\n+   \n+    expose(promise_test, 'trigger');\n+\n+    function Test(name, properties)\n+    {\n+        this.name = name;\n+        tests.push(this);\n+    }\n+\n+\n+    Test.prototype.step = function(func, this_obj)\n+    {\n+        return func.apply(this_obj, Array.prototype.slice.call(arguments, 2));  \n+    };\n+\n+    Test.prototype.step_func = function(func, this_obj)\n+    {\n+        var test_this = this;\n+\n+        return function()\n+        {\n+            return test_this.step.apply(test_this, [func, this_obj].concat(\n+                Array.prototype.slice.call(arguments)));\n+        };\n+    };\n+\n+    function Tests() {}\n+    Tests.prototype.push = function(test) {}\n+\n+    function expose(object, name)\n+    {\n+        var components = name.split(\".\");\n+        var target = global_scope;\n+        for (var i = 0; i < components.length - 1; i++) {\n+            target = target[components[i]];\n+        }\n+        target[components[components.length - 1]] = object;\n+    }\n+    var tests = new Tests();\n+})(self);"
+        },
+        {
+            "filename": "LayoutTests/http/tests/security/service-worker-network-load-expected.txt",
+            "diff": "@@ -0,0 +1 @@\n+"
+        },
+        {
+            "filename": "LayoutTests/http/tests/security/service-worker-network-load.html",
+            "diff": "@@ -0,0 +1,79 @@\n+<html>\n+<head>\n+<script>\n+if (window.testRunner) {\n+    testRunner.dumpAsText();\n+    testRunner.waitUntilDone();\n+}\n+</script>\n+<script src=\"resources/network-load.js\"></script>\n+<script>\n+\n+var count = 0;\n+var iframesToCreate = 8;\n+window.onmessage = function(e) {\n+\tif (++count == iframesToCreate) {\n+\t\tif (window.testRunner)\n+\t    \ttestRunner.notifyDone();\n+\t\telse\n+\t\t\talert(\"Done!\");\n+\t}\n+};\n+\t\n+\n+function with_iframe(url) {\n+  return new Promise(function(resolve) {\n+      var frame = document.createElement('iframe');\n+      frame.src = url;\n+      document.body.appendChild(frame);\n+    });\n+}\n+\n+function service_register(url, scope) {\n+  var options = { scope: scope };\n+  return service_unregister(scope)\n+    .then(function() {\n+        return navigator.serviceWorker.register(url, options);\n+      })\n+}\n+\n+function service_unregister(scope) {\n+  var absoluteScope = (new URL(scope, window.location).href);\n+  return navigator.serviceWorker.getRegistration(scope)\n+    .then(function(registration) {\n+        if (registration && registration.scope === absoluteScope)\n+          return registration.unregister();\n+      })\n+}\n+\n+function wating_stat(test, worker, state) {\n+  return new Promise(test.step_func(function(resolve) {\n+      worker.addEventListener('statechange', test.step_func(function() {\n+            resolve(state);\n+        }));\n+    }));\n+}\n+\n+trigger(t => {\n+    var script = 'resources/network-load-sw.js';\n+    var scope = 'resources/network-load-sw';\n+\n+    return service_register(script, scope)\n+      .then(reg => {\n+          return wating_stat(t, reg.installing, 'activated');\n+        })\n+      .then(frame => {\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 0.9);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1.0);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1.0);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1.1);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1.2);\n+          setTimeout(() => with_iframe(scope + 'asdf.py') , 1.3);\n+          \n+          return with_iframe(scope + 'asdf.py');\n+        })\n+  }, 'asdfasdf')\n+\n+</script>\n+"
+        },
+        {
+            "filename": "LayoutTests/platform/mac-wk1/TestExpectations",
+            "diff": "@@ -1281,6 +1281,7 @@ imported/w3c/web-platform-tests/IndexedDB/reading-autoincrement-indexes.any.serv\n imported/w3c/web-platform-tests/IndexedDB/reading-autoincrement-store-cursors.any.serviceworker.html [ Skip ]\n imported/w3c/web-platform-tests/IndexedDB/reading-autoincrement-store.any.serviceworker.html [ Skip ]\n imported/w3c/web-platform-tests/IndexedDB/storage-buckets.https.any.serviceworker.html [ Skip ]\n+http/tests/security/service-worker-network-load.html [ Skip ]\n \n # No Cross-Origin-Opener-Policy / Cross-Origin-Embedder-Policy in WK1.\n imported/w3c/web-platform-tests/html/anonymous-iframe [ Skip ]"
+        },
+        {
+            "filename": "Source/WebKit/NetworkProcess/NetworkLoad.cpp",
+            "diff": "@@ -193,6 +193,8 @@ void NetworkLoad::willPerformHTTPRedirection(ResourceResponse&& redirectResponse\n         if (m_currentRequest.isNull()) {\n             NetworkLoadMetrics emptyMetrics;\n             didCompleteWithError(cancelledError(m_currentRequest), emptyMetrics);\n+            completionHandler({ });\n+            return;\n         }\n         completionHandler(ResourceRequest(m_currentRequest));\n     });"
+        }
+    ],
+    "commitTime": "2023-08-05 00:32:45"
+}

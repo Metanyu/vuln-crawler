@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "sirnple"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2023-12-29 15:30:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12474",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGJEASY-6140756",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50571"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-31 10:50:46",
+    "remediation": "There is no fixed version for org.jeasy:easy-rules-mvel . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Arbitrary Code Execution",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Arbitrary Code Execution via the mVELRule.then() or mVELRule.when() functions. An attacker in control of classes on the classpath can replace invoked classes with malicious ones to execute arbitrary code. "
+    },
+    "source_code": []
+}

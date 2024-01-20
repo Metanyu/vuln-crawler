@@ -1,0 +1,61 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-01 06:31:19",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-GROOVESHOPDJANGOAPI-6100982",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-453"
+        ],
+        "PVE": [
+            "PVE-2023-62368"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 12:41:29",
+    "remediation": "Upgrade grooveshop-django-api to version 0.44.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Insecure Defaults",
+    "vulnDescription": {
+        "Overview": "grooveshop-django-api is a GrooveShop Django Backend Affected versions of this package are vulnerable to Insecure Defaults in session.py , secure.py , csrf.py and base.py . "
+    },
+    "source_code": [
+        {
+            "filename": "config/base.py",
+            "diff": "@@ -45,24 +45,21 @@\n NUXT_BASE_DOMAIN = getenv(\"NUXT_BASE_DOMAIN\", \"localhost:3000\")\n MEDIA_STREAM_BASE_URL = getenv(\"MEDIA_STREAM_BASE_URL\", \"http://localhost:3003\")\n \n-if getenv(\"ALLOWED_HOSTS\") == \"[*]\":\n-    ALLOWED_HOSTS = [\"*\"]\n-else:\n-    ALLOWED_HOSTS = [\n+ALLOWED_HOSTS = []  # Start with an empty list\n+\n+# Add the main domain and any subdomains required\n+ALLOWED_HOSTS.extend(\n+    [\n         APP_MAIN_HOST_NAME,\n         NUXT_BASE_URL,\n         MEDIA_STREAM_BASE_URL,\n-        \"http://localhost:1337\",\n-        \"localhost\",\n-        \"127.0.0.1\",\n-        \"backend\",\n-        \"api.grooveshop.site\",\n-        \"grooveshop.site\",\n-        \"assets.grooveshop.site\",\n-        \"[::1]\",\n+        \".grooveshop.site\",  # Covers all subdomains for grooveshop.site\n     ]\n-    additional_hosts = getenv(\"ALLOWED_HOSTS\", \"\").split(\",\")\n-    ALLOWED_HOSTS.extend(additional_hosts)\n+)\n+\n+# Add any additional hosts from the environment variable\n+additional_hosts = getenv(\"DJANGO_ALLOWED_HOSTS\", \"\").split(\",\")\n+ALLOWED_HOSTS.extend(filter(None, additional_hosts))  # Filter out empty strings\n \n # Django built-in apps\n DJANGO_APPS = [\n@@ -264,7 +261,7 @@\n }\n \n # Other general settings\n-APPEND_SLASH = getenv(\"APPEND_SLASH\", \"False\") == \"True\"\n+APPEND_SLASH = getenv(\"APPEND_SLASH\", \"True\") == \"True\"\n \n DEEPL_AUTH_KEY = getenv(\"DEEPL_AUTH_KEY\", \"changeme\")\n "
+        },
+        {
+            "filename": "config/csrf.py",
+            "diff": "@@ -7,23 +7,34 @@\n MEDIA_STREAM_BASE_URL = getenv(\"MEDIA_STREAM_BASE_URL\", \"http://localhost:3003\")\n \n CSRF_COOKIE_NAME = \"csrftoken\"\n-CSRF_COOKIE_AGE = 60 * 60 * 24 * 7 * 52\n-CSRF_COOKIE_DOMAIN = None\n+CSRF_COOKIE_AGE = 60 * 60 * 24 * 7 * 52  # 1 year\n+CSRF_COOKIE_DOMAIN = (\n+    \".grooveshop.site\"  # Set to your main domain to share across subdomains\n+)\n CSRF_COOKIE_PATH = \"/\"\n-CSRF_COOKIE_SECURE = False if DEBUG else True\n-CSRF_COOKIE_HTTPONLY = True\n-CSRF_COOKIE_SAMESITE = \"Lax\"\n+CSRF_COOKIE_SECURE = not DEBUG  # Only send CSRF cookie over HTTPS when DEBUG is False\n+CSRF_COOKIE_HTTPONLY = True  # Helps mitigate XSS attacks\n+CSRF_COOKIE_SAMESITE = \"Lax\"  # 'Lax' or 'None'. Use 'None' only if necessary and ensure CSRF_COOKIE_SECURE is True\n CSRF_HEADER_NAME = \"HTTP_X_CSRFTOKEN\"\n+\n+# CSRF_TRUSTED_ORIGINS should include only the domains that are trusted to send POST requests to your application\n CSRF_TRUSTED_ORIGINS = [\n-    APP_BASE_URL,\n-    NUXT_BASE_URL,\n-    MEDIA_STREAM_BASE_URL,\n-    \"http://api.grooveshop.site\",\n-    \"http://grooveshop.site\",\n-    \"http://assets.grooveshop.site\",\n+    APP_BASE_URL.replace(\"http://\", \"https://\"),  # Force HTTPS\n+    NUXT_BASE_URL.replace(\"http://\", \"https://\"),  # Force HTTPS\n+    MEDIA_STREAM_BASE_URL.replace(\"http://\", \"https://\"),  # Force HTTPS\n     \"https://api.grooveshop.site\",\n     \"https://grooveshop.site\",\n     \"https://assets.grooveshop.site\",\n-    \"http://localhost:1337\",\n ]\n-CSRF_USE_SESSIONS = False\n+\n+# Local development URLs should only be in the list if in DEBUG mode\n+if DEBUG:\n+    CSRF_TRUSTED_ORIGINS.extend(\n+        [\n+            \"http://localhost:3000\",\n+        ]\n+    )\n+\n+CSRF_USE_SESSIONS = (\n+    False  # Default is False, use True to store CSRF token in the session\n+)"
+        },
+        {
+            "filename": "config/secure.py",
+            "diff": "@@ -2,8 +2,9 @@\n \n DEBUG = getenv(\"DEBUG\", \"True\") == \"True\"\n \n-SECURE_SSL_REDIRECT = False if DEBUG else True\n-SECURE_PROXY_SSL_HEADER = None if DEBUG else (\"HTTP_X_FORWARDED_PROTO\", \"https\")\n-SECURE_HSTS_SECONDS = 3600 if DEBUG else 31536000\n-SECURE_HSTS_INCLUDE_SUBDOMAINS = False if DEBUG else True\n-SECURE_HSTS_PRELOAD = False if DEBUG else True\n+# Security Settings\n+SECURE_SSL_REDIRECT = not DEBUG\n+SECURE_PROXY_SSL_HEADER = (\"HTTP_X_FORWARDED_PROTO\", \"https\") if not DEBUG else None\n+SECURE_HSTS_SECONDS = 31536000 if not DEBUG else 0\n+SECURE_HSTS_INCLUDE_SUBDOMAINS = not DEBUG\n+SECURE_HSTS_PRELOAD = not DEBUG"
+        },
+        {
+            "filename": "config/session.py",
+            "diff": "@@ -5,8 +5,8 @@\n SESSION_CACHE_ALIAS = \"default\"\n SESSION_COOKIE_NAME = \"sessionid\"\n SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 2\n-SESSION_COOKIE_DOMAIN = None\n-SESSION_COOKIE_SECURE = False if DEBUG else True\n+SESSION_COOKIE_DOMAIN = \".grooveshop.site\"\n+SESSION_COOKIE_SECURE = not DEBUG\n SESSION_COOKIE_PATH = \"/\"\n SESSION_COOKIE_HTTPONLY = True\n SESSION_COOKIE_SAMESITE = \"Lax\""
+        }
+    ],
+    "commitTime": "2023-11-17 21:48:56"
+}

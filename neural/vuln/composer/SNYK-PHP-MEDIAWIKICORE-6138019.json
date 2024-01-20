@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "TEJ RATHI"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.3,
+    "disclosureTime": "2023-12-22 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06916",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-MEDIAWIKICORE-6138019",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51704"
+        ],
+        "CWE": [
+            "CWE-80"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-22 12:18:50",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting",
+    "vulnDescription": {
+        "Overview": "mediawiki/core is a Free software wiki application developed by the Wikimedia Foundation and others. Note: This package is not maintained on Packagist anymore, but newer releases exist. Affected versions of this package are vulnerable to Cross-site Scripting due to improper escaping of user-supplied input on the Special:log/rights page and includes/logging/RightsLogFormatter.php file. An attacker to execute malicious scripts within the affected page, posing a risk of unauthorized code execution or other malicious activities. "
+    },
+    "source_code": [
+        {
+            "filename": "includes/logging/RightsLogFormatter.php",
+            "diff": "@@ -146,7 +146,7 @@ protected function formatRightsList( $groups, $serializedUGMs = [] ) {\n \t\t\t\t\t$expiryFormatted, $expiryFormattedD, $expiryFormattedT )->parse();\n \t\t\t} else {\n \t\t\t\t// the right does not expire; just insert the group name\n-\t\t\t\t$permList[] = $group;\n+\t\t\t\t$permList[] = htmlspecialchars( $group );\n \t\t\t}\n \n \t\t\tnext( $groups );"
+        }
+    ],
+    "commitTime": "2023-10-06 20:16:01"
+}

@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Ionut Lalu"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-27 15:06:52",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMGOGITGOGITPLUMBING-6140320",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49568"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-28 12:02:03",
+    "remediation": "Upgrade github.com/go-git/go-git/plumbing to version 5.11.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "github.com/go-git/go-git/plumbing is a highly extensible git implementation library written in pure Go. Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') via specially crafted responses from a Git server, which triggers resource exhaustion in clients. Note This is only exploitable if the client is not using the in-memory filesystem supported by the library. ",
+        "Workaround": "In cases where a bump to the latest version of go-git is not possible, we recommend limiting its use to only trust-worthy Git servers. "
+    },
+    "source_code": [
+        {
+            "filename": "config/branch.go",
+            "diff": "@@ -54,7 +54,7 @@ func (b *Branch) Validate() error {\n \t\treturn errBranchInvalidRebase\n \t}\n \n-\treturn nil\n+\treturn plumbing.NewBranchReferenceName(b.Name).Validate()\n }\n \n func (b *Branch) marshal() *format.Subsection {"
+        },
+        {
+            "filename": "config/config.go",
+            "diff": "@@ -13,6 +13,7 @@ import (\n \n \t\"github.com/go-git/go-billy/v5/osfs\"\n \t\"github.com/go-git/go-git/v5/internal/url\"\n+\t\"github.com/go-git/go-git/v5/plumbing\"\n \tformat \"github.com/go-git/go-git/v5/plumbing/format/config\"\n )\n \n@@ -614,7 +615,7 @@ func (c *RemoteConfig) Validate() error {\n \t\tc.Fetch = []RefSpec{RefSpec(fmt.Sprintf(DefaultFetchRefSpec, c.Name))}\n \t}\n \n-\treturn nil\n+\treturn plumbing.NewRemoteHEADReferenceName(c.Name).Validate()\n }\n \n func (c *RemoteConfig) unmarshal(s *format.Subsection) error {"
+        },
+        {
+            "filename": "plumbing/reference.go",
+            "diff": "@@ -3,6 +3,7 @@ package plumbing\n import (\n \t\"errors\"\n \t\"fmt\"\n+\t\"regexp\"\n \t\"strings\"\n )\n \n@@ -29,6 +30,9 @@ var RefRevParseRules = []string{\n \n var (\n \tErrReferenceNotFound = errors.New(\"reference not found\")\n+\n+\t// ErrInvalidReferenceName is returned when a reference name is invalid.\n+\tErrInvalidReferenceName = errors.New(\"invalid reference name\")\n )\n \n // ReferenceType reference type's\n@@ -124,6 +128,91 @@ func (r ReferenceName) Short() string {\n \treturn res\n }\n \n+var (\n+\tctrlSeqs = regexp.MustCompile(`[\\000-\\037\\177]`)\n+)\n+\n+// Validate validates a reference name.\n+// This follows the git-check-ref-format rules.\n+// See https://git-scm.com/docs/git-check-ref-format\n+//\n+// It is important to note that this function does not check if the reference\n+// exists in the repository.\n+// It only checks if the reference name is valid.\n+// This functions does not support the --refspec-pattern, --normalize, and\n+// --allow-onelevel options.\n+//\n+// Git imposes the following rules on how references are named:\n+//\n+//  1. They can include slash / for hierarchical (directory) grouping, but no\n+//     slash-separated component can begin with a dot . or end with the\n+//     sequence .lock.\n+//  2. They must contain at least one /. This enforces the presence of a\n+//     category like heads/, tags/ etc. but the actual names are not\n+//     restricted. If the --allow-onelevel option is used, this rule is\n+//     waived.\n+//  3. They cannot have two consecutive dots .. anywhere.\n+//  4. They cannot have ASCII control characters (i.e. bytes whose values are\n+//     lower than \\040, or \\177 DEL), space, tilde ~, caret ^, or colon :\n+//     anywhere.\n+//  5. They cannot have question-mark ?, asterisk *, or open bracket [\n+//     anywhere. See the --refspec-pattern option below for an exception to this\n+//     rule.\n+//  6. They cannot begin or end with a slash / or contain multiple consecutive\n+//     slashes (see the --normalize option below for an exception to this rule).\n+//  7. They cannot end with a dot ..\n+//  8. They cannot contain a sequence @{.\n+//  9. They cannot be the single character @.\n+//  10. They cannot contain a \\.\n+func (r ReferenceName) Validate() error {\n+\ts := string(r)\n+\tif len(s) == 0 {\n+\t\treturn ErrInvalidReferenceName\n+\t}\n+\n+\t// HEAD is a special case\n+\tif r == HEAD {\n+\t\treturn nil\n+\t}\n+\n+\t// rule 7\n+\tif strings.HasSuffix(s, \".\") {\n+\t\treturn ErrInvalidReferenceName\n+\t}\n+\n+\t// rule 2\n+\tparts := strings.Split(s, \"/\")\n+\tif len(parts) < 2 {\n+\t\treturn ErrInvalidReferenceName\n+\t}\n+\n+\tisBranch := r.IsBranch()\n+\tisTag := r.IsTag()\n+\tfor _, part := range parts {\n+\t\t// rule 6\n+\t\tif len(part) == 0 {\n+\t\t\treturn ErrInvalidReferenceName\n+\t\t}\n+\n+\t\tif strings.HasPrefix(part, \".\") || // rule 1\n+\t\t\tstrings.Contains(part, \"..\") || // rule 3\n+\t\t\tctrlSeqs.MatchString(part) || // rule 4\n+\t\t\tstrings.ContainsAny(part, \"~^:?*[ \\t\\n\") || // rule 4 & 5\n+\t\t\tstrings.Contains(part, \"@{\") || // rule 8\n+\t\t\tpart == \"@\" || // rule 9\n+\t\t\tstrings.Contains(part, \"\\\\\") || // rule 10\n+\t\t\tstrings.HasSuffix(part, \".lock\") { // rule 1\n+\t\t\treturn ErrInvalidReferenceName\n+\t\t}\n+\n+\t\tif (isBranch || isTag) && strings.HasPrefix(part, \"-\") { // branches & tags can't start with -\n+\t\t\treturn ErrInvalidReferenceName\n+\t\t}\n+\t}\n+\n+\treturn nil\n+}\n+\n const (\n \tHEAD   ReferenceName = \"HEAD\"\n \tMaster ReferenceName = \"refs/heads/master\""
+        },
+        {
+            "filename": "plumbing/reference_test.go",
+            "diff": "@@ -103,6 +103,65 @@ func (s *ReferenceSuite) TestIsTag(c *C) {\n \tc.Assert(r.IsTag(), Equals, true)\n }\n \n+func (s *ReferenceSuite) TestValidReferenceNames(c *C) {\n+\tvalid := []ReferenceName{\n+\t\t\"refs/heads/master\",\n+\t\t\"refs/notes/commits\",\n+\t\t\"refs/remotes/origin/master\",\n+\t\t\"HEAD\",\n+\t\t\"refs/tags/v3.1.1\",\n+\t\t\"refs/pulls/1/head\",\n+\t\t\"refs/pulls/1/merge\",\n+\t\t\"refs/pulls/1/abc.123\",\n+\t\t\"refs/pulls\",\n+\t\t\"refs/-\", // should this be allowed?\n+\t}\n+\tfor _, v := range valid {\n+\t\tc.Assert(v.Validate(), IsNil)\n+\t}\n+\n+\tinvalid := []ReferenceName{\n+\t\t\"refs\",\n+\t\t\"refs/\",\n+\t\t\"refs//\",\n+\t\t\"refs/heads/\\\\\",\n+\t\t\"refs/heads/\\\\foo\",\n+\t\t\"refs/heads/\\\\foo/bar\",\n+\t\t\"abc\",\n+\t\t\"\",\n+\t\t\"refs/heads/ \",\n+\t\t\"refs/heads/ /\",\n+\t\t\"refs/heads/ /foo\",\n+\t\t\"refs/heads/.\",\n+\t\t\"refs/heads/..\",\n+\t\t\"refs/heads/foo..\",\n+\t\t\"refs/heads/foo.lock\",\n+\t\t\"refs/heads/foo@{bar}\",\n+\t\t\"refs/heads/foo[\",\n+\t\t\"refs/heads/foo~\",\n+\t\t\"refs/heads/foo^\",\n+\t\t\"refs/heads/foo:\",\n+\t\t\"refs/heads/foo?\",\n+\t\t\"refs/heads/foo*\",\n+\t\t\"refs/heads/foo[bar\",\n+\t\t\"refs/heads/foo\\t\",\n+\t\t\"refs/heads/@\",\n+\t\t\"refs/heads/@{bar}\",\n+\t\t\"refs/heads/\\n\",\n+\t\t\"refs/heads/-foo\",\n+\t\t\"refs/heads/foo..bar\",\n+\t\t\"refs/heads/-\",\n+\t\t\"refs/tags/-\",\n+\t\t\"refs/tags/-foo\",\n+\t}\n+\n+\tfor i, v := range invalid {\n+\t\tcomment := Commentf(\"invalid reference name case %d: %s\", i, v)\n+\t\tc.Assert(v.Validate(), NotNil, comment)\n+\t\tc.Assert(v.Validate(), ErrorMatches, \"invalid reference name\", comment)\n+\t}\n+}\n+\n func benchMarkReferenceString(r *Reference, b *testing.B) {\n \tfor n := 0; n < b.N; n++ {\n \t\t_ = r.String()"
+        },
+        {
+            "filename": "repository.go",
+            "diff": "@@ -98,6 +98,10 @@ func InitWithOptions(s storage.Storer, worktree billy.Filesystem, options InitOp\n \t\toptions.DefaultBranch = plumbing.Master\n \t}\n \n+\tif err := options.DefaultBranch.Validate(); err != nil {\n+\t\treturn nil, err\n+\t}\n+\n \tr := newRepository(s, worktree)\n \t_, err := r.Reference(plumbing.HEAD, false)\n \tswitch err {\n@@ -724,7 +728,10 @@ func (r *Repository) DeleteBranch(name string) error {\n // CreateTag creates a tag. If opts is included, the tag is an annotated tag,\n // otherwise a lightweight tag is created.\n func (r *Repository) CreateTag(name string, hash plumbing.Hash, opts *CreateTagOptions) (*plumbing.Reference, error) {\n-\trname := plumbing.ReferenceName(path.Join(\"refs\", \"tags\", name))\n+\trname := plumbing.NewTagReferenceName(name)\n+\tif err := rname.Validate(); err != nil {\n+\t\treturn nil, err\n+\t}\n \n \t_, err := r.Storer.Reference(rname)\n \tswitch err {"
+        },
+        {
+            "filename": "repository_test.go",
+            "diff": "@@ -75,6 +75,13 @@ func (s *RepositorySuite) TestInitWithOptions(c *C) {\n \n }\n \n+func (s *RepositorySuite) TestInitWithInvalidDefaultBranch(c *C) {\n+\t_, err := InitWithOptions(memory.NewStorage(), memfs.New(), InitOptions{\n+\t\tDefaultBranch: \"foo\",\n+\t})\n+\tc.Assert(err, NotNil)\n+}\n+\n func createCommit(c *C, r *Repository) {\n \t// Create a commit so there is a HEAD to check\n \twt, err := r.Worktree()\n@@ -391,6 +398,22 @@ func (s *RepositorySuite) TestDeleteRemote(c *C) {\n \tc.Assert(alt, IsNil)\n }\n \n+func (s *RepositorySuite) TestEmptyCreateBranch(c *C) {\n+\tr, _ := Init(memory.NewStorage(), nil)\n+\terr := r.CreateBranch(&config.Branch{})\n+\n+\tc.Assert(err, NotNil)\n+}\n+\n+func (s *RepositorySuite) TestInvalidCreateBranch(c *C) {\n+\tr, _ := Init(memory.NewStorage(), nil)\n+\terr := r.CreateBranch(&config.Branch{\n+\t\tName: \"-foo\",\n+\t})\n+\n+\tc.Assert(err, NotNil)\n+}\n+\n func (s *RepositorySuite) TestCreateBranchAndBranch(c *C) {\n \tr, _ := Init(memory.NewStorage(), nil)\n \ttestBranch := &config.Branch{\n@@ -2797,6 +2820,20 @@ func (s *RepositorySuite) TestDeleteTagAnnotatedUnpacked(c *C) {\n \tc.Assert(err, Equals, plumbing.ErrObjectNotFound)\n }\n \n+func (s *RepositorySuite) TestInvalidTagName(c *C) {\n+\tr, err := Init(memory.NewStorage(), nil)\n+\tc.Assert(err, IsNil)\n+\tfor i, name := range []string{\n+\t\t\"\",\n+\t\t\"foo bar\",\n+\t\t\"foo\\tbar\",\n+\t\t\"foo\\nbar\",\n+\t} {\n+\t\t_, err = r.CreateTag(name, plumbing.ZeroHash, nil)\n+\t\tc.Assert(err, NotNil, Commentf(\"case %d %q\", i, name))\n+\t}\n+}\n+\n func (s *RepositorySuite) TestBranches(c *C) {\n \tf := fixtures.ByURL(\"https://github.com/git-fixtures/root-references.git\").One()\n \tsto := filesystem.NewStorage(f.DotGit(), cache.NewObjectLRUDefault())"
+        },
+        {
+            "filename": "worktree.go",
+            "diff": "@@ -189,6 +189,10 @@ func (w *Worktree) Checkout(opts *CheckoutOptions) error {\n \treturn w.Reset(ro)\n }\n func (w *Worktree) createBranch(opts *CheckoutOptions) error {\n+\tif err := opts.Branch.Validate(); err != nil {\n+\t\treturn err\n+\t}\n+\n \t_, err := w.r.Storer.Reference(opts.Branch)\n \tif err == nil {\n \t\treturn fmt.Errorf(\"a branch named %q already exists\", opts.Branch)"
+        },
+        {
+            "filename": "worktree_test.go",
+            "diff": "@@ -785,6 +785,30 @@ func (s *WorktreeSuite) TestCheckoutCreateMissingBranch(c *C) {\n \tc.Assert(err, Equals, ErrCreateRequiresBranch)\n }\n \n+func (s *WorktreeSuite) TestCheckoutCreateInvalidBranch(c *C) {\n+\tw := &Worktree{\n+\t\tr:          s.Repository,\n+\t\tFilesystem: memfs.New(),\n+\t}\n+\n+\tfor _, name := range []plumbing.ReferenceName{\n+\t\t\"foo\",\n+\t\t\"-\",\n+\t\t\"-foo\",\n+\t\t\"refs/heads//\",\n+\t\t\"refs/heads/..\",\n+\t\t\"refs/heads/a..b\",\n+\t\t\"refs/heads/.\",\n+\t} {\n+\t\terr := w.Checkout(&CheckoutOptions{\n+\t\t\tCreate: true,\n+\t\t\tBranch: name,\n+\t\t})\n+\n+\t\tc.Assert(err, Equals, plumbing.ErrInvalidReferenceName)\n+\t}\n+}\n+\n func (s *WorktreeSuite) TestCheckoutTag(c *C) {\n \tf := fixtures.ByTag(\"tags\").One()\n \tr := s.NewRepositoryWithEmptyWorktree(f)"
+        }
+    ],
+    "commitTime": "2023-11-30 23:21:53"
+}

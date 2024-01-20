@@ -1,0 +1,82 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 4,
+    "disclosureTime": "2023-12-06 04:44:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23888",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SAMSUNGESCARGOT-6102838",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41268"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 13:26:51",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) due to insufficient validation of user-supplied input that allows an attacker to trigger a stack overflow or segmentation fault in the JavaScript engine. "
+    },
+    "source_code": [
+        {
+            "filename": "src/parser/ScriptParser.cpp",
+            "diff": "@@ -419,6 +419,12 @@ ScriptParser::InitializeScriptResult ScriptParser::initializeScript(String* orig\n     if (LIKELY(needByteCodeGeneration)) {\n         try {\n #if defined(ENABLE_CODE_CACHE)\n+            // give up if there is top-level-await\n+            if (topCodeBlock->isAsync()) {\n+                cacheable = false;\n+                deleteCodeBlockCacheInfo();\n+            }\n+\n             // Store cache\n             if (cacheable) {\n                 codeCache->prepareCacheWriting(srcHash);"
+        },
+        {
+            "filename": "src/runtime/ExecutionPauser.cpp",
+            "diff": "@@ -74,43 +74,45 @@ ExecutionPauser::ExecutionPauser(ExecutionState& state, Object* sourceObject, Ex\n {\n }\n \n-class ExecutionPauserExecutionStateParentBinder {\n-public:\n-    ExecutionPauserExecutionStateParentBinder(ExecutionState& state, ExecutionState* originalState)\n-        : m_originalState(originalState)\n-    {\n-        m_oldParent = m_originalState->parent();\n-\n-\n-        ExecutionState* pstate = m_originalState;\n-        while (pstate) {\n-            if (pstate == &state) {\n-                // AsyncGeneratorObject::asyncGeneratorResolve can make loop\n-                return;\n+\n+Value ExecutionPauser::start(ExecutionState& state, ExecutionPauser* self, Object* source, const Value& resumeValue, bool isAbruptReturn, bool isAbruptThrow, StartFrom from)\n+{\n+    class ExecutionPauserExecutionStateParentAndStackLimitBinder {\n+    public:\n+        ExecutionPauserExecutionStateParentAndStackLimitBinder(ExecutionState& state, ExecutionState* originalState)\n+            : m_originalState(originalState)\n+        {\n+            m_oldParent = m_originalState->parent();\n+\n+            ExecutionState* pstate = m_originalState;\n+            m_originalState->m_stackLimit = state.context()->vmInstance()->stackLimit();\n+            while (pstate) {\n+                if (pstate == &state) {\n+                    // AsyncGeneratorObject::asyncGeneratorResolve can make loop\n+                    return;\n+                }\n+                pstate = pstate->parent();\n             }\n-            pstate = pstate->parent();\n-        }\n \n-        m_originalState->setParent(&state);\n-    }\n+            m_originalState->setParent(&state);\n+        }\n \n-    ~ExecutionPauserExecutionStateParentBinder()\n-    {\n-        m_originalState->setParent(m_oldParent);\n-    }\n+        ~ExecutionPauserExecutionStateParentAndStackLimitBinder()\n+        {\n+            m_originalState->setParent(m_oldParent);\n+            m_originalState->m_stackLimit = 0;\n+        }\n \n-    ExecutionState* m_originalState;\n-    ExecutionState* m_oldParent;\n-};\n+        ExecutionState* m_originalState;\n+        ExecutionState* m_oldParent;\n+    };\n \n-Value ExecutionPauser::start(ExecutionState& state, ExecutionPauser* self, Object* source, const Value& resumeValue, bool isAbruptReturn, bool isAbruptThrow, StartFrom from)\n-{\n     ExecutionState* originalState = self->m_executionState;\n     while (!originalState->pauseSource()) {\n         originalState = originalState->parent();\n     }\n \n-    ExecutionPauserExecutionStateParentBinder parentBinder(state, originalState);\n+    ExecutionPauserExecutionStateParentAndStackLimitBinder parentBinder(state, originalState);\n \n     if (self->m_resumeValueIndex != REGISTER_LIMIT) {\n         self->m_registerFile[self->m_resumeValueIndex] = resumeValue;"
+        },
+        {
+            "filename": "src/runtime/ExecutionState.cpp",
+            "diff": "@@ -329,7 +329,11 @@ bool ExecutionState::inPauserScope()\n             auto env = state->lexicalEnvironment();\n             auto record = env->record();\n             if (record->isGlobalEnvironmentRecord() || record->isModuleEnvironmentRecord()) {\n-                return state->hasRareData() && state->rareData()->m_pauseSource;\n+                // class variable initializer can call {GlobalEnvironment, ModuleEnvironment}\n+                // so we should check above of {GlobalEnvironment, ModuleEnvironment}\n+                if (state->hasRareData() && state->rareData()->m_pauseSource) {\n+                    return true;\n+                }\n             } else if (record->isDeclarativeEnvironmentRecord() && record->asDeclarativeEnvironmentRecord()->isFunctionEnvironmentRecord()) {\n                 return record->asDeclarativeEnvironmentRecord()->asFunctionEnvironmentRecord()->functionObject()->isScriptGeneratorFunctionObject()\n                     || record->asDeclarativeEnvironmentRecord()->asFunctionEnvironmentRecord()->functionObject()->isScriptAsyncFunctionObject()"
+        },
+        {
+            "filename": "test/vendortest",
+            "diff": "@@ -1 +1 @@\n-Subproject commit 524b0cb6c2536fc2ff9b08abf879a1f8d5f1f67d\n+Subproject commit cc5a9dc1a32b9b8231d4bdb0c4dcb196dae5f862"
+        }
+    ],
+    "commitTime": "2023-10-24 05:25:01"
+}

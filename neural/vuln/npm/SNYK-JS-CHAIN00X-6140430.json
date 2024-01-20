@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-29 05:57:38",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-JS-CHAIN00X-6140430",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "js",
+    "malicious": true,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-29 06:13:51",
+    "remediation": "Avoid using all malicious instances of the chain00x package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "chain00x is a malicious package. This package contains malicious code, and its content was removed from the official package manager. While this package might be attempting to impersonate a valid organization, there is no connection between that organization and this package authorship. "
+    },
+    "source_code": []
+}

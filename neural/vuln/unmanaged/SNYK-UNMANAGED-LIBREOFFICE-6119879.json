@@ -1,0 +1,95 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Reginaldo Silva"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 8.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-12-11 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.26216",
+        "probability": "0.00064"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-LIBREOFFICE-6119879",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6186"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-12 14:29:19",
+    "remediation": "Upgrade libreoffice to version 7.5.9, 7.6.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Access Control due to insufficient macro permission validation. An attacker can execute unauthorized macros by convincing a user to open a specially crafted document. "
+    },
+    "source_code": []
+}

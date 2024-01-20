@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "linzc21"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-22 10:56:22",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23975",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-MP3GAIN-6138263",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49356"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 13:45:27",
+    "remediation": "There is no fixed version for mp3gain . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow via the WriteMP3GainAPETag function in apetag.c file. An attacker can cause a crash or disrupt normal operations by sending a crafted input that triggers a buffer overflow. "
+    },
+    "source_code": []
+}

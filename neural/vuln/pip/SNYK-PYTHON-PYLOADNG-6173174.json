@@ -1,0 +1,58 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:H/I:H/A:H/E:P",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "pip",
+            "url": "/vuln/pip"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "pyload-ng"
+        }
+    ],
+    "credit": [
+        "PinkDraconian"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.6,
+    "description": "## Overview [pyload-ng](https://pypi.org/project/pyload-ng) is a The free and open-source Download Manager written in pure Python Affected versions of this package are vulnerable to Cross-site Request Forgery (CSRF) due to the API accepting GET requests without proper validation. An attacker can perform unauthorized actions on behalf of a legitimate user due to the session cookie not being set to `SameSite: strict`. ## Remediation Upgrade `pyload-ng` to version 0.5.0b3.dev78 or higher. ## References - [GitHub Commit](https://github.com/pyload/pyload/commit/1374c824271cb7e927740664d06d2e577624ca3e) - [GitHub Commit](https://github.com/pyload/pyload/commit/c7cdc18ad9134a75222974b39e8b427c4af845fc) ",
+    "disclosureTime": "2024-01-18T00:42:43.081000Z",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PYLOADNG-6173174",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-22416"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "packageName": "pyload-ng",
+    "proprietary": false,
+    "publicationTime": "2024-01-18T09:17:37.425891Z",
+    "remediation": "Upgrade pyload-ng to version 0.5.0b3.dev78 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,0.5.0b3.dev78)"
+        ]
+    },
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Cross-site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "pyload-ng is a The free and open-source Download Manager written in pure Python Affected versions of this package are vulnerable to Cross-site Request Forgery (CSRF) due to the API accepting GET requests without proper validation. An attacker can perform unauthorized actions on behalf of a legitimate user due to the session cookie not being set to SameSite: strict . ",
+        "References": [
+            "https://github.com/pyload/pyload/commit/1374c824271cb7e927740664d06d2e577624ca3e",
+            "https://github.com/pyload/pyload/commit/c7cdc18ad9134a75222974b39e8b427c4af845fc"
+        ]
+    },
+    "vulnerableVersions": "[,0.5.0b3.dev78)"
+}

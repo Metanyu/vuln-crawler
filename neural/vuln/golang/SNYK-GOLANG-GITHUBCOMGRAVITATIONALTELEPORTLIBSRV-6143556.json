@@ -1,0 +1,54 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Tener"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.3,
+    "disclosureTime": "2024-01-03 21:30:17",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMGRAVITATIONALTELEPORTLIBSRV-6143556",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 11:25:30",
+    "remediation": "Upgrade github.com/gravitational/teleport/lib/srv to version 12.4.31, 13.4.13, 14.2.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Control of Generation of Code ('Code Injection')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Control of Generation of Code ('Code Injection') via user-provided environment values on macOS agents. An attacker can execute unexpected code through user-supplied environment variables. "
+    },
+    "source_code": [
+        {
+            "filename": "lib/srv/exec_linux_test.go",
+            "diff": "@@ -115,6 +115,23 @@ func TestOSCommandPrep(t *testing.T) {\n \trequire.Equal(t, expectedEnv, cmd.Env)\n }\n \n+func TestConfigureCommand(t *testing.T) {\n+\tsrv := newMockServer(t)\n+\tscx := newExecServerContext(t, srv)\n+\n+\tunexpectedKey := \"FOO\"\n+\tunexpectedValue := \"BAR\"\n+\t// environment values in the server context should not be forwarded\n+\tscx.SetEnv(unexpectedKey, unexpectedValue)\n+\n+\tcmd, err := ConfigureCommand(scx)\n+\trequire.NoError(t, err)\n+\n+\trequire.NotNil(t, cmd)\n+\trequire.Equal(t, \"/proc/self/exe\", cmd.Path)\n+\trequire.NotContains(t, cmd.Env, unexpectedKey+\"=\"+unexpectedValue)\n+}\n+\n // TestContinue tests if the process hangs if a continue signal is not sent\n // and makes sure the process continues once it has been sent.\n func TestContinue(t *testing.T) {"
+        },
+        {
+            "filename": "lib/srv/reexec.go",
+            "diff": "@@ -995,7 +995,6 @@ func ConfigureCommand(ctx *ServerContext, extraFiles ...*os.File) (*exec.Cmd, er\n \n \t// build env for `teleport exec`\n \tenv := &envutils.SafeEnv{}\n-\tenv.AddFullTrusted(cmdmsg.Environment...)\n \tenv.AddExecEnvironment()\n \n \t// Build the \"teleport exec\" command."
+        },
+        {
+            "filename": "lib/utils/envutils/environment.go",
+            "diff": "@@ -91,25 +91,13 @@ func ReadEnvironmentFile(filename string) ([]string, error) {\n \treturn *env, nil\n }\n \n-var unsafeEnvironmentVars = map[string]struct{}{\n+var unsafeEnvironmentPrefixes = []string{\n \t// Linux\n-\t\"LD_ASSUME_KERNEL\":         {},\n-\t\"LD_AUDIT\":                 {},\n-\t\"LD_BIND_NOW\":              {},\n-\t\"LD_BIND_NOT\":              {},\n-\t\"LD_DYNAMIC_WEAK\":          {},\n-\t\"LD_LIBRARY_PATH\":          {},\n-\t\"LD_ORIGIN_PATH\":           {},\n-\t\"LD_POINTER_GUARD\":         {},\n-\t\"LD_PREFER_MAP_32BIT_EXEC\": {},\n-\t\"LD_PRELOAD\":               {},\n-\t\"LD_PROFILE\":               {},\n-\t\"LD_RUNPATH\":               {},\n-\t\"LD_RPATH\":                 {},\n-\t\"LD_USE_LOAD_BIAS\":         {},\n+\t// Covering cases from LD (man ld.so) to prevent injection like LD_PRELOAD\n+\t\"LD_\",\n \t// macOS\n-\t\"DYLD_INSERT_LIBRARIES\": {},\n-\t\"DYLD_LIBRARY_PATH\":     {},\n+\t// Covering cases from DYLD (man dyld) to prevent injection like DYLD_LIBRARY_PATH\n+\t\"DYLD_\",\n }\n \n // SafeEnv allows you to build a system environment while avoiding potentially dangerous environment conditions.  In\n@@ -132,7 +120,7 @@ func (e *SafeEnv) AddUnique(k, v string) {\n func (e *SafeEnv) add(preventDuplicates bool, k, v string) {\n \tk = strings.TrimSpace(k)\n \tv = strings.TrimSpace(v)\n-\tif e.unsafeKey(preventDuplicates, k) {\n+\tif e.isUnsafeKey(preventDuplicates, k) {\n \t\treturn\n \t}\n \n@@ -158,22 +146,24 @@ func (e *SafeEnv) addFull(preventDuplicates bool, fullValues []string) {\n \t\tkv = strings.TrimSpace(kv)\n \n \t\tkey := strings.SplitN(kv, \"=\", 2)[0]\n-\t\tif e.unsafeKey(preventDuplicates, key) {\n+\t\tif e.isUnsafeKey(preventDuplicates, key) {\n \t\t\tcontinue\n \t\t}\n \n \t\t*e = append(*e, kv)\n \t}\n }\n \n-func (e *SafeEnv) unsafeKey(preventDuplicates bool, key string) bool {\n+func (e *SafeEnv) isUnsafeKey(preventDuplicates bool, key string) bool {\n \tif key == \"\" || key == \"=\" {\n \t\treturn false\n \t}\n \n \tupperKey := strings.ToUpper(key)\n-\tif _, unsafe := unsafeEnvironmentVars[upperKey]; unsafe {\n-\t\treturn true\n+\tfor _, prefix := range unsafeEnvironmentPrefixes {\n+\t\tif strings.HasPrefix(upperKey, prefix) {\n+\t\t\treturn true\n+\t\t}\n \t}\n \n \tif preventDuplicates {"
+        }
+    ],
+    "commitTime": "2023-12-29 19:25:53"
+}

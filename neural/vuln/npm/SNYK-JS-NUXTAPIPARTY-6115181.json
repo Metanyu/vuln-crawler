@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "OhB00"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-09 00:50:49",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.24710",
+        "probability": "0.00062"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-NUXTAPIPARTY-6115181",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49799"
+        ],
+        "CWE": [
+            "CWE-918"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-11 17:03:45",
+    "remediation": "Upgrade nuxt-api-party to version 0.22.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Server-Side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "nuxt-api-party is a Nuxt 3 module to securely connect with any API Affected versions of this package are vulnerable to Server-Side Request Forgery (SSRF) during the regular expression check for absolute URLs. An attacker can bypass the check and cause the application to send a request to an arbitrary URL by providing an absolute URL with leading whitespace, such as a newline character. This could lead to a credentials leak. ",
+        "Workaround": "Revert to the previous method of detecting absolute URLs. if (new URL(path, 'http://localhost').origin !== 'http://localhost') { // ... } "
+    },
+    "source_code": [
+        {
+            "filename": "src/runtime/server/handler.ts",
+            "diff": "@@ -28,7 +28,7 @@ export default defineEventHandler(async (event): Promise<any> => {\n   } = _body\n \n   // Check if the path is an absolute URL\n-  if (/^https?:\\/\\//.test(path)) {\n+  if (new URL(path, 'http://localhost').origin !== 'http://localhost') {\n     throw createError({\n       statusCode: 400,\n       statusMessage: 'Absolute URLs are not allowed',"
+        }
+    ],
+    "commitTime": "2023-12-08 23:03:16"
+}

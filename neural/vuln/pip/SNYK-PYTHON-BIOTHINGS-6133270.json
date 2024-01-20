@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.4,
+    "disclosureTime": "2023-12-01 06:27:55",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-BIOTHINGS-6133270",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-78"
+        ],
+        "PVE": [
+            "PVE-2023-62122"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 16:00:51",
+    "remediation": "Upgrade biothings to version 0.12.3 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Command Injection",
+    "vulnDescription": {
+        "Overview": "biothings is an a toolkit for building high-performance data APIs in biology Affected versions of this package are vulnerable to Command Injection due to improper user input validation. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMCLOUDTPJENKINS-6125773",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50778"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 15:01:09",
+    "remediation": "There is no fixed version for com.cloudtp.jenkins:paaslane-estimate . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the plugin's configuration settings. An attacker can perform unauthorized actions on behalf of the user by tricking them into visiting a malicious website or clicking a crafted link. "
+    },
+    "source_code": []
+}

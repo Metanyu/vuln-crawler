@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMCLOUDTPJENKINS-6125775",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50779"
+        ],
+        "CWE": [
+            "CWE-285"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 15:02:50",
+    "remediation": "There is no fixed version for com.cloudtp.jenkins:paaslane-estimate . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Authorization",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Authorization due to improper permission checks in several HTTP endpoints. An attacker with Overall/Read permission can establish a connection to a URL of their choosing using a token specified by the attacker. "
+    },
+    "source_code": []
+}

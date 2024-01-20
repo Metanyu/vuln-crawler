@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "jhgoebbert"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-11-01 06:32:54",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-JUPYTERMATLABPROXY-6140210",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-287"
+        ],
+        "PVE": [
+            "PVE-2023-61606"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-27 13:59:02",
+    "remediation": "Upgrade jupyter-matlab-proxy to version 0.8.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Authentication",
+    "vulnDescription": {
+        "Overview": "jupyter-matlab-proxy is a MATLAB Integration for Jupyter Affected versions of this package are vulnerable to Improper Authentication on multi-user-systems. "
+    },
+    "source_code": [
+        {
+            "filename": "src/jupyter_matlab_proxy/__init__.py",
+            "diff": "@@ -1,10 +1,42 @@\n-# Copyright 2020-2021 The MathWorks, Inc.\n+# Copyright 2020-2023 The MathWorks, Inc.\n \n-import inspect\n+import os\n from pathlib import Path\n+\n+from matlab_proxy.util.mwi import environment_variables as mwi_env\n+from matlab_proxy.util.mwi import token_auth as mwi_token_auth\n+\n from jupyter_matlab_proxy.jupyter_config import config\n \n \n+def _get_auth_token():\n+    \"\"\"\n+    Generate auth token and token hash if the matlab-proxy token authentication\n+    is not explicitly disabled\n+\n+    Returns:\n+        None: If token authentication is explicitly disabled\n+        dict: For all other cases, a token and a token_hash is returned as dictionary\n+    \"\"\"\n+    mwi_enable_auth_token = os.getenv(mwi_env.get_env_name_enable_mwi_auth_token(), \"\")\n+\n+    # Return None if token authentication is explicitly disabled\n+    if mwi_enable_auth_token.lower() == \"false\":\n+        return None\n+\n+    # Enable token authentication by default\n+    original_env = os.environ.copy()\n+    os.environ[mwi_env.get_env_name_enable_mwi_auth_token()] = \"True\"\n+    auth_token = mwi_token_auth.generate_mwi_auth_token_and_hash()\n+\n+    # Cleanup environment variables\n+    os.environ = original_env\n+    return auth_token\n+\n+\n+_mwi_auth_token = _get_auth_token()\n+\n+\n def _get_env(port, base_url):\n     \"\"\"Returns a dict containing environment settings to launch the MATLAB Desktop\n \n@@ -16,14 +48,26 @@ def _get_env(port, base_url):\n     Returns:\n         [Dict]: Containing environment settings to launch the MATLAB Desktop.\n     \"\"\"\n-    from matlab_proxy.util.mwi import environment_variables as mwi_env\n \n-    return {\n+    env = {\n         mwi_env.get_env_name_app_port(): str(port),\n         mwi_env.get_env_name_base_url(): f\"{base_url}matlab\",\n         mwi_env.get_env_name_app_host(): \"127.0.0.1\",\n     }\n \n+    # Add token authentication related information to the environment variables\n+    # dictionary passed to the matlab-proxy process if token authentication is\n+    # not explicitly disabled.\n+    if _mwi_auth_token:\n+        env.update(\n+            {\n+                mwi_env.get_env_name_enable_mwi_auth_token(): \"True\",\n+                mwi_env.get_env_name_mwi_auth_token(): _mwi_auth_token.get(\"token\"),\n+            }\n+        )\n+\n+    return env\n+\n \n def setup_matlab():\n     \"\"\"This method is run by jupyter-server-proxy package with instruction to launch the MATLAB Desktop\n@@ -42,7 +86,8 @@ def setup_matlab():\n     logger.debug(f\"Icon_path:  {icon_path}\")\n     logger.debug(f\"Launch Command: {matlab_proxy.get_executable_name()}\")\n     logger.debug(f\"Extension Name: {config['extension_name']}\")\n-    return {\n+\n+    jsp_config = {\n         \"command\": [\n             matlab_proxy.get_executable_name(),\n             \"--config\",\n@@ -53,3 +98,13 @@ def setup_matlab():\n         \"absolute_url\": True,\n         \"launcher_entry\": {\"title\": \"Open MATLAB\", \"icon_path\": icon_path},\n     }\n+\n+    # Add token_hash information to the request_headers_override option to\n+    # ensure requests from jupyter to matlab-proxy are automatically authenticated.\n+    # We are using token_hash instead of raw token for better security.\n+    if _mwi_auth_token:\n+        jsp_config[\"request_headers_override\"] = {\n+            \"mwi_auth_token\": _mwi_auth_token.get(\"token_hash\")\n+        }\n+\n+    return jsp_config"
+        },
+        {
+            "filename": "tests/unit/test_jupyter_server_proxy.py",
+            "diff": "@@ -1,23 +1,61 @@\n-# Copyright 2020-2021 The MathWorks, Inc.\n+# Copyright 2020-2023 The MathWorks, Inc.\n \n-import os, inspect\n-import matlab_proxy, jupyter_matlab_proxy\n+import inspect\n+import os\n from pathlib import Path\n+\n+import matlab_proxy\n from matlab_proxy.util.mwi import environment_variables as mwi_env\n+\n+import jupyter_matlab_proxy\n from jupyter_matlab_proxy.jupyter_config import config\n \n \n+def test_get_auth_token():\n+    \"\"\"Tests if _get_auth_token() function returns a token and token_hash as a dict by default.\"\"\"\n+    r = jupyter_matlab_proxy._get_auth_token()\n+    assert r != None\n+    assert r.get(\"token\") != None\n+    assert r.get(\"token_hash\") != None\n+\n+\n+def test_get_auth_token_with_token_auth_disabled(monkeypatch):\n+    \"\"\"Tests if _get_auth_token() function returns None if token authentication is explicitly disabled.\"\"\"\n+    monkeypatch.setenv(mwi_env.get_env_name_enable_mwi_auth_token(), \"False\")\n+    r = jupyter_matlab_proxy._get_auth_token()\n+    assert r == None\n+\n+\n def test_get_env():\n     \"\"\"Tests if _get_env() method returns the expected enviroment settings as a dict.\"\"\"\n \n     port = 10000\n     base_url = \"/foo/\"\n     r = jupyter_matlab_proxy._get_env(port, base_url)\n-    assert r[mwi_env.get_env_name_app_port()] == str(port)\n-    assert r[mwi_env.get_env_name_base_url()] == f\"{base_url}matlab\"\n+    assert r.get(mwi_env.get_env_name_app_port()) == str(port)\n+    assert r.get(mwi_env.get_env_name_base_url()) == f\"{base_url}matlab\"\n+    assert r.get(mwi_env.get_env_name_enable_mwi_auth_token()) == \"True\"\n+    assert r.get(\n+        mwi_env.get_env_name_mwi_auth_token()\n+    ) == jupyter_matlab_proxy._mwi_auth_token.get(\"token\")\n+\n+\n+def test_get_env_with_token_auth_disabled(monkeypatch):\n+    \"\"\"Tests if _get_env() method returns the expected enviroment settings as a dict\n+    when token authentication is explicitly disabled.\n+    \"\"\"\n+\n+    port = 10000\n+    base_url = \"/foo/\"\n+    monkeypatch.setattr(jupyter_matlab_proxy, \"_mwi_auth_token\", None)\n+    r = jupyter_matlab_proxy._get_env(port, base_url)\n+    assert r.get(mwi_env.get_env_name_app_port()) == str(port)\n+    assert r.get(mwi_env.get_env_name_base_url()) == f\"{base_url}matlab\"\n+    assert r.get(mwi_env.get_env_name_enable_mwi_auth_token()) == None\n+    assert r.get(mwi_env.get_env_name_mwi_auth_token()) == None\n \n \n-def test_setup_matlab():\n+def test_setup_matlab(monkeypatch):\n     \"\"\"Tests for a valid Server Process Configuration Dictionary\n \n     This test checks if the jupyter proxy returns the expected Server Process Configuration\n@@ -27,6 +65,41 @@ def test_setup_matlab():\n     package_path = Path(inspect.getfile(jupyter_matlab_proxy)).parent\n     icon_path = package_path / \"icon_open_matlab.svg\"\n \n+    expected_matlab_setup = {\n+        \"command\": [\n+            matlab_proxy.get_executable_name(),\n+            \"--config\",\n+            config[\"extension_name\"],\n+        ],\n+        \"timeout\": 100,\n+        \"environment\": jupyter_matlab_proxy._get_env,\n+        \"absolute_url\": True,\n+        \"launcher_entry\": {\n+            \"title\": \"Open MATLAB\",\n+            \"icon_path\": icon_path,\n+        },\n+        \"request_headers_override\": {\n+            \"mwi_auth_token\": jupyter_matlab_proxy._mwi_auth_token.get(\"token_hash\"),\n+        },\n+    }\n+\n+    actual_matlab_setup = jupyter_matlab_proxy.setup_matlab()\n+\n+    assert expected_matlab_setup == actual_matlab_setup\n+    assert os.path.isfile(actual_matlab_setup[\"launcher_entry\"][\"icon_path\"])\n+\n+\n+def test_setup_matlab_with_token_auth_disabled(monkeypatch):\n+    \"\"\"Tests for a valid Server Process Configuration Dictionary\n+\n+    This test checks if the jupyter proxy returns the expected Server Process Configuration\n+    Dictionary for the Matlab process when token authentication is explicitly disabled.\n+    \"\"\"\n+    # Setup\n+    package_path = Path(inspect.getfile(jupyter_matlab_proxy)).parent\n+    icon_path = package_path / \"icon_open_matlab.svg\"\n+    monkeypatch.setattr(jupyter_matlab_proxy, \"_mwi_auth_token\", None)\n+\n     expected_matlab_setup = {\n         \"command\": [\n             matlab_proxy.get_executable_name(),"
+        }
+    ],
+    "commitTime": "2023-10-05 09:50:17"
+}

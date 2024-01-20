@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-14 22:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-JS-LEDGERHQCONNECTKIT-6127404",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "js",
+    "malicious": true,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-15 08:58:40",
+    "remediation": "Avoid using all malicious instances of the @ledgerhq/connect-kit package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "@ledgerhq/connect-kit is a malicious package. This package contains obfuscated crypto drainer code. This is a type of malware that executes unauthorized cryptocurrency transactions to transfer assets to attacker-controlled wallets. Note: To interface with Ledger's browser extension, decentralized application frontends (dApps) include a code snippet from Ledger, executed via a connect-kit-loader proxy. This proxy dynamically fetches and executes the latest version of connect-kit from npm. Hence, once the malicious versions were published to npm, any dApp using the official connect-kit-loader would inadvertently pull a malicious version when the user selected the Ledger Wallet Provider. "
+    },
+    "source_code": []
+}

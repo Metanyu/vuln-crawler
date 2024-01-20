@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Daniel Beck"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.0",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2022-05-14 01:39:42",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.33904",
+        "probability": "0.00081"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGJENKINSCIPLUGINS-6129126",
+    "identifiers": {
+        "CVE": [
+            "CVE-2018-1000417"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 15:14:35",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "org.jenkins-ci.plugins:email-ext is a plugin that allows you to configure every aspect of email notifications. Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the ExtEmailTemplateManagement process. An attacker can manipulate the plugin to create or remove email templates without proper authorization by sending a crafted request. "
+    },
+    "source_code": [
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/emailext_template/ExtEmailTemplateManagement.java",
+            "diff": "@@ -13,6 +13,7 @@\n import org.kohsuke.stapler.QueryParameter;\r\n import org.kohsuke.stapler.StaplerRequest;\r\n import org.kohsuke.stapler.StaplerResponse;\r\n+import org.kohsuke.stapler.interceptor.RequirePOST;\r\n \r\n \r\n @Extension\r\n@@ -93,13 +94,15 @@ public void doEditTemplate(StaplerRequest req, StaplerResponse rsp, @QueryParame\n      * @return forward to 'index'\r\n      * @throws IOException\r\n      */\r\n+    @RequirePOST\r\n     public HttpResponse doRemoveTemplate(StaplerRequest res, StaplerResponse rsp, @QueryParameter(\"id\") String templateId) throws IOException {\r\n         checkPermission(Jenkins.ADMINISTER);\r\n         ExtendedEmailTemplatePublisher.DescriptorImpl descriptor = getPublisherDescriptor();\r\n         descriptor.removeTemplateById(templateId);\r\n         return new HttpRedirect(\"index\");\r\n     }\r\n-    \r\n+\r\n+    @RequirePOST\r\n     public HttpResponse doSaveTemplate(StaplerRequest req) {\r\n         checkPermission(Jenkins.ADMINISTER);\r\n         try {\r"
+        },
+        {
+            "filename": "src/main/resources/org/jenkinsci/plugins/emailext_template/ExtEmailTemplateManagement/index.groovy",
+            "diff": "@@ -46,9 +46,12 @@ l.layout(permission:app.ADMINISTER, norefresh: true) {\n             a(href:\"editTemplate?id=${t.id}\") {\r\n               img(width:\"16\", height:\"16\", title:_(\"Edit template\")+\" \"+t.name, src:\"${imagesURL}/16x16/document_edit.gif\")\r\n             }\r\n-            a(href:\"removeTemplate?id=${t.id}\", onclick:\"return emailexttemplate_confirmDelete('${t.name}')\") {\r\n+            a(href:\"removeTemplate?id=${t.id}\", onclick:\"return emailexttemplate_confirmDelete('${t.name}', '${t.id}')\") {\r\n               img(width:\"16\", height:\"16\", title:_(\"Remove template\")+\" \"+t.name, src:\"${imagesURL}/16x16/edit-delete.gif\")\r\n             }\r\n+            form(method: \"post\", action: \"removeTemplate\", id:\"removeForm\") {\r\n+              input(type: \"hidden\", \"name\": \"id\", id:\"removeId\")\r\n+            }\r\n           }\r\n           td {\r\n             b(t.name)\r\n@@ -61,12 +64,12 @@ l.layout(permission:app.ADMINISTER, norefresh: true) {\n       }\r\n     }\r\n     \r\n-    script(\"function emailexttemplate_confirmDelete(name) {\\n\" +\r\n+    script(\"function emailexttemplate_confirmDelete(name, id) {\\n\" +\r\n         \"if (confirm(\\\"Are you sure you want to delete [\\\"+name+\\\"]?\\\")) {\\n\" +\r\n-        \"    return true;\\n\" +\r\n-        \"}else{\\n\" +\r\n-        \"    return false;\\n\" +\r\n+            \"document.getElementById('removeId').value = id;\\n\" +\r\n+            \"document.getElementById('removeForm').submit();\\n\" +\r\n         \"}\\n\" +\r\n-        \"}\\n\")  \r\n+        \"return false;\\n\" +\r\n+        \"}\\n\")\r\n   }\r\n }\n\\ No newline at end of file"
+        }
+    ],
+    "commitTime": "2018-09-12 22:39:38"
+}

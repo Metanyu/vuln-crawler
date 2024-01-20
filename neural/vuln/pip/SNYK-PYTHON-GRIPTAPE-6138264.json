@@ -1,0 +1,54 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Tong Liu"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-11-01 06:31:09",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-GRIPTAPE-6138264",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-94"
+        ],
+        "PVE": [
+            "PVE-2023-61648"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 13:37:11",
+    "remediation": "Upgrade griptape to version 0.18.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Remote Code Execution (RCE)",
+    "vulnDescription": {
+        "Overview": "griptape is a Modular Python framework for LLM workflows, tools, memory, and data. Affected versions of this package are vulnerable to Remote Code Execution (RCE) due to the usage of the unsafe exec function. "
+    },
+    "source_code": [
+        {
+            "filename": "griptape/tools/calculator/requirements.txt",
+            "diff": "@@ -0,0 +1 @@\n+numexpr"
+        },
+        {
+            "filename": "griptape/tools/calculator/tool.py",
+            "diff": "@@ -1,7 +1,6 @@\n from griptape.artifacts import BaseArtifact, ErrorArtifact, TextArtifact\n from griptape.tools import BaseTool\n from griptape.utils.decorators import activity\n-import griptape.utils as utils\n from schema import Schema, Literal\n \n \n@@ -18,9 +17,11 @@ class Calculator(BaseTool):\n         })\n     })\n     def calculate(self, params: dict) -> BaseArtifact:\n+        import numexpr\n+\n         try:\n             expression = params[\"values\"][\"expression\"]\n \n-            return TextArtifact(utils.PythonRunner().run(expression))\n+            return TextArtifact(numexpr.evaluate(expression))\n         except Exception as e:\n             return ErrorArtifact(f\"error calculating: {e}\")"
+        }
+    ],
+    "commitTime": "2023-09-25 16:29:40"
+}

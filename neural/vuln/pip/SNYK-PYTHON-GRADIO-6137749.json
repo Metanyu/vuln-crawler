@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.6,
+    "disclosureTime": "2023-12-21 18:24:28",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-GRADIO-6137749",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51449"
+        ],
+        "CWE": [
+            "CWE-22",
+            "CWE-918"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 19:53:15",
+    "remediation": "Upgrade gradio to version 4.11.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Server-side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "gradio is a Python library for easily interacting with trained machine learning models Affected versions of this package are vulnerable to Server-side Request Forgery (SSRF) or path traversal allowing arbitrary file reads, via the /file route. This is exploitable using e.g. the --path-as-is option to curl , but not from a browser. "
+    },
+    "source_code": [
+        {
+            "filename": ".changeset/tough-zoos-move.md",
+            "diff": "@@ -0,0 +1,5 @@\n+---\n+\"gradio\": minor\n+---\n+\n+feat:Prevent file traversals"
+        },
+        {
+            "filename": "gradio/utils.py",
+            "diff": "@@ -932,7 +932,7 @@ def is_in_or_equal(path_1: str | Path, path_2: str | Path):\n     \"\"\"\n     path_1, path_2 = abspath(path_1), abspath(path_2)\n     try:\n-        if str(path_1.relative_to(path_2)).startswith(\"..\"):  # prevent path traversal\n+        if \"..\" in str(path_1.relative_to(path_2)):  # prevent path traversal\n             return False\n     except ValueError:\n         return False"
+        },
+        {
+            "filename": "test/test_utils.py",
+            "diff": "@@ -403,6 +403,7 @@ def test_is_in_or_equal():\n     assert is_in_or_equal(\"/home/usr/notes.txt\", \"/home/usr/\")\n     assert not is_in_or_equal(\"/home/usr/subdirectory\", \"/home/usr/notes.txt\")\n     assert not is_in_or_equal(\"/home/usr/../../etc/notes.txt\", \"/home/usr/\")\n+    assert not is_in_or_equal(\"/safe_dir/subdir/../../unsafe_file.txt\", \"/safe_dir/\")\n \n \n @pytest.mark.parametrize("
+        }
+    ],
+    "commitTime": "2023-12-18 22:30:22"
+}

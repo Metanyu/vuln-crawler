@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2024-01-01 06:33:57",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.36124",
+        "probability": "0.00087"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-KEYSTONEJSONASSIGNMENT-6141471",
+    "identifiers": {
+        "CVE": [
+            "CVE-2019-3683"
+        ],
+        "CWE": [
+            "CWE-266"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-02 14:01:00",
+    "remediation": "Upgrade keystone-json-assignment to version 0.0.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Incorrect Privilege Assignment",
+    "vulnDescription": {
+        "Overview": "keystone-json-assignment is a JSON Backend for the Keystone Assignment Driver Affected versions of this package are vulnerable to Incorrect Privilege Assignment by assigning every user listed in /etc/keystone/user-project-map.json full \"member\" role access to every project, allowing these users to access, modify, create and delete arbitrary resources. "
+    },
+    "source_code": [
+        {
+            "filename": "keystone_json_assignment/json.py",
+            "diff": "@@ -179,17 +179,18 @@ def list_role_assignments(self, role_id=None,\n         if user_id:\n             # Filtering on user\n             if user_id in self.useridmap:\n-                projects = self.userprojectmap.get(self.useridmap[user_id])\n-                if projects:\n-                    for project in projects:\n-                        role_assignments.append({\n-                            'role_id': self.role_id,\n-                            'user_id': user_id,\n-                            'project_id': project\n-                        })\n-            # If user is not in the map then this is probably not an LDAP user\n-            # so just return the SQL grants\n+                user = self.useridmap[user_id]\n+                for project in self.userprojectmap.get(user, []):\n+                    # Filter projects that user is not part of\n+                    if project_ids and project not in project_ids:\n+                        continue\n+                    role_assignments.append({\n+                        'role_id': self.role_id,\n+                        'user_id': user_id,\n+                        'project_id': project\n+                    })\n             return role_assignments\n+\n         for user, projects in self.userprojectmap.items():\n             expected_role_assignments = []\n             for project in projects:"
+        }
+    ],
+    "commitTime": "2019-02-18 11:37:03"
+}

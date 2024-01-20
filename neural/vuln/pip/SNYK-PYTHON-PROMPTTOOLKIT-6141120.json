@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.7,
+    "disclosureTime": "2024-01-01 06:37:02",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-PROMPTTOOLKIT-6141120",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-62817"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 08:36:56",
+    "remediation": "Upgrade prompt-toolkit to version 3.0.13 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Race Condition due to improper lock implementation in ThreadedHistory which could lead to a deadlock. "
+    },
+    "source_code": [
+        {
+            "filename": "prompt_toolkit/history.py",
+            "diff": "@@ -12,7 +12,7 @@\n import os\n import threading\n from abc import ABCMeta, abstractmethod\n-from typing import AsyncGenerator, Iterable, List, Optional, Sequence\n+from typing import AsyncGenerator, Iterable, List, Optional, Sequence, Tuple\n \n __all__ = [\n     \"History\",\n@@ -158,18 +158,14 @@ async def load(self) -> AsyncGenerator[str, None]:\n                     continue\n \n                 # Read new items (in lock).\n-                # (Important: acquiring the lock should happen *in* the try\n-                # block. Otherwise it's not guaranteed it will ever be\n-                # released. This can happen when this coroutine is cancelled at\n-                # an \"await\" point. This did actually happen when continuously\n-                # pasting huge amounts of text in ptpython.)\n-                try:\n-                    await loop.run_in_executor(None, self._lock.acquire)\n-                    new_items = self._loaded_strings[items_yielded:]\n-                    done = self._loaded\n-                    event.clear()\n-                finally:\n-                    self._lock.release()\n+                def in_executor() -> Tuple[List[str], bool]:\n+                    with self._lock:\n+                        new_items = self._loaded_strings[items_yielded:]\n+                        done = self._loaded\n+                        event.clear()\n+                    return new_items, done\n+\n+                new_items, done = await loop.run_in_executor(None, in_executor)\n \n                 items_yielded += len(new_items)\n "
+        }
+    ],
+    "commitTime": "2021-01-22 11:40:59"
+}

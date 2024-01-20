@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "X1r0z"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 10,
+    "disclosureTime": "2024-01-03 10:51:29",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEINLONG-6142627",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51784"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-03 12:33:14",
+    "remediation": "Upgrade org.apache.inlong:manager-web to version 1.10.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Control of Generation of Code ('Code Injection')",
+    "vulnDescription": {
+        "Overview": "org.apache.inlong:manager-web is an one-stop integration framework for massive data Affected versions of this package are vulnerable to Improper Control of Generation of Code ('Code Injection') due to insufficient validation of user-supplied parameters. An attacker can execute arbitrary code by injecting malicious input into the code generation process. "
+    },
+    "source_code": [
+        {
+            "filename": "inlong-manager/manager-pojo/src/main/java/org/apache/inlong/manager/pojo/audit/AuditSourceRequest.java",
+            "diff": "@@ -25,6 +25,7 @@\n import lombok.NoArgsConstructor;\n \n import javax.validation.constraints.NotBlank;\n+import javax.validation.constraints.Pattern;\n \n /**\n  * Audit source request\n@@ -45,6 +46,7 @@ public class AuditSourceRequest {\n     private String type;\n \n     @NotBlank\n+    @Pattern(regexp = \"^(jdbc:(mysql|clickhouse)://[\\\\w.]+(:\\\\d+)?/[\\\\w]+(\\\\?.*)?|http://[\\\\w.]+(:\\\\d+)?(/[\\\\w]+)+(/\\\\d+(-\\\\d+)?(,\\\\d+(-\\\\d+)?)*)?)\", message = \"only supports MYSQL, CLICKHOUSE, ELASTICSEARCH url\")\n     @ApiModelProperty(value = \"Audit source URL, for MYSQL or CLICKHOUSE, is jdbcUrl, and for ELASTICSEARCH is the access URL with hostname:port\", required = true)\n     private String url;\n "
+        },
+        {
+            "filename": "inlong-manager/manager-web/src/main/java/org/apache/inlong/manager/web/controller/AuditController.java",
+            "diff": "@@ -65,7 +65,7 @@ public Response<Boolean> refreshCache() {\n \n     @ApiOperation(value = \"Update the audit source\")\n     @PostMapping(value = \"/audit/updateSource\")\n-    public Response<Integer> updateAuditSource(@RequestBody AuditSourceRequest request) {\n+    public Response<Integer> updateAuditSource(@Valid @RequestBody AuditSourceRequest request) {\n         return Response.success(auditService.updateAuditSource(request, LoginUserUtils.getLoginUser().getName()));\n     }\n "
+        }
+    ],
+    "commitTime": "2023-11-27 02:38:36"
+}

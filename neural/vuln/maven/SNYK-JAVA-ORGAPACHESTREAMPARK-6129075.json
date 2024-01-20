@@ -1,0 +1,97 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-15 13:46:47",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06936",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHESTREAMPARK-6129075",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-30867"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 15:04:53",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to SQL Injection. An attacker can cause information leakage by supplying malicious parameters to the jobName field. "
+    },
+    "source_code": [
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/core/ApplicationMapper.xml",
+            "diff": "@@ -161,10 +161,10 @@\n                 and t.execution_mode = #{application.executionMode}\n             </if>\n             <if test=\"application.jobName != null and application.jobName != ''\">\n-                and t.job_name like '%${application.jobName}%'\n+                and t.job_name like concat('%',#{application.jobName},'%')\n             </if>\n             <if test=\"application.projectName != null and application.projectName != ''\">\n-                and p.name like '%${application.projectName}%'\n+                and p.name like concat('%',#{application.projectName},'%')\n             </if>\n             <if test=\"application.appId != null and application.appId != ''\">\n                 and t.app_id = #{application.appId}\n@@ -183,7 +183,7 @@\n                 </foreach>\n             </if>\n             <if test=\"application.tags != null and application.tags != ''\">\n-                and t.tags like '%${application.tags}%'\n+                and t.tags like concat('%',#{application.tags},'%')\n             </if>\n         </where>\n     </select>"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/core/ProjectMapper.xml",
+            "diff": "@@ -73,7 +73,7 @@\n         <where>\n             t.team_id = #{project.teamId}\n             <if test=\"project.name != null and project.name != ''\">\n-                and t.name like '%${project.name}%'\n+                and t.name like concat('%',#{project.name},'%')\n             </if>\n             <if test=\"project.buildState != null\">\n                 and t.build_state = #{project.buildState}"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/core/VariableMapper.xml",
+            "diff": "@@ -36,12 +36,12 @@\n         from t_variable v\n         inner join t_user u\n         on v.creator_id = u.user_id\n-        and v.team_id = ${variable.teamId}\n+        and v.team_id = #{variable.teamId}\n         <if test=\"variable.description != null and variable.description != ''\">\n-            and v.description like '%${variable.description}%'\n+            and v.description like concat('%',#{variable.description},'%')\n         </if>\n         <if test=\"variable.variableCode != null and variable.variableCode != ''\">\n-            and v.variable_code like '%${variable.variableCode}%'\n+            and v.variable_code like concat('%',#{variable.variableCode},'%')\n         </if>\n     </select>\n "
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/core/YarnQueueMapper.xml",
+            "diff": "@@ -33,7 +33,7 @@\n                 team_id = #{yarnQueue.teamId}\n             </if>\n             <if test=\"yarnQueue.queueLabel != null and yarnQueue.queueLabel != ''\">\n-                and queue_label like '%${yarnQueue.queueLabel}%'\n+                and queue_label like concat('%',#{yarnQueue.queueLabel},'%')\n             </if>\n             <if test=\"yarnQueue.createTimeFrom != null and yarnQueue.createTimeFrom !=''\">\n                 and create_time &gt; #{yarnQueue.createTimeFrom}"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/system/MemberMapper.xml",
+            "diff": "@@ -49,12 +49,12 @@\n         join t_role r\n         on r.role_id = tur.role_id\n         <where>\n-            tur.team_id = ${member.teamId}\n+            tur.team_id = #{member.teamId}\n             <if test=\"member.userName != null and member.userName != ''\">\n-                and u.username like '%${member.userName}%'\n+                and u.username like concat('%',#{member.userName},'%')\n             </if>\n             <if test=\"member.roleName != null and member.roleName != ''\">\n-                and r.role_name = '${member.roleName}'\n+                and r.role_name = #{member.roleName}\n             </if>\n             <if test=\"member.createTimeFrom != null and member.createTimeFrom !=''\">\n                 and tur.create_time &gt; #{member.createTimeFrom}"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/system/RoleMapper.xml",
+            "diff": "@@ -29,7 +29,7 @@\n         select * from t_role\n         <where>\n             <if test=\"role.roleName != null and role.roleName != ''\">\n-                and role_name like '%${role.roleName}%'\n+                and role_name like concat('%',#{role.roleName},'%')\n             </if>\n             <if test=\"role.createTimeFrom != null and role.createTimeFrom !=''\">\n                 and  create_time &gt; #{role.createTimeFrom}"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/system/TeamMapper.xml",
+            "diff": "@@ -29,7 +29,7 @@\n         select * from t_team\n         <where>\n             <if test=\"team.teamName != null and team.teamName != ''\">\n-                and team_name like '%${team.teamName}%'\n+                and team_name like concat('%',#{team.teamName},'%')\n             </if>\n             <if test=\"team.createTimeFrom != null and team.createTimeFrom !=''\">\n                 and create_time &gt; #{team.createTimeFrom}"
+        },
+        {
+            "filename": "streampark-console/streampark-console-service/src/main/resources/mapper/system/UserMapper.xml",
+            "diff": "@@ -38,7 +38,7 @@\n         select * from t_user\n         <where>\n             <if test=\"user.username != null and user.username != ''\">\n-                and username like '%${user.username}%'\n+                and username like concat('%',#{user.username},'%')\n             </if>\n             <if test=\"user.createTimeFrom != null and user.createTimeFrom !=''\">\n                 and create_time &gt; #{user.createTimeFrom}"
+        }
+    ],
+    "commitTime": "2023-12-03 02:48:07"
+}

@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2024-01-01 06:33:26",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-INTERNETARCHIVE-6141253",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-367"
+        ],
+        "PVE": [
+            "PVE-2023-63160"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-02 13:49:11",
+    "remediation": "Upgrade internetarchive to version 3.1.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Time-of-check Time-of-use (TOCTOU) Race Condition",
+    "vulnDescription": {
+        "Overview": "internetarchive is an A Python interface to archive.org. Affected versions of this package are vulnerable to Time-of-check Time-of-use (TOCTOU) Race Condition due to simultaneous read attempts on multiple threads, which could lead to unauthorized information exposure. "
+    },
+    "source_code": [
+        {
+            "filename": "internetarchive/files.py",
+            "diff": "@@ -199,8 +199,11 @@ def download(self, file_path=None, verbose=None, ignore_existing=None,\n         file_path = file_path or self.name\n \n         if destdir:\n-            if not os.path.exists(destdir) and return_responses is not True:\n-                os.mkdir(destdir)\n+            if return_responses is not True:\n+                try:\n+                    os.mkdir(destdir)\n+                except FileExistsError:\n+                    pass\n             if os.path.isfile(destdir):\n                 raise OSError(f'{destdir} is not a directory!')\n             file_path = os.path.join(destdir, file_path)\n@@ -233,12 +236,10 @@ def download(self, file_path=None, verbose=None, ignore_existing=None,\n                     return\n \n         parent_dir = os.path.dirname(file_path)\n-        if parent_dir != '' \\\n-                and not os.path.exists(parent_dir) \\\n-                and return_responses is not True:\n-            os.makedirs(parent_dir)\n-\n         try:\n+            if parent_dir != '' and return_responses is not True:\n+                os.makedirs(parent_dir, exist_ok=True)\n+\n             response = self.item.session.get(self.url,\n                                              stream=True,\n                                              timeout=12,\n@@ -272,8 +273,10 @@ def download(self, file_path=None, verbose=None, ignore_existing=None,\n         except (RetryError, HTTPError, ConnectTimeout, OSError, ReadTimeout) as exc:\n             msg = f'error downloading file {file_path}, exception raised: {exc}'\n             log.error(msg)\n-            if os.path.exists(file_path):\n+            try:\n                 os.remove(file_path)\n+            except OSError:\n+                pass\n             if verbose:\n                 print(f' {msg}', file=sys.stderr)\n             if ignore_errors:"
+        }
+    ],
+    "commitTime": "2023-01-03 18:36:10"
+}

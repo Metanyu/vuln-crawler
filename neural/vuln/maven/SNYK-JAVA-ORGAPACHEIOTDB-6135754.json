@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-21 12:48:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12071",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEIOTDB-6135754",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51656"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-21 13:19:04",
+    "remediation": "Upgrade org.apache.iotdb:iotdb-server to version 1.0.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Deserialization of Untrusted Data",
+    "vulnDescription": {
+        "Details": "Serialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like Remote Method Invocation (RMI) , Java Management Extension (JMX) , Java Messaging System (JMS) , Action Message Format (AMF) , Java Server Faces (JSF) ViewState , etc. Deserialization of untrusted data ( CWE-502 ) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution. ",
+        "Overview": "org.apache.iotdb:iotdb-server is a data management system for time series data, which can provide users specific services, such as, data collection, storage and analysis. Affected versions of this package are vulnerable to Deserialization of Untrusted Data due to the use of deviceOwnerInput.readObject() . An attacker can execute arbitrary code in the form of a malicious device_Owner file. "
+    },
+    "source_code": [
+        {
+            "filename": "server/src/main/java/org/apache/iotdb/db/sync/receiver/load/FileLoaderManager.java",
+            "diff": "@@ -29,12 +29,11 @@\n import org.slf4j.Logger;\n import org.slf4j.LoggerFactory;\n \n+import java.io.BufferedReader;\n import java.io.File;\n-import java.io.FileInputStream;\n-import java.io.FileOutputStream;\n+import java.io.FileReader;\n+import java.io.FileWriter;\n import java.io.IOException;\n-import java.io.ObjectInputStream;\n-import java.io.ObjectOutputStream;\n import java.util.HashMap;\n import java.util.Map;\n import java.util.Set;\n@@ -139,10 +138,17 @@ private void updateDeviceOwner(String curOwner, Set<String> deviceSet) throws IO\n \n   private void deSerializeDeviceOwnerMap(File deviceOwnerFile)\n       throws IOException, ClassNotFoundException {\n-    try (FileInputStream fis = new FileInputStream(deviceOwnerFile);\n-        ObjectInputStream deviceOwnerInput = new ObjectInputStream(fis)) {\n-      deviceOwnerMap = (Map<String, String>) deviceOwnerInput.readObject();\n+    Map<String, String> finalMap = new HashMap<>();\n+    try (BufferedReader reader = new BufferedReader(new FileReader(deviceOwnerFile))) {\n+      reader\n+          .lines()\n+          .forEach(\n+              o -> {\n+                String[] entry = o.split(\" \");\n+                finalMap.put(entry[0], entry[1]);\n+              });\n     }\n+    deviceOwnerMap = finalMap;\n   }\n \n   private void serializeDeviceOwnerMap(File deviceOwnerFile) throws IOException {\n@@ -152,9 +158,15 @@ private void serializeDeviceOwnerMap(File deviceOwnerFile) throws IOException {\n     if (!deviceOwnerFile.exists()) {\n       deviceOwnerFile.createNewFile();\n     }\n-    try (FileOutputStream fos = new FileOutputStream(deviceOwnerFile, false);\n-        ObjectOutputStream deviceOwnerOutput = new ObjectOutputStream(fos)) {\n-      deviceOwnerOutput.writeObject(deviceOwnerMap);\n+    try (FileWriter writer = new FileWriter(deviceOwnerFile)) {\n+      deviceOwnerMap.forEach(\n+          (k, v) -> {\n+            try {\n+              writer.write(k + \" \" + v + System.lineSeparator());\n+            } catch (IOException e) {\n+              throw new RuntimeException(e);\n+            }\n+          });\n     }\n   }\n "
+        }
+    ],
+    "commitTime": "2023-02-07 07:31:34"
+}

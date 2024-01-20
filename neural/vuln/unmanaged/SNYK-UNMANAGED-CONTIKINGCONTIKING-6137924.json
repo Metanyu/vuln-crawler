@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2020-12-11 22:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.39718",
+        "probability": "0.00095"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137924",
+    "identifiers": {
+        "CVE": [
+            "CVE-2020-13984"
+        ],
+        "CWE": [
+            "CWE-835"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:38:57",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS). An issue was discovered in Contiki through 3.0. An infinite loop exists in the uIP TCP/IP stack component when processing IPv6 extension headers in ext_hdr_options_process in net/ipv6/uip6.c. "
+    },
+    "source_code": []
+}

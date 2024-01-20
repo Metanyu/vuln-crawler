@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "@SWW13",
+        "@Scepticz"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2023-03-19 11:24:15",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.33930",
+        "probability": "0.00081"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137911",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-28116"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:01:20",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-Bounds",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-Bounds in the BLE L2CAP module of the Contiki-NG operating system. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/mac/ble/ble-l2cap.c",
+            "diff": "@@ -593,6 +593,10 @@ PROCESS_THREAD(ble_l2cap_tx_process, ev, data)\n         }\n \n         /* copy payload */\n+        if(data_len > PACKETBUF_SIZE - packetbuf_hdrlen()) {\n+          LOG_WARN(\"Not enough packetbuf space to copy buffer\\n\");\n+          continue;\n+        }\n         memcpy(packetbuf_dataptr(),\n                &channel->tx_buffer.sdu[channel->tx_buffer.current_index],\n                data_len);"
+        },
+        {
+            "filename": "os/net/mac/ble/ble-l2cap.h",
+            "diff": "@@ -73,7 +73,11 @@\n #ifdef BLE_L2CAP_CONF_NODE_MTU\n #define BLE_L2CAP_NODE_MTU      BLE_L2CAP_CONF_NODE_MTU\n #else\n-#define BLE_L2CAP_NODE_MTU              1280\n+#define BLE_L2CAP_NODE_MTU      PACKETBUF_SIZE\n+#endif\n+\n+#if BLE_L2CAP_NODE_MTU > PACKETBUF_SIZE\n+#error BLE_L2CAP_NODE_MTU exceeds the PACKETBUF_SIZE\n #endif\n \n /* the max. supported L2CAP fragment length */"
+        }
+    ],
+    "commitTime": "2023-03-01 13:47:56"
+}

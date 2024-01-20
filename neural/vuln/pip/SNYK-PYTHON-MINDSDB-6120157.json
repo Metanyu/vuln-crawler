@@ -1,0 +1,82 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Sylwia Budzynska"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-12 00:49:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14009",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MINDSDB-6120157",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49796"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-12 14:52:39",
+    "remediation": "Upgrade MindsDB to version 23.11.4.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "MindsDB is a MindsDB server, provides server capabilities to mindsdb native python library Affected versions of this package are vulnerable to Improper Input Validation due to insufficient validation of user-supplied input in the put method. An attacker can write files to arbitrary locations on the server by manipulating the name value, which is incorporated into the filename of a temporary file that is subsequently opened for writing. "
+    },
+    "source_code": [
+        {
+            "filename": "mindsdb/api/http/namespaces/file.py",
+            "diff": "@@ -14,6 +14,7 @@\n from mindsdb.utilities.config import Config\n from mindsdb.utilities.context import context as ctx\n from mindsdb.utilities import log\n+from mindsdb.utilities.security import is_private_url, clear_filename\n \n logger = log.getLogger(__name__)\n \n@@ -51,7 +52,7 @@ def on_field(field):\n \n         def on_file(file):\n             nonlocal file_object\n-            data[\"file\"] = file.file_name.decode()\n+            data[\"file\"] = clear_filename(file.file_name.decode())\n             file_object = file.file_object\n \n         temp_dir_path = tempfile.mkdtemp(prefix=\"mindsdb_file_\")\n@@ -91,10 +92,15 @@ def on_file(file):\n \n         if data.get(\"source_type\") == \"url\":\n             url = data[\"source\"]\n-            data[\"file\"] = data[\"name\"]\n+            data[\"file\"] = clear_filename(data[\"name\"])\n \n             config = Config()\n             is_cloud = config.get(\"cloud\", False)\n+            if is_cloud and is_private_url(url):\n+                return http_error(\n+                    400, f'URL is private: {url}'\n+                )\n+\n             if is_cloud is True and ctx.user_class != 1:\n                 info = requests.head(url)\n                 file_size = info.headers.get(\"Content-Length\")\n@@ -123,7 +129,7 @@ def on_file(file):\n                     for chunk in r.iter_content(chunk_size=8192):\n                         f.write(chunk)\n \n-        original_file_name = data.get(\"original_file_name\")\n+        original_file_name = clear_filename(data.get(\"original_file_name\"))\n \n         file_path = os.path.join(temp_dir_path, data[\"file\"])\n         lp = file_path.lower()"
+        },
+        {
+            "filename": "mindsdb/integrations/handlers/llama_index_handler/llama_index_handler.py",
+            "diff": "@@ -13,6 +13,7 @@\n \n from mindsdb.integrations.libs.base import BaseMLEngine\n from mindsdb.utilities.config import Config\n+from mindsdb.utilities.security import is_private_url\n \n \n def _validate_prompt_template(prompt_template: str):\n@@ -69,7 +70,13 @@ def create(self, target: str, df: Optional[pd.DataFrame] = None, args: Optional[\n             if 'source_url_link' not in args['using']:\n                 raise Exception(\"SimpleWebPageReader requires a `source_url_link` parameter. Refer to LlamaIndex documentation for more details.\")  # noqa\n \n-            reader = SimpleWebPageReader(html_to_text=True).load_data([args['using']['source_url_link']])\n+            url = args['using']['source_url_link']\n+            config = Config()\n+            is_cloud = config.get(\"cloud\", False)\n+            if is_cloud and is_private_url(url):\n+                raise Exception(f'URL is private: {url}')\n+\n+            reader = SimpleWebPageReader(html_to_text=True).load_data([url])\n \n         else:\n             raise Exception(f\"Invalid operation mode. Please use one of {self.supported_reader}.\")"
+        },
+        {
+            "filename": "mindsdb/integrations/handlers/web_handler/web_handler.py",
+            "diff": "@@ -10,6 +10,8 @@\n     HandlerResponse as Response,\n     RESPONSE_TYPE\n )\n+from mindsdb.utilities.security import is_private_url\n+from mindsdb.utilities.config import Config\n \n from .urlcrawl_helpers import get_df_from_query_str, get_all_websites\n \n@@ -37,7 +39,9 @@ def select(self, query: ast.Select) -> pd.DataFrame:\n                         urls = url\n                 else:\n                     raise NotImplementedError(\n-                        f'url can be url = \"someurl\", you can also crawl multiple sites, as follows: url IN (\"url1\", \"url2\", ..)')\n+                        f'url can be url = \"someurl\", you can also crawl multiple sites, as follows:'\n+                        f' url IN (\"url1\", \"url2\", ..)'\n+                    )\n \n             else:\n                 pass\n@@ -52,7 +56,16 @@ def select(self, query: ast.Select) -> pd.DataFrame:\n \n         if limit < 0:\n             limit = 0\n-            \n+\n+        config = Config()\n+        is_cloud = config.get(\"cloud\", False)\n+        if is_cloud:\n+            urls = [\n+                url\n+                for url in urls\n+                if not is_private_url(url)\n+            ]\n+\n         result = get_all_websites(urls, limit, html=False)\n         if len(result) > limit:\n             result = result[:limit]"
+        },
+        {
+            "filename": "mindsdb/utilities/security.py",
+            "diff": "@@ -0,0 +1,33 @@\n+from urllib.parse import urlparse\n+import socket\n+import ipaddress\n+\n+\n+def is_private_url(url: str):\n+    \"\"\"\n+    Raises exception if url is private\n+\n+    :param url: url to check\n+    \"\"\"\n+\n+    hostname = urlparse(url).hostname\n+    if not hostname:\n+        # Unable find hostname in url\n+        return True\n+    ip = socket.gethostbyname(hostname)\n+    return ipaddress.ip_address(ip).is_private\n+\n+\n+def clear_filename(filename: str):\n+    \"\"\"\n+    Removes path symbols from filename which could be used for path injection\n+    :param s:\n+    :return:\n+    \"\"\"\n+\n+    if not filename:\n+        return filename\n+    badchars = '\\\\/:*?\\\"<>|'\n+    for c in badchars:\n+        filename = filename.replace(c, '')\n+    return filename"
+        }
+    ],
+    "commitTime": "2023-11-29 13:02:18"
+}

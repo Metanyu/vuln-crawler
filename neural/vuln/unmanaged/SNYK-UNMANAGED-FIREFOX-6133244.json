@@ -1,0 +1,99 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Andrew McCreight",
+        "Karl Tomlinson",
+        "Valentin Gosu",
+        "Randell Jesup",
+        "Yury Delendik"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.42899",
+        "probability": "0.00106"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOX-6133244",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6864"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 15:09:49",
+    "remediation": "Upgrade Firefox to version 121.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Copy without Checking Size of Input ('Classic Buffer Overflow') due to memory corruption issues. An attacker can potentially exploit these to execute arbitrary code by manipulating memory layout or contents in a way that triggers a buffer overflow or similar memory-related error. "
+    },
+    "source_code": []
+}

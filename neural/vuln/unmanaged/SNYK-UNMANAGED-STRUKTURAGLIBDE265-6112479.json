@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Yuchuan Meng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-07 20:45:18",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23888",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBDE265-6112479",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49468"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 13:20:58",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via the read_coding_unit function at slice.cc file. "
+    },
+    "source_code": [
+        {
+            "filename": "libde265/image.h",
+            "diff": "@@ -624,7 +624,14 @@ struct de265_image {\n \n   enum IntraPredMode get_IntraPredMode(int x,int y) const\n   {\n-    return (enum IntraPredMode)intraPredMode.get(x,y);\n+    uint8_t ipm = intraPredMode.get(x,y);\n+\n+    // sanitize values if IPM is uninitialized (because of earlier read error)\n+    if (ipm > 34) {\n+      ipm = 0;\n+    }\n+\n+    return static_cast<enum IntraPredMode>(ipm);\n   }\n \n   enum IntraPredMode get_IntraPredMode_atIndex(int idx) const"
+        }
+    ],
+    "commitTime": "2023-11-23 18:11:34"
+}

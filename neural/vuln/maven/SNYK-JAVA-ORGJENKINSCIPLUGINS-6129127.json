@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.0",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Daniel Beck"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.0",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2022-05-14 01:39:42",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.33904",
+        "probability": "0.00081"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGJENKINSCIPLUGINS-6129127",
+    "identifiers": {
+        "CVE": [
+            "CVE-2018-1000414"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 15:16:36",
+    "remediation": "Upgrade org.jenkins-ci.plugins:config-file-provider to version 3.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the ConfigFilesManagement and FolderConfigFileAction classes. An attacker can manipulate the application's state by tricking an authenticated user into submitting a forged request. "
+    },
+    "source_code": [
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/configfiles/ConfigFilesManagement.java",
+            "diff": "@@ -47,6 +47,7 @@ of this software and associated documentation files (the \"Software\"), to deal\n import org.kohsuke.stapler.StaplerProxy;\n import org.kohsuke.stapler.StaplerRequest;\n import org.kohsuke.stapler.StaplerResponse;\n+import org.kohsuke.stapler.verb.POST;\n \n /**\n  * Provides a new link in the \"Manage Jenkins\" view and builds the UI to manage the configfiles.\n@@ -131,6 +132,7 @@ public Collection<Config> getConfigs() {\n      * @param req\n      * @return\n      */\n+    @POST\n     public HttpResponse doSaveConfig(StaplerRequest req) {\n         checkPermission(Hudson.ADMINISTER);\n         try {\n@@ -189,6 +191,7 @@ public void doEditConfig(StaplerRequest req, StaplerResponse rsp, @QueryParamete\n      * @throws IOException\n      * @throws ServletException\n      */\n+    @POST\n     public void doAddConfig(StaplerRequest req, StaplerResponse rsp, @QueryParameter(\"providerId\") String providerId, @QueryParameter(\"configId\") String configId) throws IOException, ServletException {\n         checkPermission(Hudson.ADMINISTER);\n "
+        },
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/configfiles/folder/FolderConfigFileAction.java",
+            "diff": "@@ -41,6 +41,7 @@\n \n import jenkins.model.TransientActionFactory;\n import net.sf.json.JSONObject;\n+import org.kohsuke.stapler.verb.POST;\n \n public class FolderConfigFileAction implements Action, ConfigFilesUIContract, StaplerProxy {\n \n@@ -116,6 +117,7 @@ public List<ConfigProvider> getProviders() {\n     }\n \n     @Override\n+    @POST\n     public HttpResponse doSaveConfig(StaplerRequest req) throws IOException, ServletException {\n         checkPermission(Item.CONFIGURE);\n         try {\n@@ -175,6 +177,7 @@ public void doEditConfig(StaplerRequest req, StaplerResponse rsp, @QueryParamete\n \n \n     @Override\n+    @POST\n     public void doAddConfig(StaplerRequest req, StaplerResponse rsp, @QueryParameter(\"providerId\") String providerId, @QueryParameter(\"configId\") String configId) throws IOException, ServletException {\n         checkPermission(Item.CONFIGURE);\n "
+        },
+        {
+            "filename": "src/main/resources/lib/configfiles/configfiles.jelly",
+            "diff": "@@ -37,7 +37,7 @@ THE SOFTWARE.\n                 <tr valign=\"center\" style=\"border-top: 0px;\">\n                     <td class=\"pane-header\" colspan=\"2\">\n                         <i>\n-                            <j:out value=\"${pEntry.key.displayName}\"/>\n+                            ${pEntry.key.displayName}\n                         </i>\n                     </td>\n                 </tr>\n@@ -56,16 +56,16 @@ THE SOFTWARE.\n                         </td>\n                         <td>\n                             <i>\n-                                <j:out value=\"${t.name}\"/>\n+                                ${t.name}\n                             </i>\n                         </td>\n                     </tr>\n                     <tr>\n                         <td>\n-                            <j:out value=\"${t.contentType}\"/>\n+                            ${t.contentType}\n                         </td>\n                         <td>\n-                            <j:out value=\"${t.comment}\"/>\n+                            ${t.comment}\n                         </td>\n                     </tr>\n                 </j:forEach>"
+        },
+        {
+            "filename": "src/main/resources/lib/configfiles/providerlist.jelly",
+            "diff": "@@ -36,7 +36,7 @@ THE SOFTWARE.\n             <table class=\"pane\">\n                 <tr valign=\"center\" style=\"border-top: 0px;\">\n                     <td class=\"pane-header\" colspan=\"2\">\n-                        <i><j:out value=\"${p.displayName}\" /></i>\n+                        <i>${p.displayName}</i>\n                     </td>\n                 </tr>\n                 <j:forEach var=\"t\" items=\"${p.allConfigs}\">\n@@ -53,12 +53,12 @@ THE SOFTWARE.\n                             </a>\n                         </td>\n                         <td >\n-                            <i><j:out value=\"${t.name}\" /></i>\n+                            <i>${t.name}</i>\n                         </td>\n                     </tr>\n                     <tr>\n-                        <td><j:out value=\"${t.contentType}\" /></td>\n-                        <td><j:out value=\"${t.comment}\" /></td>\n+                        <td>${t.contentType}</td>\n+                        <td>${t.comment}</td>\n                     </tr>\n                 </j:forEach>\n             </table>"
+        }
+    ],
+    "commitTime": "2018-09-12 08:30:00"
+}

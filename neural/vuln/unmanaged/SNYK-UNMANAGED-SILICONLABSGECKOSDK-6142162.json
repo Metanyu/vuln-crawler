@@ -1,0 +1,42 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.3,
+    "disclosureTime": "2024-01-02 17:56:44",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SILICONLABSGECKOSDK-6142162",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4280"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 11:44:11",
+    "remediation": "There is no fixed version for SiliconLabs/gecko_sdk . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation due to an unvalidated input in the TrustZone implementation. An attacker can access the trusted region of memory from the untrusted region. "
+    },
+    "source_code": []
+}

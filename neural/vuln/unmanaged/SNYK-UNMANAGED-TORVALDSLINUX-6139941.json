@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-26 00:43:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.17111",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6139941",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51781"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-27 12:51:16",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free in the atalk_ioctl function in net/appletalk/ddp.c file. This can cause a race condition within atalk_recvmsg() function. "
+    },
+    "source_code": [
+        {
+            "filename": "net/appletalk/ddp.c",
+            "diff": "@@ -1775,15 +1775,14 @@ static int atalk_ioctl(struct socket *sock, unsigned int cmd, unsigned long arg)\n \t\tbreak;\n \t}\n \tcase TIOCINQ: {\n-\t\t/*\n-\t\t * These two are safe on a single CPU system as only\n-\t\t * user tasks fiddle here\n-\t\t */\n-\t\tstruct sk_buff *skb = skb_peek(&sk->sk_receive_queue);\n+\t\tstruct sk_buff *skb;\n \t\tlong amount = 0;\n \n+\t\tspin_lock_irq(&sk->sk_receive_queue.lock);\n+\t\tskb = skb_peek(&sk->sk_receive_queue);\n \t\tif (skb)\n \t\t\tamount = skb->len - sizeof(struct ddpehdr);\n+\t\tspin_unlock_irq(&sk->sk_receive_queue.lock);\n \t\trc = put_user(amount, (int __user *)argp);\n \t\tbreak;\n \t}"
+        }
+    ],
+    "commitTime": "2023-12-14 11:02:45"
+}

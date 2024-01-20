@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "CHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-01-28 19:49:35",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12394",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137913",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-23609"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:06:49",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write in the input_l2cap_frame_flow_channel() function in ble-l2cap.c . When fragments are reassembled in the BLE-L2CAP module they are stored in a packet buffer of a configurable size, but there is no check to verify that the packet buffer is large enough to hold the reassembled packet. An out-of-bounds write of up to 1152 bytes is possible. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/mac/ble/ble-l2cap.c",
+            "diff": "@@ -452,6 +452,12 @@ input_l2cap_frame_flow_channel(l2cap_channel_t *channel, uint8_t *data, uint16_t\n \n   if((channel->rx_buffer.sdu_length > 0) &&\n      (channel->rx_buffer.sdu_length == channel->rx_buffer.current_index)) {\n+    if(channel->rx_buffer.sdu_length > packetbuf_remaininglen()) {\n+      LOG_WARN(\"l2cap_frame: illegal L2CAP frame sdu_length: %\"PRIu16\"\\n\",\n+               channel->rx_buffer.sdu_length);\n+      return;\n+    }\n+\n     /* do not use packetbuf_copyfrom here because the packetbuf_attr\n      * must not be cleared */\n     memcpy(packetbuf_dataptr(), channel->rx_buffer.sdu, channel->rx_buffer.sdu_length);"
+        }
+    ],
+    "commitTime": "2022-11-04 15:35:38"
+}

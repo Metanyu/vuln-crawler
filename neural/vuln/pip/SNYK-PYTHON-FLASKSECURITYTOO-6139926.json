@@ -1,0 +1,108 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Brandon T. Elliott"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-26 22:52:24",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06930",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-FLASKSECURITYTOO-6139926",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49438"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-27 08:54:15",
+    "remediation": "Upgrade Flask-Security-Too to version 5.3.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Open Redirect",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Open Redirect via the the /login and /register routes, using the ?next parameter. Note: With Werkzeug >=2.1.0 the autocorrect_location_header configuration was changed to False - which means that location headers in redirects are relative by default. Thus, this issue may impact applications that were previously not impacted, if they are using Werkzeug >=2.1.0 as the WSGI layer. ",
+        "PoC": "https://example/login?next=/\\github.com https://example/login?next=\\/github.com ",
+        "Workaround": "Adding these configuration options to your app will mitigate all currently known examples: app.config['SECURITY_REDIRECT_VALIDATE_MODE'] = \"regex\" app.config['SECURITY_REDIRECT_VALIDATE_RE'] = r\"^/{4}|\\\\{3}|[\\s\\000-\\037][/\\\\]{2}(?![/\\\\])|[/\\\\]([^/\\\\]|/[^/\\\\])*[/\\\\].*\" Note: The vulnerability present in this library and represented by CVE-2021-32618 , was insufficiently assessed and a case was missed, leading to the current vulnerability. The fix commit from this advisory is strictly for this library. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGES.rst",
+            "diff": "@@ -19,6 +19,7 @@ Fixes\n +++++\n \n - (:issue:`845`) us-signin magic link should use fs_uniquifier (not email)\n+- (:issue:`893`) Once again work on open-redirect vulnerability - this time due to newer Werkzeug\n - (:pr:`873`) Update Spanish and Italian translations (gissimo)\n - (:pr:`877`) Make AnonymousUser optional and deprecated\n - (:issue:`875`) user_datastore.create_user has side effects on mutable inputs (NoRePercussions)"
+        },
+        {
+            "filename": "docs/configuration.rst",
+            "diff": "@@ -279,46 +279,27 @@ These configuration keys are used globally across all features.\n \n .. py:data:: SECURITY_REDIRECT_VALIDATE_MODE\n \n-    These 2 configuration options attempt to solve a open-redirect vulnerability\n-    that can be exploited if an application sets the Werkzeug response option\n-    ``autocorrect_location_header = False`` (it is ``True`` by default).\n-    For numerous views (e.g. /login) Flask-Security allows callers to specify\n-    a redirect upon successful completion (via the ?next parameter). So it is\n-    possible for a user to be tricked into logging in to a legitimate site\n-    and then redirected to a malicious site. Flask-Security attempts to\n-    verify that redirects are always relative to overcome this security concern.\n-    FS uses the standard Python library urlsplit() to parse the URL and verify\n-    that the ``netloc`` hasn't been altered.\n-    However, many browsers actually accept URLs that should be considered\n-    relative and perform various stripping and conversion that can cause them\n-    to be interpreted as absolute. A trivial example of this is:\n-\n-    .. line-block::\n-        /login?next=%20///github.com\n-\n-    This will pass the urlsplit() test that it is relative - but many browsers\n-    will simply strip off the space and interpret it as an absolute URL!\n-    With the default configuration of Werkzeug this isn't an issue since it by\n-    default modifies the Location Header to with the request ``netloc``. However\n-    if the application sets the Werkzeug response option\n-    ``autocorrect_location_header = False`` this will allow a redirect outside of\n-    the application.\n-\n-    Setting this to ``\"regex\"`` will force the URL to be matched using the\n-    pattern specified below. If a match occurs the URL is considered 'absolute'\n-    and will be rejected.\n+    Defines how Flask-Security will attempt to mitigate an open redirect\n+    vulnerability w.r.t. client supplied `next` parameters.\n+    Please see :ref:`redirect_topic` for a complete discussion.\n+\n+    Current options include `\"absolute\"` and `\"regex\"`. A list is allowed.\n \n-    Default: ``None``\n+\n+    Default: ``[\"absolute\"]``\n \n     .. versionadded:: 4.0.2\n \n+    .. versionchanged:: 5.4.0\n+        Default is now `\"absolute\"` and now takes a list.\n+\n .. py:data:: SECURITY_REDIRECT_VALIDATE_RE\n \n     This regex handles known patterns that can be exploited. Basically,\n     don't allow control characters or white-space followed by slashes (or\n     back slashes).\n \n-    Default: ``r\"^/{4,}|\\\\{3,}|[\\s\\000-\\037][/\\\\]{2,}\"``\n+    Default: ``r\"^/{4,}|\\\\{3,}|[\\s\\000-\\037][/\\\\]{2,}(?![/\\\\])|[/\\\\]([^/\\\\]|/[^/\\\\])*[/\\\\].*\"``\n \n     .. versionadded:: 4.0.2\n "
+        },
+        {
+            "filename": "docs/patterns.rst",
+            "diff": "@@ -93,6 +93,60 @@ can be protected by requiring a 'fresh' or recent authentication. Flask-Security\n \n Flask-Security itself uses this as part of securing the :ref:`unified-sign-in`, :ref:`two-factor`, and :ref:`webauthn` setup endpoints.\n \n+.. _redirect_topic:\n+\n+Open Redirect Exposure\n+~~~~~~~~~~~~~~~~~~~~~~~\n+Flask-Security, accepts a ``next=xx`` parameter (either\n+as a query param OR in the POSTed form) which it will use when completing an operation\n+which results in a redirection. If a malicious user/\n+application can inject an arbitrary ``next`` parameter which redirects to an external\n+location, this results in a security vulnerability called an `open redirect`.\n+The following endpoints accept a ``next`` parameter::\n+\n+- .login (\"/login\")\n+- .logout (\"/logout\")\n+- .register (\"/register\")\n+- .verify (\"/verify\")\n+- .two_factor_token_validation (\"/tf-validate\")\n+- .wan_verify_response (\"/wan-verify\")\n+- .wan_signin_response (\"/wan-signin\")\n+- .us_signin (\"/us-signin\")\n+- .us_verify (\"/us-verify\")\n+\n+\n+Flask-Security attempts to verify that redirects are always relative.\n+FS uses the standard Python library urlsplit() to parse the URL and verify\n+that the ``netloc`` hasn't been altered.\n+However, many browsers actually accept URLs that should be considered\n+relative and perform various stripping and conversions that can cause them\n+to be interpreted as absolute. A trivial example of this is:\n+\n+.. line-block::\n+    /login?next=%20///github.com\n+\n+This will pass the urlsplit() test that it is relative - but many browsers\n+will simply strip off the space and interpret it as an absolute URL!\n+\n+Prior to Werkzeug 2.1, Werkzeug set the response configuration variable\n+``autocorrect_location_header = True`` which forced the response `Location`\n+header to always be an absolute path - thus effectively squashing any open\n+redirect possibility. However since 2.1 it is now `False`.\n+\n+Flask Security offers\n+2 mitigations for this via the :py:data:`SECURITY_REDIRECT_VALIDATE_MODE` and\n+:py:data:`SECURITY_REDIRECT_VALIDATE_RE` configuration variables.\n+\n+- The first mode - `\"absolute\"`, which is the default, is to once again set Werkzeug's ``autocorrect_location_header``\n+  to ``True``. Please note that this is set JUST for Flask-Security's blueprint - not all requests.\n+- With the second mode - `\"regex\"` - FS uses a regular expression to validate all ``next`` parameters to make sure\n+  they will be interpreted as `relative`. Be aware that the default regular\n+  expression is based on in-the-field testing and it is quite possible that there\n+  are other crafted relative URLs that could escape detection.\n+\n+:py:data:`SECURITY_REDIRECT_VALIDATE_MODE` actually takes a list - so both\n+mechanisms can be specified.\n+\n .. _pass_validation_topic:\n \n Password Validation and Complexity"
+        },
+        {
+            "filename": "flask_security/core.py",
+            "diff": "@@ -197,8 +197,8 @@\n     \"REDIRECT_HOST\": None,\n     \"REDIRECT_BEHAVIOR\": None,\n     \"REDIRECT_ALLOW_SUBDOMAINS\": False,\n-    \"REDIRECT_VALIDATE_MODE\": None,\n-    \"REDIRECT_VALIDATE_RE\": r\"^/{4,}|\\\\{3,}|[\\s\\000-\\037][/\\\\]{2,}\",\n+    \"REDIRECT_VALIDATE_MODE\": [\"absolute\"],\n+    \"REDIRECT_VALIDATE_RE\": r\"^/{4,}|\\\\{3,}|[\\s\\000-\\037][/\\\\]{2,}(?![/\\\\])|[/\\\\]([^/\\\\]|/[^/\\\\])*[/\\\\].*\",  # noqa: E501\n     \"FORGOT_PASSWORD_TEMPLATE\": \"security/forgot_password.html\",\n     \"LOGIN_USER_TEMPLATE\": \"security/login_user.html\",\n     \"REGISTER_USER_TEMPLATE\": \"security/register_user.html\",\n@@ -1432,10 +1432,6 @@ def init_app(\n         self._username_util = self.username_util_cls(app)\n         self._webauthn_util = self.webauthn_util_cls(app)\n         self._mf_recovery_codes_util = self.mf_recovery_codes_util_cls(app)\n-        rvre = cv(\"REDIRECT_VALIDATE_RE\", app=app)\n-        if rvre:\n-            self._redirect_validate_re = re.compile(rvre)\n-\n         self.remember_token_serializer = _get_serializer(app, \"remember\")\n         self.login_serializer = _get_serializer(app, \"login\")\n         self.reset_serializer = _get_serializer(app, \"reset\")\n@@ -1531,10 +1527,32 @@ def init_app(\n         if cv(\"OAUTH_ENABLE\", app=app):\n             self.oauthglue = OAuthGlue(app, self._oauth)\n \n+        redirect_validate_mode = cv(\"REDIRECT_VALIDATE_MODE\", app=app) or []\n+        if redirect_validate_mode:\n+            # should be \"regex\" or \"absolute\" or a list of those\n+            if not isinstance(redirect_validate_mode, list):\n+                redirect_validate_mode = [redirect_validate_mode]\n+            if all([m in [\"regex\", \"absolute\"] for m in redirect_validate_mode]):\n+                if \"regex\" in redirect_validate_mode:\n+                    rvre = cv(\"REDIRECT_VALIDATE_RE\", app=app)\n+                    if rvre:\n+                        self._redirect_validate_re = re.compile(rvre)\n+                    else:\n+                        raise ValueError(\"Must specify REDIRECT_VALIDATE_RE\")\n+            else:\n+                raise ValueError(\"Invalid value(s) for REDIRECT_VALIDATE_MODE\")\n+\n+        def autocorrect(r):\n+            # By setting this (Werkzeug) avoids any open-redirect issues.\n+            r.autocorrect_location_header = True\n+            return r\n+\n         # register our blueprint/endpoints\n         bp = None\n         if self.register_blueprint:\n             bp = create_blueprint(app, self, __name__)\n+            if \"absolute\" in redirect_validate_mode:\n+                bp.after_request(autocorrect)\n             self.two_factor_plugins.create_blueprint(app, bp, self)\n             if self.oauthglue:\n                 self.oauthglue._create_blueprint(app, bp)"
+        },
+        {
+            "filename": "tests/test_common.py",
+            "diff": "@@ -22,6 +22,7 @@\n from tests.test_utils import (\n     authenticate,\n     capture_flashes,\n+    check_location,\n     get_auth_token_version_3x,\n     get_form_action,\n     get_num_queries,\n@@ -224,13 +225,13 @@ def test_login_form_username(client):\n \n \n @pytest.mark.settings(username_enable=True, username_required=True)\n-def test_login_form_username_required(client):\n+def test_login_form_username_required(app, client):\n     # If username required - we should still be able to login with email alone\n     # given default user_identity_attributes\n     response = client.post(\n         \"/login\", data=dict(email=\"matt@lp.com\", password=\"password\")\n     )\n-    assert response.location == \"/\"\n+    assert check_location(app, response.location, \"/\")\n \n \n @pytest.mark.confirmable()"
+        },
+        {
+            "filename": "tests/test_confirmable.py",
+            "diff": "@@ -22,6 +22,7 @@\n     authenticate,\n     capture_flashes,\n     capture_registrations,\n+    check_location,\n     is_authenticated,\n     logout,\n     populate_data,\n@@ -469,7 +470,7 @@ def test_auto_login(app, client, get_message):\n \n     token = registrations[0][\"confirm_token\"]\n     response = client.get(\"/confirm/\" + token, follow_redirects=False)\n-    assert \"/postlogin\" == response.location\n+    assert check_location(app, response.location, \"/postlogin\")\n     assert is_authenticated(client, get_message)\n \n "
+        },
+        {
+            "filename": "tests/test_misc.py",
+            "diff": "@@ -25,6 +25,7 @@\n     authenticate,\n     capture_flashes,\n     capture_reset_password_requests,\n+    check_location,\n     check_xlation,\n     get_csrf_token,\n     init_app_with_options,\n@@ -1117,7 +1118,7 @@ def test_verify_fresh(app, client, get_message):\n     response = client.post(\n         verify_url, data=dict(password=\"password\"), follow_redirects=False\n     )\n-    assert response.location == \"/fresh\"\n+    assert check_location(app, response.location, \"/fresh\")\n \n     # should be fine now\n     response = client.get(\"/fresh\", follow_redirects=True)\n@@ -1301,6 +1302,27 @@ def test_post_security_with_application_root_and_views(app, sqlalchemy_datastore\n     assert \"/post_logout\" in response.location\n \n \n+def test_invalid_redirect_config(app, sqlalchemy_datastore, get_message):\n+    with pytest.raises(ValueError):\n+        init_app_with_options(\n+            app,\n+            sqlalchemy_datastore,\n+            **{\"SECURITY_REDIRECT_VALIDATE_MODE\": [\"regex\", \"bogus\"]},\n+        )\n+\n+\n+def test_invalid_redirect_re(app, sqlalchemy_datastore, get_message):\n+    with pytest.raises(ValueError):\n+        init_app_with_options(\n+            app,\n+            sqlalchemy_datastore,\n+            **{\n+                \"SECURITY_REDIRECT_VALIDATE_MODE\": [\"regex\"],\n+                \"SECURITY_REDIRECT_VALIDATE_RE\": None,\n+            },\n+        )\n+\n+\n @pytest.mark.settings(redirect_validate_mode=\"regex\")\n def test_validate_redirect(app, sqlalchemy_datastore):\n     \"\"\"\n@@ -1314,9 +1336,24 @@ def test_validate_redirect(app, sqlalchemy_datastore):\n         assert not validate_redirect_url(\"\\\\\\\\\\\\github.com\")\n         assert not validate_redirect_url(\" //github.com\")\n         assert not validate_redirect_url(\"\\t//github.com\")\n+        assert not validate_redirect_url(r\"/\\github.com\")\n+        assert not validate_redirect_url(r\"\\/github.com\")\n         assert not validate_redirect_url(\"//github.com\")  # this is normal urlsplit\n \n \n+@pytest.mark.settings(post_login_view=\"\\\\\\\\\\\\github.com\")\n+def test_validate_redirect_default(app, client):\n+    \"\"\"\n+    Test various possible URLs that urlsplit() shows as relative but\n+    many browsers will interpret as absolute - and thus have a\n+    open-redirect vulnerability. This tests the default configuration for\n+    Flask-Security, Flask, Werkzeug\n+    \"\"\"\n+    authenticate(client)\n+    response = client.get(\"/login\", follow_redirects=False)\n+    assert response.location.startswith(\"http://localhost\")\n+\n+\n def test_kwargs():\n     import warnings\n "
+        },
+        {
+            "filename": "tests/test_two_factor.py",
+            "diff": "@@ -27,6 +27,7 @@\n     authenticate,\n     capture_flashes,\n     capture_send_code_requests,\n+    check_location,\n     check_xlation,\n     get_form_action,\n     get_session,\n@@ -813,7 +814,7 @@ def on_identity_changed(app, identity):\n     # Validate token - this should complete 2FA setup\n     response = client.post(\"/tf-validate\", data=dict(code=code), follow_redirects=True)\n     assert b\"You successfully changed\" in response.data\n-    assert response.history[0].location == \"/tf-setup\"\n+    assert check_location(app, response.history[0].location, \"/tf-setup\")\n \n     # Upon completion, session cookie shouldnt have any two factor stuff in it.\n     session = get_session(response)\n@@ -1293,7 +1294,7 @@ def test_verify(app, client, get_message):\n     # Test setup when re-authenticate required\n     authenticate(client)\n     response = client.get(\"tf-setup\", follow_redirects=False)\n-    assert response.location == \"/verify?next=/tf-setup\"\n+    assert check_location(app, response.location, \"/verify?next=/tf-setup\")\n     logout(client)\n \n     # Now try again - follow redirects to get to verify form\n@@ -1320,7 +1321,8 @@ def test_verify(app, client, get_message):\n             follow_redirects=False,\n         )\n         assert response.status_code == 302\n-        assert response.location == \"/tf-setup\"\n+        assert check_location(app, response.location, \"/tf-setup\")\n+\n     assert get_message(\"REAUTHENTICATION_SUCCESSFUL\") == flashes[0][\"message\"].encode(\n         \"utf-8\"\n     )\n@@ -1445,7 +1447,7 @@ def test_post_setup_redirect(app, client):\n \n     # Validate token - this should complete 2FA setup\n     response = client.post(\"/tf-validate\", data=dict(code=code), follow_redirects=False)\n-    assert response.location == \"/post_setup_view\"\n+    assert check_location(app, response.location, \"/post_setup_view\")\n \n \n @pytest.mark.app_settings(babel_default_locale=\"fr_FR\")"
+        },
+        {
+            "filename": "tests/test_unified_signin.py",
+            "diff": "@@ -26,6 +26,7 @@\n     authenticate,\n     capture_flashes,\n     capture_reset_password_requests,\n+    check_location,\n     check_xlation,\n     get_form_action,\n     is_authenticated,\n@@ -457,7 +458,7 @@ def test_us_passwordless_confirm_json(app, client, get_message):\n     matcher = re.findall(r\"\\w+:.*\", outbox[0].body, re.IGNORECASE)\n     link = matcher[0].split(\":\", 1)[1]\n     response = client.get(link, headers=headers, follow_redirects=False)\n-    assert response.location == \"/login\"\n+    assert check_location(app, response.location, \"/login\")\n \n     # should be able to authenticate now.\n     response = client.post(\n@@ -989,7 +990,7 @@ def test_verify(app, client, get_message):\n     us_authenticate(client)\n     response = client.get(\"us-setup\", follow_redirects=False)\n     verify_url = response.location\n-    assert verify_url == \"/us-verify?next=/us-setup\"\n+    assert check_location(app, response.location, \"/us-verify?next=/us-setup\")\n     logout(client)\n     us_authenticate(client)\n \n@@ -1020,7 +1021,7 @@ def test_verify(app, client, get_message):\n \n     code = sms_sender.messages[0].split()[-1].strip(\".\")\n     response = client.post(verify_url, data=dict(passcode=code), follow_redirects=False)\n-    assert response.location == \"/us-setup\"\n+    assert check_location(app, response.location, \"/us-setup\")\n \n \n def test_verify_json(app, client, get_message):"
+        },
+        {
+            "filename": "tests/test_utils.py",
+            "diff": "@@ -27,6 +27,7 @@\n     us_security_token_sent,\n )\n from flask_security.utils import hash_data, hash_password\n+from flask_security.utils import config_value as cv\n \n from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer\n from werkzeug.http import parse_cookie\n@@ -63,6 +64,16 @@ def is_authenticated(client, get_message):\n     raise ValueError(\"Failed to figure out if authenticated\")\n \n \n+def check_location(app, location, expected_base):\n+    # verify response location. This can be absolute or relative based\n+    # on configuration\n+    redirect_validate_mode = cv(\"REDIRECT_VALIDATE_MODE\", app=app) or []\n+    if \"absolute\" in redirect_validate_mode:\n+        return location == f\"http://localhost{expected_base}\"\n+    else:\n+        return location == expected_base\n+\n+\n def verify_token(client_nc, token, status=None):\n     # Use passed auth token in API that requires auth and verify status.\n     # Pass in a client_nc to get valid results."
+        }
+    ],
+    "commitTime": "2023-12-28 02:17:22"
+}

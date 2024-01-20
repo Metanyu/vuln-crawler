@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "vultza"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.1,
+    "disclosureTime": "2023-12-12 12:06:57",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMMATTERMOSTMATTERMOSTSERVER-6117643",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6727"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 13:49:48",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "github.com/mattermost/mattermost-server is an open source Slack-alternative in Golang and React. Affected versions of this package are vulnerable to Information Exposure due to improper authorization checks when creating a playbook action. An attacker with limited privileges can leak sensitive playbook information, such as the playbook's name, by creating a playbook action that posts a message in a channel triggered by specific keywords. "
+    },
+    "source_code": []
+}

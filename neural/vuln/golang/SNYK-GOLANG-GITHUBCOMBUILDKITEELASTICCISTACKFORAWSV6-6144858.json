@@ -1,0 +1,90 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Nick Nam"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-22 12:31:50",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMBUILDKITEELASTICCISTACKFORAWSV6-6144858",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-43116"
+        ],
+        "CWE": [
+            "CWE-59"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-05 14:02:13",
+    "remediation": "Upgrade github.com/buildkite/elastic-ci-stack-for-aws/v6 to version 6.7.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Link Resolution Before File Access ('Link Following')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Link Resolution Before File Access ('Link Following') via the PIPELINE_PATH variable in the fix-buildkite-agent-builds-permissions script. An attacker can change ownership of arbitrary directories by exploiting this vulnerability. "
+    },
+    "source_code": [
+        {
+            "filename": "docker-compose.unit-tests.yml",
+            "diff": "@@ -2,8 +2,8 @@ version: '3'\n \n services:\n   unit-tests:\n-    image: lucor/bats\n+    image: bats/bats\n     volumes:\n-      - .:/src:ro\n-    working_dir: /src\n-    command: bats /src/unit-tests/\n\\ No newline at end of file\n+      - .:/code:ro\n+      - ./unit-tests/fixtures:/var/lib/buildkite-agent/builds:ro\n+    command: /code/unit-tests\n\\ No newline at end of file"
+        },
+        {
+            "filename": "packer/linux/conf/buildkite-agent/scripts/fix-buildkite-agent-builds-permissions",
+            "diff": "@@ -1,4 +1,4 @@\n-#!/bin/bash\n+#!/usr/bin/env bash\n \n # To run the unit tests for this file, run the following command in the root of\n # the project:\n@@ -71,15 +71,30 @@ exit_if_blank \"${AGENT_DIR}\"\n exit_if_blank \"${ORG_DIR}\"\n exit_if_blank \"${PIPELINE_DIR}\"\n \n-# If we make it here, we're safe to go!\n-\n # We know the builds path:\n BUILDS_PATH=\"/var/lib/buildkite-agent/builds\"\n \n # And now we can reconstruct the full agent builds path:\n PIPELINE_PATH=\"${BUILDS_PATH}/${AGENT_DIR}/${ORG_DIR}/${PIPELINE_DIR}\"\n # => \"/var/lib/buildkite-agent/builds/my-agent-1/my-org/my-pipeline\"\n \n-if [[ -e \"${PIPELINE_PATH}\" ]]; then\n-\t/bin/chown -R buildkite-agent:buildkite-agent \"${PIPELINE_PATH}\"\n+# If it doesn't exist, then we won't do anything.\n+if [[ ! -e \"${PIPELINE_PATH}\" ]]; then\n+\texit 0\n+fi\n+\n+\n+# Check for symlink shenanigans\n+if [[ \"$(realpath \"${PIPELINE_PATH}\")\" != \"${PIPELINE_PATH}\" ]]; then\n+\texit 4\n fi\n+\n+# It should be a directory.\n+if [[ ! -d \"${PIPELINE_PATH}\" ]]; then\n+\texit 5\n+fi\n+\n+# If we make it here, we're safe to go!\n+\n+/bin/chown -R buildkite-agent:buildkite-agent \"${PIPELINE_PATH}\"\n+"
+        },
+        {
+            "filename": "unit-tests/fix-buildkite-agent-builds-permissions.bats",
+            "diff": "@@ -1,93 +1,93 @@\n #!/usr/bin/env bats\n \n-FIX_PERMISSIONS_SCRIPT=\"/src/packer/linux/conf/buildkite-agent/scripts/fix-buildkite-agent-builds-permissions\"\n+FIX_PERMISSIONS_SCRIPT=\"/code/packer/linux/conf/buildkite-agent/scripts/fix-buildkite-agent-builds-permissions\"\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (A)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"/\" \"abc\" \"abc\"\n \t[ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (B)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc/\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (C)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"/abc\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (D)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc/def\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (E)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc/def/ghi\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the agent arg cause an exit 1\" {\n+@test \"Slashes in the agent arg cause an exit 1 (F)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"/abc/\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (A)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"/\" \"abc\"\n \t[ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (B)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc/\" \"abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (C)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"/abc\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (D)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc/def\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (E)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc/def/ghi\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the org arg cause an exit 1\" {\n+@test \"Slashes in the org arg cause an exit 1 (F)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"/abc/\" \"abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (A)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"/\"\n \t[ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (B)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"abc/\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (C)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"/abc\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (D)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"abc/def\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (E)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"abc/def/ghi\"\n   [ \"$status\" -eq 1 ]\n }\n \n-@test \"Slashes in the pipeline arg cause an exit 1\" {\n+@test \"Slashes in the pipeline arg cause an exit 1 (F)\" {\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"/abc/\"\n   [ \"$status\" -eq 1 ]\n }\n@@ -136,3 +136,27 @@ FIX_PERMISSIONS_SCRIPT=\"/src/packer/linux/conf/buildkite-agent/scripts/fix-build\n   run \"$FIX_PERMISSIONS_SCRIPT\" \"abc\" \"abc\" \"\"\n   [ \"$status\" -eq 3 ]\n }\n+\n+@test \"Non-existing path is skipped\" {\n+  \"$FIX_PERMISSIONS_SCRIPT\" \"g\" \"h\" \"i\"\n+}\n+\n+@test \"Symlinks in the args cause an exit 4 (A)\" {\n+  run \"$FIX_PERMISSIONS_SCRIPT\" \"link\" \"b\" \"c\"\n+  [ \"$status\" -eq 4 ]\n+}\n+\n+@test \"Symlinks in the args cause an exit 4 (B)\" {\n+  run \"$FIX_PERMISSIONS_SCRIPT\" \"a\" \"link\" \"c\"\n+  [ \"$status\" -eq 4 ]\n+}\n+\n+@test \"Symlinks in the args cause an exit 4 (C)\" {\n+  run \"$FIX_PERMISSIONS_SCRIPT\" \"a\" \"b\" \"link\"\n+  [ \"$status\" -eq 4 ]\n+}\n+\n+@test \"Path not a directory causes an exit 5\" {\n+  run \"$FIX_PERMISSIONS_SCRIPT\" \"d\" \"e\" \"f\"\n+  [ \"$status\" -eq 5 ]\n+}"
+        },
+        {
+            "filename": "unit-tests/fixtures/a/b/link",
+            "diff": "@@ -0,0 +1 @@\n+c\n\\ No newline at end of file"
+        },
+        {
+            "filename": "unit-tests/fixtures/a/link",
+            "diff": "@@ -0,0 +1 @@\n+b\n\\ No newline at end of file"
+        },
+        {
+            "filename": "unit-tests/fixtures/link",
+            "diff": "@@ -0,0 +1 @@\n+a\n\\ No newline at end of file"
+        }
+    ],
+    "commitTime": "2023-09-12 23:26:10"
+}

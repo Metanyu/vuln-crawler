@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-30 02:54:15",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14093",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGJEECGFRAMEWORKBOOT-6140758",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41543"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-31 10:28:23",
+    "remediation": "There is no fixed version for org.jeecgframework.boot:jeecg-boot-base-core . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to SQL Injection via the /sys/replicate/check endpoint. An attacker can escalate privileges and obtain sensitive information by injecting malicious SQL queries. "
+    },
+    "source_code": []
+}

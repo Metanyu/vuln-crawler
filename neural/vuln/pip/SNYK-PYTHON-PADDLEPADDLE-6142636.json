@@ -1,0 +1,67 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.6,
+    "disclosureTime": "2024-01-03 09:44:58",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PADDLEPADDLE-6142636",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52310"
+        ],
+        "CWE": [
+            "CWE-78"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-03 13:55:26",
+    "remediation": "Upgrade paddlepaddle to version 2.6.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "OS Command Injection",
+    "vulnDescription": {
+        "Overview": "paddlepaddle is a Parallel Distributed Deep Learning Affected versions of this package are vulnerable to OS Command Injection via the get_online_pass_interval function. An attacker can execute arbitrary commands on the operating system by supplying malicious input. ",
+        "PoC": "from paddle.incubate.distributed.fleet.fleet_util import FleetUtil fleet_util = FleetUtil() online_pass_interval = fleet_util.get_online_pass_interval( days=\"{20190720..20190729}\", hours=\"9;touch /home/test/aaaa\", split_interval=5, split_per_pass=2, is_data_hourly_placed=False ) "
+    },
+    "source_code": [
+        {
+            "filename": "python/paddle/incubate/distributed/fleet/fleet_util.py",
+            "diff": "@@ -1317,7 +1317,23 @@ def get_online_pass_interval(\n                 ...     is_data_hourly_placed=False)\n \n         \"\"\"\n+        assert (\n+            \"|\" not in days\n+            and \";\" not in days\n+            and \"\\\\\" not in days\n+            and \"/\" not in days\n+            and \"(\" not in days\n+            and \")\" not in days\n+        ), r\"days should not contain [|,;,\\,/,(,)]\"\n         days = os.popen(\"echo -n \" + days).read().split(\" \")\n+        assert (\n+            \"|\" not in hours\n+            and \";\" not in hours\n+            and \"\\\\\" not in hours\n+            and \"/\" not in hours\n+            and \"(\" not in hours\n+            and \")\" not in days\n+        ), r\"hours should not contain [|,;,\\,/,(,)]\"\n         hours = os.popen(\"echo -n \" + hours).read().split(\" \")\n         split_interval = int(split_interval)\n         split_per_pass = int(split_per_pass)"
+        }
+    ],
+    "commitTime": "2023-12-18 06:12:57"
+}

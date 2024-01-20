@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-11-30 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05780",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6102837",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6560"
+        ],
+        "CWE": [
+            "CWE-823"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 13:20:58",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use of Out-of-range Pointer Offset",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use of Out-of-range Pointer Offset in the __io_uaddr_map() function, allowing an attacker to access noncontiguous memory pages without detection. "
+    },
+    "source_code": [
+        {
+            "filename": "io_uring/io_uring.c",
+            "diff": "@@ -2697,6 +2697,7 @@ static void *__io_uaddr_map(struct page ***pages, unsigned short *npages,\n {\n \tstruct page **page_array;\n \tunsigned int nr_pages;\n+\tvoid *page_addr;\n \tint ret, i;\n \n \t*npages = 0;\n@@ -2718,27 +2719,29 @@ static void *__io_uaddr_map(struct page ***pages, unsigned short *npages,\n \t\tio_pages_free(&page_array, ret > 0 ? ret : 0);\n \t\treturn ret < 0 ? ERR_PTR(ret) : ERR_PTR(-EFAULT);\n \t}\n-\t/*\n-\t * Should be a single page. If the ring is small enough that we can\n-\t * use a normal page, that is fine. If we need multiple pages, then\n-\t * userspace should use a huge page. That's the only way to guarantee\n-\t * that we get contigious memory, outside of just being lucky or\n-\t * (currently) having low memory fragmentation.\n-\t */\n-\tif (page_array[0] != page_array[ret - 1])\n-\t\tgoto err;\n \n-\t/*\n-\t * Can't support mapping user allocated ring memory on 32-bit archs\n-\t * where it could potentially reside in highmem. Just fail those with\n-\t * -EINVAL, just like we did on kernels that didn't support this\n-\t * feature.\n-\t */\n+\tpage_addr = page_address(page_array[0]);\n \tfor (i = 0; i < nr_pages; i++) {\n-\t\tif (PageHighMem(page_array[i])) {\n-\t\t\tret = -EINVAL;\n+\t\tret = -EINVAL;\n+\n+\t\t/*\n+\t\t * Can't support mapping user allocated ring memory on 32-bit\n+\t\t * archs where it could potentially reside in highmem. Just\n+\t\t * fail those with -EINVAL, just like we did on kernels that\n+\t\t * didn't support this feature.\n+\t\t */\n+\t\tif (PageHighMem(page_array[i]))\n \t\t\tgoto err;\n-\t\t}\n+\n+\t\t/*\n+\t\t * No support for discontig pages for now, should either be a\n+\t\t * single normal page, or a huge page. Later on we can add\n+\t\t * support for remapping discontig pages, for now we will\n+\t\t * just fail them with EINVAL.\n+\t\t */\n+\t\tif (page_address(page_array[i]) != page_addr)\n+\t\t\tgoto err;\n+\t\tpage_addr += PAGE_SIZE;\n \t}\n \n \t*pages = page_array;"
+        }
+    ],
+    "commitTime": "2023-11-27 15:28:56"
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.1,
+    "disclosureTime": "2023-12-12 03:31:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.33021",
+        "probability": "0.00079"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-SAPXSSEC-6137723",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49583"
+        ],
+        "CWE": [
+            "CWE-264"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-21 15:19:37",
+    "remediation": "Upgrade @sap/xssec to version 3.6.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Privilege Escalation",
+    "vulnDescription": {
+        "Overview": "@sap/xssec is a XS Advanced Container Security API for node.js Affected versions of this package are vulnerable to Privilege Escalation via an authentication bypass. "
+    },
+    "source_code": []
+}

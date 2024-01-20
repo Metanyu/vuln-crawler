@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Yuchuan Meng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-07 20:45:22",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBHEIF-6112459",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49462"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 12:18:50",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the /libheif/exif.cc component. An attacker can cause a denial of service by triggering a segmentation violation. "
+    },
+    "source_code": [
+        {
+            "filename": "libheif/exif.cc",
+            "diff": "@@ -28,7 +28,7 @@\n \n static int32_t read32(const uint8_t* data, int size, int pos, bool littleEndian)\n {\n-  if (pos + 4 > size) {\n+  if (pos > size - 4) {\n     return -1;\n   }\n \n@@ -45,7 +45,7 @@ static int32_t read32(const uint8_t* data, int size, int pos, bool littleEndian)\n \n static int32_t read16(const uint8_t* data, int size, int pos, bool littleEndian)\n {\n-  if (pos + 2 > size) {\n+  if (pos > size - 2) {\n     return -1;\n   }\n \n@@ -62,7 +62,7 @@ static int32_t read16(const uint8_t* data, int size, int pos, bool littleEndian)\n \n static void write16(uint8_t* data, int size, int pos, uint16_t value, bool littleEndian)\n {\n-  if (pos + 2 > size) {\n+  if (pos > size - 2) {\n     return;\n   }\n \n@@ -95,18 +95,18 @@ static int find_exif_tag(const uint8_t* exif, int  size, uint16_t query_tag, boo\n   assert(out_littleEndian);\n   *out_littleEndian = littleEndian;\n \n-  int offset = read32(exif, size, 4, littleEndian);\n+  int32_t offset = read32(exif, size, 4, littleEndian);\n   if (offset < 0) {\n     return -1;\n   }\n \n-  int cnt = read16(exif, size, offset, littleEndian);\n+  int32_t cnt = read16(exif, size, offset, littleEndian);\n   if (cnt < 1) {\n     return -1;\n   }\n \n   for (int i = 0; i < cnt; i++) {\n-    int tag = read16(exif, size, offset + 2 + i * 12, littleEndian);\n+    int32_t tag = read16(exif, size, offset + 2 + i * 12, littleEndian);\n     if (tag == query_tag) {\n       return offset + 2 + i * 12;\n     }\n@@ -149,8 +149,8 @@ int read_exif_orientation_tag(const uint8_t* exif, int size)\n     return DEFAULT_EXIF_ORIENTATION;\n   }\n \n-  int type = read16(exif, size, pos + 2, little_endian);\n-  int count = read32(exif, size, pos + 4, little_endian);\n+  int32_t type = read16(exif, size, pos + 2, little_endian);\n+  int32_t count = read32(exif, size, pos + 4, little_endian);\n \n   if (type == EXIF_TYPE_SHORT && count == 1) {\n     return read16(exif, size, pos + 8, little_endian);"
+        }
+    ],
+    "commitTime": "2023-12-01 02:49:52"
+}

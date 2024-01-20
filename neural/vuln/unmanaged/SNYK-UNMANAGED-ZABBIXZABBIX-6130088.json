@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Philippe Antoine"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 3.9,
+    "disclosureTime": "2023-12-18 10:45:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06917",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-ZABBIXZABBIX-6130088",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-32726"
+        ],
+        "CWE": [
+            "CWE-754"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 14:26:02",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Improper Check for Unusual or Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Check for Unusual or Exceptional Conditions due to an improper check for unusual or exceptional conditions in the handling of DNS server responses. An attacker can cause a buffer overflow by sending a crafted response with an RDLENGTH value that overflows the buffer. "
+    },
+    "source_code": []
+}

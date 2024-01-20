@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-01 06:33:27",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-MASTERCARDOAUTH1SIGNER-6133251",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-330"
+        ],
+        "PVE": [
+            "PVE-2023-62158"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 15:14:32",
+    "remediation": "Upgrade mastercard-oauth1-signer to version 1.4.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Insecure Randomness",
+    "vulnDescription": {
+        "Overview": "mastercard-oauth1-signer is a Mastercard OAuth1 Signer. Affected versions of this package are vulnerable to Insecure Randomness through the get_nonce function in coreutils.py . "
+    },
+    "source_code": [
+        {
+            "filename": "oauth1/coreutils.py",
+            "diff": "@@ -32,7 +32,7 @@\n import base64\n import urllib\n import time\n-from random import randint\n+from random import SystemRandom\n \n from urllib.parse import urlparse, quote, parse_qsl\n \n@@ -152,7 +152,7 @@ def get_nonce(length=16):\n     \"\"\"\n     characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'\n     charlen = len(characters)\n-    return \"\".join([characters[randint(0, charlen - 1)] for _ in range(0, length)])\n+    return \"\".join([characters[SystemRandom().randint(0, charlen - 1)] for _ in range(0, length)])\n \n \n def get_timestamp():"
+        },
+        {
+            "filename": "tests/test_oauth.py",
+            "diff": "@@ -34,6 +34,9 @@\n from oauth1.oauth import OAuth\n from oauth1.oauth import OAuthParameters\n \n+from concurrent.futures import ThreadPoolExecutor\n+import multiprocessing\n+\n \n class OAuthTest(unittest.TestCase):\n     signing_key = authenticationutils.load_signing_key('./test_key_container.p12', \"Password1\")\n@@ -109,14 +112,20 @@ def test_nonce_length(self):\n         self.assertEqual(16, len(nonce))\n \n     def test_nonce_uniqueness(self):\n-        init = util.get_nonce()\n-        l = []\n-        for _ in range(0, 100000):\n-            l.append(init + util.get_nonce())\n+        list_of_nonce = []\n+\n+        def task():\n+            for _ in range(0, 100000):\n+                list_of_nonce.append(util.get_nonce())\n+\n+        executor = ThreadPoolExecutor(multiprocessing.cpu_count())\n+        future = executor.submit(task)\n+        future.result()\n \n-        self.assertEqual(self.list_duplicates(l), [])\n+        self.assertEqual(OAuthTest.list_duplicates(list_of_nonce), [])\n \n-    def list_duplicates(self, seq):\n+    @staticmethod\n+    def list_duplicates(seq):\n         seen = set()\n         seen_add = seen.add\n         # adds all elements it doesn't know yet to seen and all other to seen_twice"
+        }
+    ],
+    "commitTime": "2021-07-24 19:54:32"
+}

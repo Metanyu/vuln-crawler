@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.9,
+    "disclosureTime": "2024-01-03 21:48:34",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-EVM-6143593",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21629"
+        ],
+        "CWE": [
+            "CWE-755"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2024-01-05 08:45:06",
+    "remediation": "Upgrade evm to version 0.41.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Handling of Exceptional Conditions via the record_external_operation feature, which allows library users to record custom gas changes. An attacker can cause smart contracts to commit state changes even when the parent caller contract receives a zero address, which typically indicates that the execution has failed. Note: This issue only impacts library users with custom record_external_operation that returns errors. "
+    },
+    "source_code": [
+        {
+            "filename": "Cargo.toml",
+            "diff": "@@ -1,6 +1,6 @@\n [package]\n name = \"evm\"\n-version = \"0.41.0\"\n+version = \"0.41.1\"\n license = \"Apache-2.0\"\n authors = [\"Wei Tang <hi@that.world>\", \"Parity Technologies <admin@parity.io>\"]\n description = \"SputnikVM - a Portable Blockchain Virtual Machine\""
+        },
+        {
+            "filename": "src/executor/stack/executor.rs",
+            "diff": "@@ -1009,12 +1009,14 @@ impl<'config, 'precompiles, S: StackState<'config>, P: PrecompileSet>\n \t\t\t\t\t.record_deposit(out.len())\n \t\t\t\t{\n \t\t\t\t\tOk(()) => {\n-\t\t\t\t\t\tlet exit_result = self.exit_substate(StackExitKind::Succeeded);\n \t\t\t\t\t\tif let Err(e) = self.record_external_operation(\n \t\t\t\t\t\t\tcrate::ExternalOperation::Write(U256::from(out.len())),\n \t\t\t\t\t\t) {\n+\t\t\t\t\t\t\tself.state.metadata_mut().gasometer.fail();\n+\t\t\t\t\t\t\tlet _ = self.exit_substate(StackExitKind::Failed);\n \t\t\t\t\t\t\treturn (e.into(), None, Vec::new());\n \t\t\t\t\t\t}\n+\t\t\t\t\t\tlet exit_result = self.exit_substate(StackExitKind::Succeeded);\n \t\t\t\t\t\tself.state.set_code(address, out);\n \t\t\t\t\t\tif let Err(e) = exit_result {\n \t\t\t\t\t\t\treturn (e.into(), None, Vec::new());"
+        }
+    ],
+    "commitTime": "2023-12-17 21:30:03"
+}

@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "am0o0"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-19 02:45:34",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.48548",
+        "probability": "0.00134"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-MLFLOW-6130902",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6940"
+        ],
+        "CWE": [
+            "CWE-77"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-19 10:43:06",
+    "remediation": "Upgrade mlflow to version 2.9.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Command Injection",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Command Injection because of an invalid fix for CVE-2023-6709 . Attackers can gain full command execution on the victim system, with only one user interaction. "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/utils/file_utils.py",
+            "diff": "@@ -329,7 +329,8 @@ def render_and_merge_yaml(root, template_name, context_name):\n     :param context_name: Name of the context file\n     :return: Data in yaml file as dictionary\n     \"\"\"\n-    import jinja2\n+    from jinja2 import FileSystemLoader, StrictUndefined\n+    from jinja2.sandbox import SandboxedEnvironment\n \n     template_path = os.path.join(root, template_name)\n     context_path = os.path.join(root, context_name)\n@@ -338,9 +339,9 @@ def render_and_merge_yaml(root, template_name, context_name):\n         if not pathlib.Path(path).is_file():\n             raise MissingConfigException(f\"Yaml file '{path}' does not exist.\")\n \n-    j2_env = jinja2.Environment(\n-        loader=jinja2.FileSystemLoader(root, encoding=ENCODING),\n-        undefined=jinja2.StrictUndefined,\n+    j2_env = SandboxedEnvironment(\n+        loader=FileSystemLoader(root, encoding=ENCODING),\n+        undefined=StrictUndefined,\n         line_comment_prefix=\"#\",\n     )\n "
+        }
+    ],
+    "commitTime": "2023-12-14 02:01:34"
+}

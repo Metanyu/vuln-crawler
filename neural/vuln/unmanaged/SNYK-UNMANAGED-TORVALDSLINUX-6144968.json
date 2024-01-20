@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-25 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.17089",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6144968",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51779"
+        ],
+        "CWE": [
+            "CWE-362"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-05 14:28:59",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc7 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Race Condition between the bt_sock_recvmsg and bt_sock_ioctl functions. An attacker can cause a denial of service condition or potentially execute arbitrary code by exploiting the use-after-free condition on a socket buffer (\"skb\"). "
+    },
+    "source_code": [
+        {
+            "filename": "net/bluetooth/af_bluetooth.c",
+            "diff": "@@ -309,11 +309,14 @@ int bt_sock_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,\n \tif (flags & MSG_OOB)\n \t\treturn -EOPNOTSUPP;\n \n+\tlock_sock(sk);\n+\n \tskb = skb_recv_datagram(sk, flags, &err);\n \tif (!skb) {\n \t\tif (sk->sk_shutdown & RCV_SHUTDOWN)\n-\t\t\treturn 0;\n+\t\t\terr = 0;\n \n+\t\trelease_sock(sk);\n \t\treturn err;\n \t}\n \n@@ -343,6 +346,8 @@ int bt_sock_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,\n \n \tskb_free_datagram(sk, skb);\n \n+\trelease_sock(sk);\n+\n \tif (flags & MSG_TRUNC)\n \t\tcopied = skblen;\n "
+        }
+    ],
+    "commitTime": "2023-12-15 16:54:18"
+}

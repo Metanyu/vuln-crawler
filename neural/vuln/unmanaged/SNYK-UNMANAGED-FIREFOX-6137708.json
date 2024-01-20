@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Oriol Brufau"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-20 15:45:38",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14829",
+        "probability": "0.00048"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOX-6137708",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6869"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-27 19:21:25",
+    "remediation": "Upgrade Firefox to version 121.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation due to improper handling of a <dialog> element, which could be manipulated to render content outside the confines of a sandboxed iframe. An attacker can misrepresent untrusted content as if it were trusted. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "PHYSICAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.6,
+    "disclosureTime": "2023-12-21 21:56:36",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06916",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SILICONLABSGECKOSDK-6138250",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41097"
+        ],
+        "CWE": [
+            "CWE-208"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:46:59",
+    "remediation": "There is no fixed version for SiliconLabs/gecko_sdk . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Observable Timing Discrepancy",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Observable Timing Discrepancy via the implementation of cryptographic operations. An attacker can infer sensitive data by observing the time taken to execute cryptographic algorithms. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.4,
+    "disclosureTime": "2023-12-21 16:48:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-AUTOMADAUTOMAD-6137750",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7036"
+        ],
+        "CWE": [
+            "CWE-434"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-21 20:16:55",
+    "remediation": "There is no fixed version for automad/automad . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Unrestricted Upload of File with Dangerous Type",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Unrestricted Upload of File with Dangerous Type such as .svg and .pdf, due to improper validation in the upload() function of FileCollectionController.php . An attacker can upload arbitrary files to the server by manipulating the content type handler. "
+    },
+    "source_code": []
+}

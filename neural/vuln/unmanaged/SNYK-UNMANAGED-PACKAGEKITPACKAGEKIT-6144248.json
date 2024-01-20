@@ -1,0 +1,59 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 3.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "low"
+        }
+    ],
+    "cvssScore": 3.3,
+    "disclosureTime": "2024-01-03 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-PACKAGEKITPACKAGEKIT-6144248",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0217"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-04 14:42:24",
+    "remediation": "Upgrade PackageKit/PackageKit to version 1.2.7 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free via the Idle Function Callback. An attacker can potentially cause a program to crash or execute arbitrary code by manipulating the timing of memory allocation and deallocation to exploit the freed memory before it is reallocated. "
+    },
+    "source_code": []
+}

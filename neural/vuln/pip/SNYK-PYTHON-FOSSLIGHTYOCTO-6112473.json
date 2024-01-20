@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-10-01 06:31:41",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-FOSSLIGHTYOCTO-6112473",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-89"
+        ],
+        "PVE": [
+            "PVE-2023-61100"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-08 12:56:04",
+    "remediation": "Upgrade fosslight-yocto to version 3.1.23 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "fosslight-yocto is a FOSSLight Yocto Affected versions of this package are vulnerable to SQL Injection via the create_oss_report_for_yocto.py file. "
+    },
+    "source_code": [
+        {
+            "filename": "src/fosslight_yocto/create_oss_report_for_yocto.py",
+            "diff": "@@ -66,6 +66,8 @@\n _skip_to_check_scancode_licenses = ['proprietary-license']\n additional_columns = []\n printall = False  # Print all values in bom.json\n+OSC_DB_USER = 'user_oss_license'\n+OSC_DB_PASSWORD = 'oss_lic123'\n \n \n def read_installed_pkg_file(installed_pkg_names_file):\n@@ -449,7 +451,7 @@ def declare_license_by_osc_db():\n     # Get OSS's Licenses from DB\n     for key, oss_item in oss_info_from_db.items():\n         where_condition = \" WHERE (OM.OSS_NAME = '{oss_name}' OR NICK.OSS_NICKNAME = '{oss_name}') AND OM.OSS_VERSION = '{oss_version}'\".format(\n-            oss_name=oss_item['name'], oss_version=oss_item['version'])\n+            oss_name=pymysql.escape_string(oss_item['name']), oss_version=pymysql.escape_string(oss_item['version']))\n         oss_item['lic_group'], license_info_from_db = select_query_to_db(db_cur, license_info_from_db, where_condition)\n     disconnect_lge_bin_db(db_conn, db_cur)\n \n@@ -617,7 +619,7 @@ def get_license_query_to_db(license_name):\n         sql_query = \"\"\"SELECT LM.LICENSE_NAME, LICENSE_TYPE FROM LICENSE_MASTER AS LM\n         LEFT OUTER JOIN LICENSE_NICKNAME AS LN ON LM.LICENSE_NAME = LN.LICENSE_NAME\n         WHERE LM.LICENSE_NAME='{license_name}' OR LM.SHORT_IDENTIFIER = '{license_name}' OR LN.LICENSE_NICKNAME = '{license_name}' \"\"\".format(\n-            license_name=license_name)\n+            license_name=pymysql.escape_string(license_name))\n         df_result = get_list_by_using_query(db_cur, sql_query, [\"LICENSE_NAME\", \"LICENSE_TYPE\"])\n         if df_result is not None and len(df_result) > 0:\n             for idx, row in df_result.iterrows():\n@@ -855,9 +857,9 @@ def check_oss_exists_in_db(db_cur, name, link):\n         LEFT OUTER JOIN OSS_NICKNAME NICK ON OM.OSS_NAME = NICK.OSS_NAME\n         LEFT OUTER JOIN OSS_DOWNLOADLOCATION DOWNLOAD ON DOWNLOAD.OSS_ID = OM.OSS_ID\n         WHERE OM.OSS_NAME = '{oss_name}' OR NICK.OSS_NICKNAME = '{oss_name}' \"\"\".format(\n-            oss_name=name)\n+            oss_name=pymysql.escape_string(name))\n         if link != \"\":\n-            sql_query = f\"{sql_query} OR DOWNLOAD.DOWNLOAD_LOCATION='{link}'\"\n+            sql_query = f\"{sql_query} OR DOWNLOAD.DOWNLOAD_LOCATION='{pymysql.escape_string(link)}'\"\n \n         df_result = get_list_by_using_query(db_cur, sql_query, [\"OSS_NAME\"])\n         if df_result is not None and len(df_result) > 0:  # Exists\n@@ -881,8 +883,8 @@ def get_list_by_using_query(cur, sql_query, columns):\n \n \n def connect_to_osc_db():\n-    user = 'user_oss_license'\n-    password = 'oss_lic123'\n+    user = OSC_DB_USER\n+    password = OSC_DB_PASSWORD\n     host_product = 'osc-db.lge.com'\n     dbname = 'osc'\n     port = 3306"
+        }
+    ],
+    "commitTime": "2023-08-31 01:48:26"
+}

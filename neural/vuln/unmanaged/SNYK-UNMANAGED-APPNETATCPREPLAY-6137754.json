@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-21 17:48:16",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05750",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-APPNETATCPREPLAY-6137754",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4256"
+        ],
+        "CWE": [
+            "CWE-415"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-21 20:36:49",
+    "remediation": "There is no fixed version for appneta/tcpreplay . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Double Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Double Free in the tcpedit_dlt_cleanup() function in plugins/dlt_plugins.c . An attacker can trigger a crash by supplying a specifically crafted file to the tcprewrite binary. "
+    },
+    "source_code": []
+}

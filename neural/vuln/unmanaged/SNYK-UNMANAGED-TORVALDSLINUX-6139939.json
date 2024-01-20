@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-26 00:43:57",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.17111",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6139939",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51780"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-27 12:50:36",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free via the do_vcc_ioctl function in net/atm/ioctl.c . This can cause a race condition within vcc_recvmsg() . "
+    },
+    "source_code": [
+        {
+            "filename": "net/atm/ioctl.c",
+            "diff": "@@ -73,14 +73,17 @@ static int do_vcc_ioctl(struct socket *sock, unsigned int cmd,\n \tcase SIOCINQ:\n \t{\n \t\tstruct sk_buff *skb;\n+\t\tint amount;\n \n \t\tif (sock->state != SS_CONNECTED) {\n \t\t\terror = -EINVAL;\n \t\t\tgoto done;\n \t\t}\n+\t\tspin_lock_irq(&sk->sk_receive_queue.lock);\n \t\tskb = skb_peek(&sk->sk_receive_queue);\n-\t\terror = put_user(skb ? skb->len : 0,\n-\t\t\t\t (int __user *)argp) ? -EFAULT : 0;\n+\t\tamount = skb ? skb->len : 0;\n+\t\tspin_unlock_irq(&sk->sk_receive_queue.lock);\n+\t\terror = put_user(amount, (int __user *)argp) ? -EFAULT : 0;\n \t\tgoto done;\n \t}\n \tcase ATM_SETSC:"
+        }
+    ],
+    "commitTime": "2023-12-12 12:14:08"
+}

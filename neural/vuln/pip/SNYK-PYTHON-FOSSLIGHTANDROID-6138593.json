@@ -1,0 +1,57 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-11-01 06:31:20",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-FOSSLIGHTANDROID-6138593",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-89"
+        ],
+        "PVE": [
+            "PVE-2023-62077"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 14:31:15",
+    "remediation": "Upgrade fosslight-android to version 4.1.15 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "fosslight-android is a FOSSLight Android Scanner Affected versions of this package are vulnerable to SQL Injection due to improper input sanitization. "
+    },
+    "source_code": [
+        {
+            "filename": "script/generate-notice-files.py",
+            "diff": "@@ -77,7 +77,7 @@ def html_escape(text):\n def combine_notice_files_html(file_hash, input_dirs, output_filename):\n     \"\"\"Combine notice files in FILE_HASH and output a HTML version to OUTPUT_FILENAME.\"\"\"\n \n-    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(input_dirs) + \")(/.*).txt\")\n+    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(re.escape(input_dirs)) + \")(/.*).txt\")\n \n     # Set up a filename to row id table (anchors inside tables don't work in\n     # most browsers, but href's to table row ids do)\n@@ -135,7 +135,7 @@ def combine_notice_files_html(file_hash, input_dirs, output_filename):\n def combine_notice_files_text(file_hash, input_dirs, output_filename, file_title):\n     \"\"\"Combine notice files in FILE_HASH and output a text version to OUTPUT_FILENAME.\"\"\"\n \n-    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(input_dirs) + \")(/.*).txt\")\n+    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(re.escape(input_dirs)) + \")(/.*).txt\")\n     output_file = open(output_filename, \"wb\")\n     print >> output_file, file_title\n     for value in file_hash:\n@@ -150,7 +150,7 @@ def combine_notice_files_text(file_hash, input_dirs, output_filename, file_title\n def combine_notice_files_xml(files_with_same_hash, input_dirs, output_filename):\n     \"\"\"Combine notice files in FILE_HASH and output a XML version to OUTPUT_FILENAME.\"\"\"\n \n-    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(input_dirs) + \")(/.*).txt\")\n+    SRC_DIR_STRIP_RE = re.compile(\"(?:\" + \"|\".join(re.escape(input_dirs)) + \")(/.*).txt\")\n \n     # Set up a filename to row id table (anchors inside tables don't work in\n     # most browsers, but href's to table row ids do)"
+        },
+        {
+            "filename": "src/fosslight_android/_binary_db_controller.py",
+            "diff": "@@ -14,12 +14,15 @@\n columns = ['filename', 'pathname', 'checksum', 'tlshchecksum', 'ossname', 'ossversion', 'license', 'platformname',\n            'platformversion']\n \n+DB_USER = 'bin_analysis_script_user'\n+DB_PSWD = 'script_123'\n+\n \n def connect_to_lge_bin_db():\n     conn = \"\"\n     cur = \"\"\n-    user = 'bin_analysis_script_user'\n-    password = 'script_123'\n+    user = DB_USER\n+    password = DB_PSWD\n     host_product = 'bat.lge.com'\n     dbname = 'bat'\n     port = '5432'\n@@ -73,29 +76,29 @@ def get_oss_info_from_db(platform_version, bin_info_list, return_list):\n \n def get_oss_info_by_tlsh_and_filename(file_name, checksum_value, tlsh_value, source_path, platform_version, conn, cur):\n     sql_statement = \"SELECT filename,pathname,checksum,tlshchecksum,ossname,ossversion,license,platformname,platformversion FROM lgematching \"\n-    sql_statement_checksum = \" WHERE filename='{fname}' AND checksum='{checksum}';\".format(fname=file_name,\n-                                                                                           checksum=checksum_value)  # Checking checksum first.\n-    sql_statement_filename = \"SELECT tlshchecksum FROM lgematching WHERE filename='{fname}' AND tlshchecksum <> '0' ORDER BY ( \" \\\n+    sql_statement_checksum = \" WHERE filename=%(fname)s AND checksum=%(checksum)s;\"\n+    sql_checksum_params = {'fname': file_name, 'checksum': checksum_value}\n+    sql_statement_filename = \"SELECT tlshchecksum FROM lgematching WHERE filename=%(fname)s AND tlshchecksum <> '0' ORDER BY ( \" \\\n                              \"CASE \" \\\n-                             \"WHEN sourcepath = '{src_path}' AND lower(platformname)='{plat_name}' \" \\\n-                             \"AND platformversion='{plat_version}' THEN 1 \" \\\n-                             \"WHEN sourcepath = '{src_path}' AND lower(platformname)='{plat_name}' THEN 2 \" \\\n-                             \"WHEN lower(platformname)='{plat_name}' AND platformversion='{plat_version}' THEN 3 \" \\\n-                             \"WHEN lower(platformname)='{plat_name}' THEN 4 \" \\\n+                             \"WHEN sourcepath = %(src_path)s AND lower(platformname)=%(plat_name)s \" \\\n+                             \"AND platformversion=%(plat_version)s THEN 1 \" \\\n+                             \"WHEN sourcepath = %(src_path)s AND lower(platformname)=%(plat_name)s THEN 2 \" \\\n+                             \"WHEN lower(platformname)=%(plat_name)s AND platformversion=%(plat_version)s THEN 3 \" \\\n+                             \"WHEN lower(platformname)=%(plat_name)s THEN 4 \" \\\n                              \"ELSE 5 \" \\\n-                             \"END), updatedate DESC;\".format(fname=file_name, src_path=source_path, plat_version=platform_version,\n-                                                             plat_name=\"android\")\n+                             \"END), updatedate DESC;\"\n+    sql_filename_params = {'fname': file_name, 'src_path': source_path, 'plat_version': platform_version, 'plat_name': \"android\"}\n     auto_id_comment = \"\"\n     final_result_item = \"\"\n     is_new = False\n \n     # Match checksum and fileName\n-    df_result = get_list_by_using_query(sql_statement + sql_statement_checksum, columns, conn, cur)\n+    df_result = get_list_by_using_query(sql_statement + sql_statement_checksum, sql_checksum_params, columns, conn, cur)\n     if df_result is not None and len(df_result) > 0:  # Found a file with the same checksum.\n         final_result_item = df_result\n     else:  # Can't find files that have same name and checksum\n         # Match tlsh and fileName\n-        df_result = get_list_by_using_query(sql_statement_filename, ['tlshchecksum'], conn, cur)\n+        df_result = get_list_by_using_query(sql_statement_filename, sql_filename_params, ['tlshchecksum'], conn, cur)\n         if df_result is None or len(df_result) <= 0:\n             final_result_item = \"\"\n             auto_id_comment = \"New Binary/\"\n@@ -116,16 +119,15 @@ def get_oss_info_by_tlsh_and_filename(file_name, checksum_value, tlsh_value, sou\n \n             if matched_tlsh != \"\":\n                 final_result_item = get_list_by_using_query(\n-                    sql_statement + \" WHERE filename='{fname}' AND tlshchecksum='{tlsh}';\".format(fname=file_name,\n-                                                                                                  tlsh=matched_tlsh),\n+                    sql_statement + \" WHERE filename=%(fname)s AND tlshchecksum=%(tlsh)s;\", {'fname': file_name, 'tlsh': matched_tlsh},\n                     columns, conn, cur)\n \n     return final_result_item, auto_id_comment, is_new\n \n \n-def get_list_by_using_query(sql_query, columns, conn, cur):\n+def get_list_by_using_query(sql_query, params, columns, conn, cur):\n     result_rows = \"\"  # DataFrame\n-    cur.execute(sql_query)\n+    cur.execute(sql_query, params)\n     rows = cur.fetchall()\n \n     if rows is not None and len(rows) > 0:"
+        },
+        {
+            "filename": "src/fosslight_android/check_package_file.py",
+            "diff": "@@ -11,6 +11,7 @@\n import logging\n import json\n import sys\n+import contextlib\n from datetime import datetime\n from ._util import read_file\n from fosslight_util.constant import LOGGER_NAME\n@@ -126,13 +127,11 @@ def extract_file(fname):\n \n         # Unzip the file.\n         if fname.endswith(\".tar.gz\"):\n-            tar = tarfile.open(fname, \"r:gz\")\n-            tar.extractall(path=extract_path)\n-            tar.close()\n+            with contextlib.closing(tarfile.open(fname, \"r:gz\")) as t:\n+                t.extractall(path=extract_path)\n         elif fname.endswith(\".tar\"):\n-            tar = tarfile.open(fname, \"r:\")\n-            tar.extractall(path=extract_path)\n-            tar.close()\n+            with contextlib.closing(tarfile.open(fname, \"r:\")) as t:\n+                t.extractall(path=extract_path)\n         elif fname.endswith(\".zip\"):\n             return unzip(fname, extract_path)\n         else:"
+        }
+    ],
+    "commitTime": "2023-09-01 07:27:07"
+}

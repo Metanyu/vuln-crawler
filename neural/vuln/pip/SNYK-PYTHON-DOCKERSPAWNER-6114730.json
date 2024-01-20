@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-08 14:42:55",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06910",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-DOCKERSPAWNER-6114730",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48311"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-11 11:41:20",
+    "remediation": "Upgrade dockerspawner to version 13.0.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "dockerspawner is a Dockerspawner: A custom spawner for Jupyterhub. Affected versions of this package are vulnerable to Improper Input Validation in the DockerSpawner.allowed_images configuration. This allow users to launch any pullable image, instead of restricting to only the single configured image, as intended. ",
+        "Workaround": "Explicitly setting DockerSpawner.allowed_images to a non-empty list containing only the default image will result in the intended default behavior: c.DockerSpawner.image = \"your-image\" c.DockerSpawner.allowed_images = [\"your-image\"] "
+    },
+    "source_code": [
+        {
+            "filename": "dockerspawner/dockerspawner.py",
+            "diff": "@@ -261,43 +261,56 @@ def _ip_default(self):\n \n         If a callable, will be called with the Spawner instance as its only argument.\n         The user is accessible as spawner.user.\n-        The callable should return a dict or list as above.\n+        The callable should return a dict or list or None as above.\n+\n+        If empty (default), the value from ``image`` is used and\n+        any attempt to specify the image via user_options will result in an error.\n+\n+        .. versionchanged:: 13\n+            Empty allowed_images means no user-specified images are allowed.\n+            This is the default.\n+            Prior to 13, restricting to single image required a length-1 list,\n+            e.g. ``allowed_images = [image]``.\n+\n+        .. versionadded:: 13\n+            To allow any image, specify ``allowed_images = \"*\"``.\n \n         .. versionchanged:: 12.0\n             ``DockerSpawner.image_whitelist`` renamed to ``allowed_images``\n-\n         \"\"\",\n     )\n \n     @validate('allowed_images')\n-    def _allowed_images_dict(self, proposal):\n+    def _validate_allowed_images(self, proposal):\n         \"\"\"cast allowed_images to a dict\n \n         If passing a list, cast it to a {item:item}\n         dict where the keys and values are the same.\n         \"\"\"\n-        allowed_images = proposal.value\n-        if isinstance(allowed_images, list):\n+        allowed_images = proposal[\"value\"]\n+        if isinstance(allowed_images, str):\n+            if allowed_images != \"*\":\n+                raise ValueError(\n+                    f\"'*' (all images) is the only accepted string value for allowed_images, got {allowed_images!r}. Use a list: `[{allowed_images!r}]` if you want to allow just one image.\"\n+                )\n+        elif isinstance(allowed_images, list):\n             allowed_images = {item: item for item in allowed_images}\n         return allowed_images\n \n     def _get_allowed_images(self):\n         \"\"\"Evaluate allowed_images callable\n \n-        Or return the list as-is if it's already a dict\n+        Always returns a dict or None\n         \"\"\"\n         if callable(self.allowed_images):\n             allowed_images = self.allowed_images(self)\n-            if not isinstance(allowed_images, dict):\n-                # always return a dict\n-                allowed_images = {item: item for item in allowed_images}\n-            return allowed_images\n+            return self._validate_allowed_images({\"value\": allowed_images})\n         return self.allowed_images\n \n     @default('options_form')\n     def _default_options_form(self):\n         allowed_images = self._get_allowed_images()\n-        if len(allowed_images) <= 1:\n+        if allowed_images == \"*\" or len(allowed_images) <= 1:\n             # default form only when there are images to choose from\n             return ''\n         # form derived from wrapspawner.ProfileSpawner\n@@ -1065,8 +1078,10 @@ async def remove_object(self):\n \n     async def check_allowed(self, image):\n         allowed_images = self._get_allowed_images()\n-        if not allowed_images:\n+        if allowed_images == \"*\":\n             return image\n+        elif not allowed_images:\n+            raise web.HTTPError(400, \"Specifying image to launch is not allowed\")\n         if image not in allowed_images:\n             raise web.HTTPError(\n                 400,"
+        },
+        {
+            "filename": "docs/source/changelog.md",
+            "diff": "@@ -12,8 +12,12 @@ command line for details.\n \n ([full changelog](https://github.com/jupyterhub/dockerspawner/compare/12.1.0...13.0.0))\n \n+13.0 Fixes security vulnerability GHSA-hfgr-h3vc-p6c2, which allowed authenticated users to spawn arbitrary images\n+unless `DockerSpawner.allowed_images` was specified.\n+\n #### API and Breaking Changes\n \n+- Add and require `DockerSpawner.allowed_images='*'` to allow any image to be spawned via `user_options`. (GHSA-hfgr-h3vc-p6c2)\n - Remove deprecated, broken hub_ip_connect [#499](https://github.com/jupyterhub/dockerspawner/pull/499) ([@minrk](https://github.com/minrk))\n - Require python 3.8+ and jupyterhub 2.3.1+ [#488](https://github.com/jupyterhub/dockerspawner/pull/488) ([@consideRatio](https://github.com/consideRatio), [@minrk](https://github.com/minrk))\n "
+        },
+        {
+            "filename": "examples/image_form/jupyterhub_config.py",
+            "diff": "@@ -13,26 +13,11 @@ def get_options_form(spawner):\n \n c.DockerSpawner.options_form = get_options_form\n \n-from dockerspawner import DockerSpawner\n+# specify that DockerSpawner should accept any image from user input\n+c.DockerSpawner.allowed_images = \"*\"\n \n-\n-class CustomDockerSpawner(DockerSpawner):\n-    def options_from_form(self, formdata):\n-        options = {}\n-        image_form_list = formdata.get(\"image\", [])\n-        if image_form_list and image_form_list[0]:\n-            options[\"image\"] = image_form_list[0].strip()\n-            self.log.info(f\"User selected image: {options['image']}\")\n-        return options\n-\n-    def load_user_options(self, options):\n-        image = options.get(\"image\")\n-        if image:\n-            self.log.info(f\"Loading image {image}\")\n-            self.image = image\n-\n-\n-c.JupyterHub.spawner_class = CustomDockerSpawner\n+# tell JupyterHub to use DockerSpawner\n+c.JupyterHub.spawner_class = \"docker\"\n \n # the rest of the config is testing boilerplate\n # to make the Hub connectable from the containers"
+        },
+        {
+            "filename": "tests/conftest.py",
+            "diff": "@@ -15,6 +15,7 @@\n from jupyterhub.tests.conftest import event_loop  # noqa: F401\n from jupyterhub.tests.conftest import io_loop  # noqa: F401\n from jupyterhub.tests.conftest import ssl_tmpdir  # noqa: F401\n+from jupyterhub.tests.conftest import user  # noqa: F401\n from jupyterhub.tests.mocking import MockHub\n \n from dockerspawner import DockerSpawner, SwarmSpawner, SystemUserSpawner"
+        },
+        {
+            "filename": "tests/test_dockerspawner.py",
+            "diff": "@@ -84,62 +84,124 @@ async def test_start_stop(dockerspawner_configured_app, remove):\n \n \n def allowed_images_callable(*_):\n-    return [\"jupyterhub/singleuser:1.0\", \"jupyterhub/singleuser:1.1\"]\n+    return [\"quay.io/jupyterhub/singleuser:4.0\", \"quay.io/jupyterhub/singleuser:4\"]\n \n \n @pytest.mark.parametrize(\n-    \"allowed_images, image\",\n+    \"allowed_images, image, ok\",\n     [\n         (\n             {\n-                \"1.0\": \"jupyterhub/singleuser:1.0\",\n-                \"1.1\": \"jupyterhub/singleuser:1.1\",\n+                \"4.0\": \"quay.io/jupyterhub/singleuser:4.0\",\n+                \"4\": \"quay.io/jupyterhub/singleuser:4\",\n             },\n-            \"1.0\",\n+            \"4.0\",\n+            True,\n+        ),\n+        (\n+            {\n+                \"4.0\": \"quay.io/jupyterhub/singleuser:4.0\",\n+                \"4\": \"quay.io/jupyterhub/singleuser:4\",\n+            },\n+            None,\n+            True,\n+        ),\n+        (\n+            [\n+                \"quay.io/jupyterhub/singleuser:4\",\n+                \"quay.io/jupyterhub/singleuser:4.0\",\n+            ],\n+            \"not-in-list\",\n+            False,\n+        ),\n+        (\n+            [\n+                \"quay.io/jupyterhub/singleuser:4.0\",\n+                \"quay.io/jupyterhub/singleuser:4\",\n+            ],\n+            \"quay.io/jupyterhub/singleuser:4\",\n+            True,\n+        ),\n+        (\n+            allowed_images_callable,\n+            \"quay.io/jupyterhub/singleuser:4.0\",\n+            True,\n+        ),\n+        (\n+            allowed_images_callable,\n+            \"quay.io/jupyterhub/singleuser:3.0\",\n+            False,\n+        ),\n+        (\n+            None,\n+            \"DEFAULT\",\n+            False,\n+        ),\n+        (\n+            None,\n+            None,\n+            True,\n+        ),\n+        (\n+            # explicitly allow all\n+            \"*\",\n+            \"quay.io/jupyterhub/singleuser:4\",\n+            True,\n         ),\n-        ([\"jupyterhub/singleuser:1.0\", \"jupyterhub/singleuser:1.1.0\"], \"1.1.0\"),\n-        (allowed_images_callable, \"1.0\"),\n     ],\n )\n-async def test_allowed_image(dockerspawner_configured_app, allowed_images, image):\n+async def test_allowed_image(\n+    user, dockerspawner_configured_app, allowed_images, image, ok\n+):\n     app = dockerspawner_configured_app\n-    name = \"checker\"\n-    add_user(app.db, app, name=name)\n-    user = app.users[name]\n+    name = user.name\n     assert isinstance(user.spawner, DockerSpawner)\n+    default_image = user.spawner.image  # default value\n+    if image == \"DEFAULT\":\n+        image = default_image\n     user.spawner.remove_containers = True\n-    user.spawner.allowed_images = allowed_images\n-    token = user.new_api_token()\n+    if allowed_images is not None:\n+        user.spawner.allowed_images = allowed_images\n+\n+    if image:\n+        request_body = json.dumps({\"image\": image})\n+    else:\n+        request_body = b\"\"\n     # start the server\n     r = await api_request(\n         app,\n         \"users\",\n         name,\n         \"server\",\n         method=\"post\",\n-        data=json.dumps({\"image\": image}),\n+        data=request_body,\n     )\n \n-    if image not in user.spawner._get_allowed_images():\n-        with pytest.raises(Exception):\n-            r.raise_for_status()\n+    if not ok:\n+        assert r.status_code == 400\n         return\n+    else:\n+        r.raise_for_status()\n+\n     pending = r.status_code == 202\n     while pending:\n         # request again\n-        await asyncio.sleep(2)\n+        await asyncio.sleep(1)\n         r = await api_request(app, \"users\", name)\n         user_info = r.json()\n         pending = user_info[\"servers\"][\"\"][\"pending\"]\n \n-    url = url_path_join(public_url(app, user), \"api/status\")\n-    resp = await AsyncHTTPClient().fetch(\n-        url, headers={\"Authorization\": \"token %s\" % token}\n-    )\n-    assert resp.effective_url == url\n-    resp.rethrow()\n+    if image is None:\n+        expected_image = default_image\n+    elif isinstance(allowed_images, (list, dict)):\n+        expected_image = user.spawner._get_allowed_images()[image]\n+    else:\n+        expected_image = image\n+\n+    assert user.spawner.image == expected_image\n+    obj = await user.spawner.get_object()\n+    assert obj[\"Config\"][\"Image\"] == expected_image\n \n-    assert resp.headers['x-jupyterhub-version'].startswith(image)\n     r = await api_request(\n         app,\n         \"users\","
+        }
+    ],
+    "commitTime": "2023-11-21 14:09:25"
+}

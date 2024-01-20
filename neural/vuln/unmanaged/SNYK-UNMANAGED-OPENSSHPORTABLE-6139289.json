@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-24 07:46:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12544",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-OPENSSHPORTABLE-6139289",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51767"
+        ],
+        "CWE": [
+            "CWE-653"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 20:59:17",
+    "remediation": "There is no fixed version for openssh-portable . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Isolation or Compartmentalization",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Isolation or Compartmentalization with the memory involved in the mm_answer_authpassword() function. A co-located attacker with low privileges can escalate privileges by inducing bit flips through ROWHAMMER attacks on stack variables and register values. "
+    },
+    "source_code": []
+}

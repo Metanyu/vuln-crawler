@@ -1,0 +1,76 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "OhB00"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-09 00:50:43",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23888",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JS-NUXTAPIPARTY-6115221",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49800"
+        ],
+        "CWE": [
+            "CWE-674"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-11 16:55:57",
+    "remediation": "Upgrade nuxt-api-party to version 0.22.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Recursion",
+    "vulnDescription": {
+        "Overview": "nuxt-api-party is a Nuxt 3 module to securely connect with any API Affected versions of this package are vulnerable to Uncontrolled Recursion due to an abuse on the retry logic in ofetch function. An attacker can cause the server to crash from a stack overflow by sending a crafted request with a high number of retry attempts for a URL known to fail. ",
+        "PoC": " await fetch(\"http://localhost:3000/api/__api_party/MyEndpoint\", { method: \"POST\", body: JSON.stringify({ path: \"x:x\", retry: 9999999 }), headers: { \"Content-Type\": \"application/json\" } }) ",
+        "Workaround": "Limit which options can be passed to ofetch . "
+    },
+    "source_code": [
+        {
+            "filename": "src/runtime/server/handler.ts",
+            "diff": "@@ -23,8 +23,8 @@ export default defineEventHandler(async (event): Promise<any> => {\n     path,\n     query,\n     headers,\n+    method,\n     body,\n-    ...fetchOptions\n   } = _body\n \n   // Check if the path is an absolute URL\n@@ -54,7 +54,7 @@ export default defineEventHandler(async (event): Promise<any> => {\n     const response = await globalThis.$fetch.raw<ArrayBuffer>(\n       path,\n       {\n-        ...fetchOptions,\n+        method,\n         baseURL,\n         query: {\n           ...endpoint.query,"
+        },
+        {
+            "filename": "src/runtime/types.ts",
+            "diff": "@@ -1,8 +1,14 @@\n import type { NitroFetchOptions } from 'nitropack'\n import type { Ref } from 'vue'\n \n+type HTTPMethod = 'GET' | 'HEAD' | 'PATCH' | 'POST' | 'PUT' | 'DELETE' | 'CONNECT' | 'OPTIONS' | 'TRACE'\n+\n export type EndpointFetchOptions = NitroFetchOptions<string> & {\n   path: string\n+  query?: Record<string, any>\n+  headers?: HeadersInit\n+  method?: Lowercase<HTTPMethod> | Uppercase<HTTPMethod>\n+  body?: RequestInit['body'] | Record<string, any>\n }\n \n export type MaybeRef<T> = T | Ref<T>"
+        }
+    ],
+    "commitTime": "2023-12-08 23:00:24"
+}

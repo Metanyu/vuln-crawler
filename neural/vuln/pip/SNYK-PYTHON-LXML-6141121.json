@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.7,
+    "disclosureTime": "2024-01-01 06:34:16",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-LXML-6141121",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-400"
+        ],
+        "PVE": [
+            "PVE-2023-63015"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 08:18:11",
+    "remediation": "Upgrade lxml to version 2.3.4 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) due to race conditions when errors or user messages occur during threaded XSLT processing. "
+    },
+    "source_code": [
+        {
+            "filename": "src/lxml/xslt.pxi",
+            "diff": "@@ -390,8 +390,7 @@ cdef class XSLT:\n         c_doc._private = <python.PyObject*>self._xslt_resolver_context\n \n         self._error_log.connect()\n-        with nogil:\n-            c_style = xslt.xsltParseStylesheetDoc(c_doc)\n+        c_style = xslt.xsltParseStylesheetDoc(c_doc)\n         self._error_log.disconnect()\n \n         if c_style is NULL or c_style.errors:\n@@ -511,7 +510,6 @@ cdef class XSLT:\n             transform_ctxt.profile = 1\n \n         try:\n-            self._error_log.connect()\n             context = self._context._copy()\n             context.register_context(transform_ctxt, input_doc)\n \n@@ -540,7 +538,6 @@ cdef class XSLT:\n             if context is not None:\n                 context.free_context()\n             _destroyFakeDoc(input_doc._c_doc, c_doc)\n-            self._error_log.disconnect()\n \n         try:\n             if resolver_context is not None and resolver_context._has_raised():"
+        }
+    ],
+    "commitTime": "2012-03-26 10:15:43"
+}

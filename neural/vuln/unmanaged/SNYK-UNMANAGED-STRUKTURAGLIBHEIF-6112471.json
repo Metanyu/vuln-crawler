@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "fdu-sec"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-07 20:45:23",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBHEIF-6112471",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49464"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 13:05:37",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write in the libheif/libheif/uncompressed_image.cc file. "
+    },
+    "source_code": [
+        {
+            "filename": "libheif/uncompressed_image.cc",
+            "diff": "@@ -534,6 +534,9 @@ int UncompressedImageCodec::get_luma_bits_per_pixel_from_configuration_unci(cons\n   int alternate_channel_bits = 0;\n   for (Box_uncC::Component component : uncC_box->get_components()) {\n     uint16_t component_index = component.component_index;\n+    if (component_index >= cmpd_box->get_components().size()) {\n+      return -1;\n+    }\n     auto component_type = cmpd_box->get_components()[component_index].component_type;\n     switch (component_type) {\n       case component_type_monochrome:"
+        }
+    ],
+    "commitTime": "2023-11-30 10:59:46"
+}

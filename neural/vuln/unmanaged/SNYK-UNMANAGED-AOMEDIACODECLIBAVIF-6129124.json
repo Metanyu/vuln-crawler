@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Fudan University"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-14 22:46:52",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.34540",
+        "probability": "0.00083"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-AOMEDIACODECLIBAVIF-6129124",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6704"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 15:25:01",
+    "remediation": "Upgrade aomediacodec/libavif to version 1.0.3 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free via a crafted image file where colorProperties could be pointing to a dangling pointer if findAlphaItem() resizes the meta.items array. An attacker can potentially exploit heap corruption by inducing the application to reference memory after it has been freed. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0\n \n ## [Unreleased]\n \n+### Changed\n+* Fix memory errors reported in crbug.com/1504792.\n+\n ## [1.0.2] - 2023-11-16\n \n ### Changed"
+        },
+        {
+            "filename": "src/read.c",
+            "diff": "@@ -3938,7 +3938,6 @@ avifResult avifDecoderReset(avifDecoder * decoder)\n             avifDiagnosticsPrintf(&decoder->diag, \"Primary item not found\");\n             return AVIF_RESULT_MISSING_IMAGE_ITEM;\n         }\n-        colorProperties = &colorItem->properties;\n         if (!memcmp(colorItem->type, \"grid\", 4)) {\n             avifROData readData;\n             AVIF_CHECKRES(avifDecoderItemRead(colorItem, decoder->io, &readData, 0, 0, data->diag));\n@@ -3995,6 +3994,8 @@ avifResult avifDecoderReset(avifDecoder * decoder)\n             }\n         }\n \n+        colorProperties = &colorItem->properties;\n+\n         // Find Exif and/or XMP metadata, if any\n         AVIF_CHECKRES(avifDecoderFindMetadata(decoder, data->meta, decoder->image, colorItem->id));\n "
+        }
+    ],
+    "commitTime": "2023-11-28 23:11:08"
+}

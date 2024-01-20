@@ -1,0 +1,95 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.6,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 6.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.6,
+    "disclosureTime": "2023-12-13 07:44:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10639",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-XORGSERVER-6125597",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6478"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 13:55:48",
+    "remediation": "Upgrade xorg-server to version 21.1.10 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read in the RRChangeProviderProperty or RRChangeOutputProperty functions. An attacker can disclose sensitive information by sending a specially crafted request. "
+    },
+    "source_code": []
+}

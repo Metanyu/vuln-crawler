@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-09 00:50:50",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14828",
+        "probability": "0.00048"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-OPENZEPPELINCONTRACTS-6114711",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49798"
+        ],
+        "CWE": [
+            "CWE-670"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-10 14:27:43",
+    "remediation": "Upgrade @openzeppelin/contracts to version 4.9.5 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Always-Incorrect Control Flow Implementation",
+    "vulnDescription": {
+        "Overview": "@openzeppelin/contracts is a library for contract development. Affected versions of this package are vulnerable to Always-Incorrect Control Flow Implementation due to an issue with the Multicall.sol implementation. An attacker can cause unintended duplicate operations, such as asset transfers, by exploiting the fact that all subcalls are executed twice. "
+    },
+    "source_code": [
+        {
+            "filename": "contracts/utils/Multicall.sol",
+            "diff": "@@ -32,7 +32,6 @@ abstract contract Multicall is Context {\n \n         results = new bytes[](data.length);\n         for (uint256 i = 0; i < data.length; i++) {\n-            results[i] = Address.functionDelegateCall(address(this), data[i]);\n             results[i] = Address.functionDelegateCall(address(this), bytes.concat(data[i], context));\n         }\n         return results;"
+        }
+    ],
+    "commitTime": "2023-12-08 14:49:17"
+}

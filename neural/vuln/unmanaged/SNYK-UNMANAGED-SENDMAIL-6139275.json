@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "SEC Consult"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.2,
+    "disclosureTime": "2023-12-24 06:47:57",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.45283",
+        "probability": "0.00116"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SENDMAIL-6139275",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51765"
+        ],
+        "CWE": [
+            "CWE-924"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 13:50:11",
+    "remediation": "There is no fixed version for sendmail . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Enforcement of Message Integrity During Transmission in a Communication Channel",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Enforcement of Message Integrity During Transmission in a Communication Channel due to improper handling of SMTP protocol sequences, which allows header smuggling. An attacker can inject e-mail messages that appear to originate from the server, thus bypassing SPF protection mechanisms by exploiting the support for <LF>.<CR><LF> sequences, which are not universally handled by other e-mail servers. "
+    },
+    "source_code": []
+}

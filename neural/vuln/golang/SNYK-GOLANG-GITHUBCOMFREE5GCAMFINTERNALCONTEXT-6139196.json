@@ -1,0 +1,80 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-22 12:31:52",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12486",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMFREE5GCAMFINTERNALCONTEXT-6139196",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49391"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-24 09:47:34",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "github.com/free5gc/amf/internal/context is a 5g networking package Affected versions of this package are vulnerable to Denial of Service (DoS) due to a crash when receiving an invalid NGAP message. ",
+        "PoC": "import sys, sctp, socket if len(sys.argv) != 2: print(\"Usage: free5gc.py server-address\") exit(0) sk = sctp.sctpsocket_tcp(socket.AF_INET) sk.connect((sys.argv[1], 38412)) sk.sctp_send(b\"Hello!\", ppid=socket.htonl(60)) sk.close() "
+    },
+    "source_code": [
+        {
+            "filename": "internal/context/context.go",
+            "diff": "@@ -354,7 +354,13 @@ func (context *AMFContext) NewAmfRan(conn net.Conn) *AmfRan {\n \tran := AmfRan{}\n \tran.SupportedTAList = make([]SupportedTAI, 0, MaxNumOfTAI*MaxNumOfBroadcastPLMNs)\n \tran.Conn = conn\n-\tran.Log = logger.NgapLog.WithField(logger.FieldRanAddr, conn.RemoteAddr().String())\n+\taddr := conn.RemoteAddr()\n+\tif addr != nil {\n+\t\tran.Log = logger.NgapLog.WithField(logger.FieldRanAddr, addr.String())\n+\t} else {\n+\t\tran.Log = logger.NgapLog.WithField(logger.FieldRanAddr, \"(nil)\")\n+\t}\n+\n \tcontext.AmfRanPool.Store(conn, &ran)\n \treturn &ran\n }"
+        },
+        {
+            "filename": "internal/context/ran_ue.go",
+            "diff": "@@ -124,7 +124,12 @@ func (ranUe *RanUe) SwitchToRan(newRan *AmfRan, ranUeNgapId int64) error {\n \n func (ranUe *RanUe) UpdateLogFields() {\n \tif ranUe.Ran != nil && ranUe.Ran.Conn != nil {\n-\t\tranUe.Log = ranUe.Log.WithField(logger.FieldRanAddr, ranUe.Ran.Conn.RemoteAddr().String())\n+\t\taddr := ranUe.Ran.Conn.RemoteAddr()\n+\t\tif addr != nil {\n+\t\t\tranUe.Log = ranUe.Log.WithField(logger.FieldRanAddr, addr.String())\n+\t\t} else {\n+\t\t\tranUe.Log = ranUe.Log.WithField(logger.FieldRanAddr, \"(nil)\")\n+\t\t}\n \n \t\tanTypeStr := \"\"\n \t\tif ranUe.Ran.AnType == models.AccessType__3_GPP_ACCESS {"
+        },
+        {
+            "filename": "internal/ngap/dispatcher.go",
+            "diff": "@@ -16,7 +16,12 @@ func Dispatch(conn net.Conn, msg []byte) {\n \n \tran, ok := amfSelf.AmfRanFindByConn(conn)\n \tif !ok {\n-\t\tlogger.NgapLog.Infof(\"Create a new NG connection for: %s\", conn.RemoteAddr().String())\n+\t\taddr := conn.RemoteAddr()\n+\t\tif addr == nil {\n+\t\t\tlogger.NgapLog.Warn(\"Addr of new NG connection is nii\")\n+\t\t\treturn\n+\t\t}\n+\t\tlogger.NgapLog.Infof(\"Create a new NG connection for: %s\", addr.String())\n \t\tran = amfSelf.NewAmfRan(conn)\n \t}\n "
+        }
+    ],
+    "commitTime": "2023-12-01 14:54:38"
+}

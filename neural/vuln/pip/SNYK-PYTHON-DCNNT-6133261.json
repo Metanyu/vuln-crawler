@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-11-01 06:29:16",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-DCNNT-6133261",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-78"
+        ],
+        "PVE": [
+            "PVE-2023-62062"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 15:40:21",
+    "remediation": "Upgrade dcnnt to version 0.9.1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Command Injection",
+    "vulnDescription": {
+        "Overview": "dcnnt is an UI-less tool to connect Android phone with desktop Affected versions of this package are vulnerable to Command Injection due to passing of unescaped text to the arguments of notification command in dcnnt/plugins/notifications.py . "
+    },
+    "source_code": [
+        {
+            "filename": "dcnnt/plugins/notifications.py",
+            "diff": "@@ -1,5 +1,6 @@\n import logging\n import subprocess\n+from shlex import quote\n \n from .base import Plugin\n from ..common import *\n@@ -53,6 +54,6 @@ def main(self):\n                         except Exception as e:\n                             self.log(e, logging.WARNING)\n                     icon = icon_path if icon_data else ''\n-                    command = cmd.format(uin=uin, name=name, icon=icon, text=text, title=title, package=package)\n+                    command = cmd.format(uin=quote(uin), name=quote(name), icon=quote(icon), text=quote(text), title=quote(title), package=quote(package))\n                     self.log('Execute: \"{}\"'.format(command))\n                     subprocess.call(command, shell=True)"
+        }
+    ],
+    "commitTime": "2023-08-14 05:24:18"
+}

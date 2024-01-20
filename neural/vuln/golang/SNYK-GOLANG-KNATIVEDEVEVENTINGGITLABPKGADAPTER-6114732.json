@@ -1,0 +1,46 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Ada Logics"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-08 21:57:27",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-KNATIVEDEVEVENTINGGITLABPKGADAPTER-6114732",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-11 11:40:04",
+    "remediation": "Upgrade knative.dev/eventing-gitlab/pkg/adapter to version 1.11.3, 1.12.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption due to improper enforcement of ReadHeaderTimeout parameter on cluster-local server. An attacker can cause the server to hang and deny service to other users by sending requests, leading to a potential Slowloris attack scenario. "
+    },
+    "source_code": [
+        {
+            "filename": "pkg/adapter/receive_adapter.go",
+            "diff": "@@ -92,8 +92,10 @@ func (ra *gitLabReceiveAdapter) start(stopCh <-chan struct{}) error {\n \t}\n \n \tserver := &http.Server{\n-\t\tAddr:    \":\" + ra.port,\n-\t\tHandler: ra.newRouter(hook),\n+\t\tReadTimeout:       10 * time.Second,\n+\t\tReadHeaderTimeout: 2 * time.Second,\n+\t\tAddr:              \":\" + ra.port,\n+\t\tHandler:           ra.newRouter(hook),\n \t}\n \n \tvar wg sync.WaitGroup"
+        }
+    ],
+    "commitTime": "2023-11-24 06:54:14"
+}

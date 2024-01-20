@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Andrea Chiera"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGJENKINSCIPLUGINS-6124884",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50765"
+        ],
+        "CWE": [
+            "CWE-275"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 12:22:43",
+    "remediation": "Upgrade org.jenkins-ci.plugins:scriptler to version 344.v5a_ddb_5f9e685 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Permission Issues",
+    "vulnDescription": {
+        "Overview": "org.jenkins-ci.plugins:scriptler is a package that allows you to store/edit/execute Groovy scripts on any of the slaves/nodes - no need to copy paste Groovy code anymore. Besides administering your scripts, Scriptler also provides a way to share scripts between users via hosted script catalogs on the internet. Affected versions of this package are vulnerable to Permission Issues. An attacker with Overall/Read permission can access the contents of a Groovy script by knowing its ID, by exploiting a missing permission check in an HTTP endpoint. "
+    },
+    "source_code": [
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/scriptler/ScriptlerManagement.java",
+            "diff": "@@ -30,6 +30,7 @@\n import hudson.markup.MarkupFormatter;\n import hudson.markup.RawHtmlMarkupFormatter;\n import hudson.model.*;\n+import hudson.security.AccessControlled;\n import hudson.security.Permission;\n import jenkins.model.Jenkins;\n import org.apache.commons.fileupload.FileItem;\n@@ -637,8 +638,13 @@ private String[] resolveSlaveNames(String nameAlias) {\n      * @throws IOException\n      * @throws ServletException\n      */\n-    public void doShowScript(StaplerRequest req, StaplerResponse rsp, @QueryParameter(\"id\") String id) throws IOException, ServletException {\n-        // action directly accessible to any people configuring job, so no permission check\n+    public void doShowScript(StaplerRequest req, StaplerResponse rsp, @AncestorInPath Item item, @QueryParameter(\"id\") String id) throws IOException, ServletException {\n+        // action directly accessible to any people configuring job, so use a more lenient permission check\n+        Jenkins jenkins = Jenkins.get();\n+        if (!jenkins.hasAnyPermission(ScriptlerPermissions.RUN_SCRIPTS, ScriptlerPermissions.CONFIGURE)) {\n+            AccessControlled parent = item == null ? jenkins : item;\n+            parent.checkPermission(Item.CONFIGURE);\n+        }\n         Script script = ScriptHelper.getScript(id, true);\n         req.setAttribute(\"script\", script);\n         req.getView(this, \"show.jelly\").forward(req, rsp);"
+        },
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/scriptler/TransientActionProvider.java",
+            "diff": "@@ -0,0 +1,33 @@\n+package org.jenkinsci.plugins.scriptler;\n+\n+import edu.umd.cs.findbugs.annotations.NonNull;\n+import hudson.Extension;\n+import hudson.model.Action;\n+import hudson.model.Job;\n+import java.util.Collection;\n+import java.util.Collections;\n+import jenkins.model.TransientActionFactory;\n+\n+@Extension\n+public class TransientActionProvider extends TransientActionFactory<Job> {\n+    @Override\n+    public Class<Job> type() {\n+        return Job.class;\n+    }\n+\n+    @NonNull\n+    @Override\n+    public Collection<? extends Action> createFor(@NonNull Job target) {\n+        return Collections.singleton(new ScriptlerManagement() {\n+            @Override\n+            public String getIconFileName() {\n+                return null;\n+            }\n+\n+            @Override\n+            public String getDisplayName() {\n+                return null;\n+            }\n+        });\n+    }\n+}"
+        },
+        {
+            "filename": "src/main/resources/org/jenkinsci/plugins/scriptler/builder/ScriptlerBuilder/config.jelly",
+            "diff": "@@ -20,7 +20,7 @@\n \t\t\t<f:entry title=\"${%Script}\" field=\"buildStepContent\">\r\n \t\t\t    <input type=\"hidden\" name=\"backupJobName\" />\r\n \t\t\t    <input type=\"hidden\" name=\"builderId\" value=\"${instance.builderId}\" />\r\n-\t\t\t\t<select name=\"scriptlerScriptId\" onChange=\"scriptler_initDetailLink('${rootURL}', this);scriptler_showParams(this, this.value);\" >\r\n+\t\t\t\t<select name=\"scriptlerScriptId\" data-item-url=\"${it.url}\" onChange=\"scriptler_initDetailLink('${rootURL}', this);scriptler_showParams(this, this.value);\" >\r\n \t\t\t\t\t<option value=\"\">(Default)</option>\r\n \t\t\t\t\t<j:forEach var=\"inst\" items=\"${descriptor.scripts}\" varStatus=\"loop\">\r\n \t\t\t\t\t\t<j:choose>\r"
+        },
+        {
+            "filename": "src/main/webapp/lib/scriptler.js",
+            "diff": "@@ -1,13 +1,14 @@\n \n function scriptler_initDetailLink(rootURL, referenceTag){\n+   var itemURL = referenceTag.getAttribute('data-item-url');\n    var selId = referenceTag.value;\n    var all = new Array();\n    all = document.getElementsByName('scriptlerScriptId');\n    for(var i = 0; i < all.length; i++) {\n \t   if(referenceTag == all.item(i)){\n \t\t   var detailsLinkTag = document.getElementsByName('showScriptlerDetailLink').item(i);\n \t\t   if(selId.length != 0){\n-\t\t\t   detailsLinkTag .href=rootURL+\"/scriptler/showScript?id=\".concat(selId);\n+\t\t\t   detailsLinkTag .href=rootURL+\"/\" + itemURL + \"scriptler/showScript?id=\".concat(selId);\n \t\t\t   detailsLinkTag .style.display = 'block';\n \t\t\t}else{\n \t\t\t   detailsLinkTag .style.display = 'none';"
+        }
+    ],
+    "commitTime": "2023-12-12 14:29:42"
+}

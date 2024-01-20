@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "febinrev"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.2,
+    "disclosureTime": "2023-12-27 17:43:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14121",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-LINUXDEEPINDEEPINCOMPRESSOR-6140363",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50255"
+        ],
+        "CWE": [
+            "CWE-29"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-28 14:56:27",
+    "remediation": "Upgrade linuxdeepin/deepin-compressor to version 5.12.21 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Arbitrary File Write via Archive Extraction (Zip Slip)",
+    "vulnDescription": {
+        "Details": "It is exploited using a specially crafted zip archive, that holds path traversal filenames. When exploited, a filename in a malicious archive is concatenated to the target extraction directory, which results in the final path ending up outside of the target folder. For instance, a zip may hold a file with a \"../../file.exe\" location and thus break out of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily. The following is an example of a zip archive with one benign file and one malicious file. Extracting the malicous file will result in traversing out of the target folder, ending up in /root/.ssh/ overwriting the authorized_keys file: +2018-04-15 22:04:29 ..... 19 19 good.txt +2018-04-15 22:04:42 ..... 20 20 ../../../../../../root/.ssh/authorized_keys ",
+        "Overview": "Affected versions of this package are vulnerable to Arbitrary File Write via Archive Extraction (Zip Slip) via crafted archives. An attacker can achieve remote command execution on the target system upon opening these archives. Exploiting this vulnerability is possible by adding one or more ../ as prefixes to the filenames. "
+    },
+    "source_code": [
+        {
+            "filename": "3rdparty/libzipplugin/libzipplugin.cpp",
+            "diff": "@@ -761,6 +761,11 @@ ErrorType LibzipPlugin::extractEntry(zip_t *archive, zip_int64_t index, const Ex\n     }\n \n     strFileName = m_common->trans2uft8(statBuffer.name, m_mapFileCode[index]);    // \u89e3\u538b\u6587\u4ef6\u540d\uff08\u538b\u7f29\u5305\u4e2d\uff09\n+    //fix 232873\n+    if(strFileName.indexOf(\"../\") != -1) {\n+        qInfo() << \"skipped ../ path component(s) in \" << strFileName;\n+        strFileName = strFileName.replace(\"../\", \"\");\n+    }\n     if(strFileName.contains(QLatin1Char('\\\\')))\n         strFileName = strFileName.replace(QLatin1Char('\\\\'), QDir::separator());\n     QString strOriginName = strFileName;"
+        }
+    ],
+    "commitTime": "2023-12-12 05:25:17"
+}

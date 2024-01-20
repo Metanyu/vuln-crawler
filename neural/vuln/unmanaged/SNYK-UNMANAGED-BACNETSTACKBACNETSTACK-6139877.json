@@ -1,0 +1,42 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "skarg"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-25 21:52:28",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-BACNETSTACKBACNETSTACK-6139877",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51773"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-26 17:58:17",
+    "remediation": "Upgrade bacnet-stack/bacnet-stack to version 1.3.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read via the bacapp_decode_application_data function in bacapp.c . An attacker can cause a buffer over-read, potentially leading to information disclosure or denial of service by sending crafted packets to be processed by this function. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "xiaoxiaoafeifei"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-18 14:53:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.39350",
+        "probability": "0.00094"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-OPENIMAGEIOOIIO-6130241",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-3430"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 15:28:04",
+    "remediation": "Upgrade OpenImageIO/oiio to version 2.4.12.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the gifinput.cpp file. An attacker can cause a crash, leading to a denial of service by passing a specially crafted file to the application, which triggers a heap-based buffer overflow. "
+    },
+    "source_code": [
+        {
+            "filename": "src/gif.imageio/gifinput.cpp",
+            "diff": "@@ -329,10 +329,13 @@ bool\n GIFInput::read_subimage_data()\n {\n     GifColorType* colormap = NULL;\n+    int colormap_count;\n     if (m_gif_file->Image.ColorMap) {  // local colormap\n-        colormap = m_gif_file->Image.ColorMap->Colors;\n+        colormap       = m_gif_file->Image.ColorMap->Colors;\n+        colormap_count = m_gif_file->Image.ColorMap->ColorCount;\n     } else if (m_gif_file->SColorMap) {  // global colormap\n-        colormap = m_gif_file->SColorMap->Colors;\n+        colormap       = m_gif_file->SColorMap->Colors;\n+        colormap_count = m_gif_file->SColorMap->ColorCount;\n     } else {\n         errorf(\"Neither local nor global colormap present.\");\n         return false;\n@@ -361,6 +364,12 @@ GIFInput::read_subimage_data()\n                 + (interlacing ? decode_line_number(wy, window_height) : wy);\n         if (0 <= y && y < m_spec.height) {\n             for (int wx = 0; wx < window_width; wx++) {\n+                if (fscanline[wx] >= colormap_count) {\n+                    errorfmt(\n+                        \"Possible corruption: Encoded value {:d} @ ({},{}) exceeds palette size {}\\n\",\n+                        fscanline[wx], wx, y, colormap_count);\n+                    return false;\n+                }\n                 int x   = window_left + wx;\n                 int idx = m_spec.nchannels * (y * m_spec.width + x);\n                 if (0 <= x && x < m_spec.width"
+        }
+    ],
+    "commitTime": "2023-05-20 01:55:49"
+}

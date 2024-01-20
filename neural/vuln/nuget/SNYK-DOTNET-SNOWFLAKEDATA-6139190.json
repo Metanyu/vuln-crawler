@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Timo Vink"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6,
+    "disclosureTime": "2023-12-22 19:51:09",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-SNOWFLAKEDATA-6139190",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51662"
+        ],
+        "CWE": [
+            "CWE-295"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-24 07:43:14",
+    "remediation": "Upgrade Snowflake.Data to version 2.1.5 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Certificate Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Certificate Validation due to not checking the Certificate Revocation List (CRL) when insecureMode is set to its default value of false. An attacker with access to the private key of a correctly issued certificate and the ability to intercept network traffic could perform a Man-in-the-Middle (MitM) attack to compromise credentials used by the driver. "
+    },
+    "source_code": [
+        {
+            "filename": "Snowflake.Data.Tests/UnitTests/Session/SFHttpClientPropertiesTest.cs",
+            "diff": "@@ -15,11 +15,11 @@ namespace Snowflake.Data.Tests.UnitTests.Session\n     public class SFHttpClientPropertiesTest\n     {\n         [Test]\n-        public void ShouldConvertToMapOnly2Properties(\n+        public void TestConvertToMapOnly2Properties(\n             [Values(true, false)] bool validateDefaultParameters,\n             [Values(true, false)] bool clientSessionKeepAlive)\n         {\n-            // given\n+            // arrange\n             var proxyProperties = new SFSessionHttpClientProxyProperties()\n             {\n                 proxyHost = \"localhost\",\n@@ -41,19 +41,52 @@ public class SFHttpClientPropertiesTest\n                 proxyProperties = proxyProperties\n             };\n             \n-            // when\n+            // act\n             var parameterMap = properties.ToParameterMap();\n             \n-            // then\n+            // assert\n             Assert.AreEqual(2, parameterMap.Count);\n             Assert.AreEqual(validateDefaultParameters, parameterMap[SFSessionParameter.CLIENT_VALIDATE_DEFAULT_PARAMETERS]);\n             Assert.AreEqual(clientSessionKeepAlive, parameterMap[SFSessionParameter.CLIENT_SESSION_KEEP_ALIVE]);\n         }\n \n         [Test]\n-        public void ShouldBuildHttpClientConfig()\n+        public void TestBuildHttpClientConfig()\n+        {\n+            // arrange\n+            var properties = RandomSFSessionHttpClientProperties();\n+            \n+            // act\n+            var config = properties.BuildHttpClientConfig();\n+\n+            // assert\n+            Assert.AreEqual(!properties.insecureMode, config.CrlCheckEnabled);\n+            Assert.AreEqual(properties.proxyProperties.proxyHost, config.ProxyHost);\n+            Assert.AreEqual(properties.proxyProperties.proxyPort, config.ProxyPort);\n+            Assert.AreEqual(properties.proxyProperties.proxyUser, config.ProxyUser);\n+            Assert.AreEqual(properties.proxyProperties.proxyPassword, config.ProxyPassword);\n+            Assert.AreEqual(properties.proxyProperties.nonProxyHosts, config.NoProxyList);\n+            Assert.AreEqual(properties.disableRetry, config.DisableRetry);\n+            Assert.AreEqual(properties.forceRetryOn404, config.ForceRetryOn404);\n+            Assert.AreEqual(properties.maxHttpRetries, config.MaxHttpRetries);\n+        }\n+\n+        [Test]\n+        public void TestCrlCheckEnabledToBeOppositeInsecureMode([Values] bool insecureMode)\n+        {\n+            // arrange\n+            var properties = RandomSFSessionHttpClientProperties();\n+            properties.insecureMode = insecureMode;\n+\n+            // act\n+            var config = properties.BuildHttpClientConfig();\n+            \n+            // assert\n+            Assert.AreEqual(!insecureMode, config.CrlCheckEnabled);\n+        }\n+        \n+        private SFSessionHttpClientProperties RandomSFSessionHttpClientProperties()\n         {\n-            // given\n             var proxyProperties = new SFSessionHttpClientProxyProperties()\n             {\n                 proxyHost = TestDataGenarator.NextAlphaNumeric(),\n@@ -62,7 +95,7 @@ public void ShouldBuildHttpClientConfig()\n                 proxyPassword = TestDataGenarator.NextAlphaNumeric(),\n                 proxyUser = TestDataGenarator.NextAlphaNumeric()\n             };\n-            var properties = new SFSessionHttpClientProperties()\n+            return new SFSessionHttpClientProperties()\n             {\n                 validateDefaultParameters = TestDataGenarator.NextBool(),\n                 clientSessionKeepAlive = TestDataGenarator.NextBool(),\n@@ -74,26 +107,12 @@ public void ShouldBuildHttpClientConfig()\n                 maxHttpRetries = TestDataGenarator.NextInt(0, 15),\n                 proxyProperties = proxyProperties\n             };\n-            \n-            // when\n-            var config = properties.BuildHttpClientConfig();\n-\n-            // then\n-            Assert.AreEqual(properties.insecureMode, config.CrlCheckEnabled);\n-            Assert.AreEqual(properties.proxyProperties.proxyHost, config.ProxyHost);\n-            Assert.AreEqual(properties.proxyProperties.proxyPort, config.ProxyPort);\n-            Assert.AreEqual(properties.proxyProperties.proxyUser, config.ProxyUser);\n-            Assert.AreEqual(properties.proxyProperties.proxyPassword, config.ProxyPassword);\n-            Assert.AreEqual(properties.proxyProperties.nonProxyHosts, config.NoProxyList);\n-            Assert.AreEqual(properties.disableRetry, config.DisableRetry);\n-            Assert.AreEqual(properties.forceRetryOn404, config.ForceRetryOn404);\n-            Assert.AreEqual(properties.maxHttpRetries, config.MaxHttpRetries);\n         }\n \n         [Test, TestCaseSource(nameof(PropertiesProvider))]\n-        public void ShouldExtractProperties(PropertiesTestCase testCase)\n+        public void TestExtractProperties(PropertiesTestCase testCase)\n         {\n-            // given\n+            // arrange\n             var proxyExtractorMock = new Moq.Mock<SFSessionHttpClientProxyProperties.IExtractor>();\n             var extractor = new SFSessionHttpClientProperties.Extractor(proxyExtractorMock.Object);\n             var properties = SFSessionProperties.parseConnectionString(testCase.conectionString, null);\n@@ -102,11 +121,11 @@ public void ShouldExtractProperties(PropertiesTestCase testCase)\n                 .Setup(e => e.ExtractProperties(properties))\n                 .Returns(proxyProperties);\n \n-            // when\n+            // act\n             var extractedProperties = extractor.ExtractProperties(properties);\n             extractedProperties.CheckPropertiesAreValid();\n \n-            // then\n+            // assert\n             Assert.AreEqual(testCase.expectedProperties.validateDefaultParameters, extractedProperties.validateDefaultParameters);\n             Assert.AreEqual(testCase.expectedProperties.clientSessionKeepAlive, extractedProperties.clientSessionKeepAlive);\n             Assert.AreEqual(testCase.expectedProperties.timeoutInSec, extractedProperties.timeoutInSec);"
+        },
+        {
+            "filename": "Snowflake.Data/Core/Session/SFSessionHttpClientProperties.cs",
+            "diff": "@@ -75,7 +75,7 @@ internal TimeSpan TimeoutDuration()\n         internal HttpClientConfig BuildHttpClientConfig()\n         {\n             return new HttpClientConfig(\n-                insecureMode,\n+                !insecureMode,\n                 proxyProperties.proxyHost,\n                 proxyProperties.proxyPort,\n                 proxyProperties.proxyUser,"
+        }
+    ],
+    "commitTime": "2023-12-15 14:00:03"
+}

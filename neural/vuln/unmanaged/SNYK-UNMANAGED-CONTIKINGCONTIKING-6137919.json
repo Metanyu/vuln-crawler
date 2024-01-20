@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "szsam"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-04-30 12:18:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.35315",
+        "probability": "0.00084"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137919",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-30546"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:24:34",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow due to missing length limit of the filename array "
+    },
+    "source_code": [
+        {
+            "filename": "os/storage/antelope/storage-cfs.c",
+            "diff": "@@ -333,7 +333,7 @@ storage_rename_relation(char *old_name, char *new_name)\n db_result_t\n storage_get_index(index_t *index, relation_t *rel, attribute_t *attr)\n {\n-  char filename[INDEX_NAME_LENGTH];\n+  char filename[INDEX_NAME_LENGTH + 1];\n   int fd;\n   int r;\n   struct index_record record;\n@@ -369,7 +369,7 @@ storage_get_index(index_t *index, relation_t *rel, attribute_t *attr)\n db_result_t\n storage_put_index(index_t *index)\n {\n-  char filename[INDEX_NAME_LENGTH];\n+  char filename[INDEX_NAME_LENGTH + 1];\n   int fd;\n   int r;\n   struct index_record record;"
+        }
+    ],
+    "commitTime": "2023-04-14 13:52:31"
+}

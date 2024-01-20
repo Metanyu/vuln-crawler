@@ -1,0 +1,97 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2018-10-08 15:29:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.77711",
+        "probability": "0.00678"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137935",
+    "identifiers": {
+        "CVE": [
+            "CVE-2018-1000804"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:57:28",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.2 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Out-of-Bounds",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-Bounds contiki-ng version 4 contains a Buffer Overflow vulnerability in AQL (Antelope Query Language) database engine that can result in Attacker can perform Remote Code Execution on device using Contiki-NG operating system. This attack appear to be exploitable via Attacker must be able to run malicious AQL code (e.g. via SQL-like Injection attack). "
+    },
+    "source_code": [
+        {
+            "filename": "os/storage/antelope/aql-adt.c",
+            "diff": "@@ -90,6 +90,21 @@ aql_clear(aql_adt_t *adt)\n   memset(adt->aggregators, 0, sizeof(adt->aggregators));\n }\n \n+db_result_t\n+aql_add_relation(aql_adt_t *adt, const char *name)\n+{\n+  if(adt->relation_count >= AQL_RELATION_LIMIT) {\n+    return DB_LIMIT_ERROR;\n+  }\n+\n+  strncpy(adt->relations[adt->relation_count], name,\n+\t  sizeof(adt->relations[0]) - 1);\n+  adt->relations[adt->relation_count][sizeof(adt->relations[0]) - 1] = '\\0';\n+  adt->relation_count++;\n+\n+  return DB_OK;\n+}\n+\n db_result_t\n aql_add_attribute(aql_adt_t *adt, char *name, domain_t domain,\n                    unsigned element_size, int processed_only)"
+        },
+        {
+            "filename": "os/storage/antelope/aql-lexer.c",
+            "diff": "@@ -207,6 +207,10 @@ next_string(lexer_t *lexer, const char *s)\n   *lexer->token = STRING_VALUE;\n   lexer->input = end + 1; /* Skip the closing delimiter. */\n \n+  if(length > DB_MAX_ELEMENT_SIZE - 1) {\n+    length = DB_MAX_ELEMENT_SIZE - 1;\n+  }\n+\n   memcpy(lexer->value, s, length);\n   (*lexer->value)[length] = '\\0';\n \n@@ -236,6 +240,10 @@ next_token(lexer_t *lexer, const char *s)\n \n   *lexer->token = IDENTIFIER;\n \n+  if(length > DB_MAX_ELEMENT_SIZE - 1) {\n+    length = DB_MAX_ELEMENT_SIZE - 1;\n+  }\n+\n   memcpy(lexer->value, s, length);\n   (*lexer->value)[length] = '\\0';\n "
+        },
+        {
+            "filename": "os/storage/antelope/aql-parser.c",
+            "diff": "@@ -269,16 +269,20 @@ PARSER(operand)\n   NEXT;\n   switch(TOKEN) {\n   case IDENTIFIER:\n-    lvm_register_variable(VALUE, LVM_LONG);\n-    lvm_set_variable(&p, VALUE);\n+    if(LVM_ERROR(lvm_register_variable(VALUE, LVM_LONG)) ||\n+       LVM_ERROR(lvm_set_variable(&p, VALUE))) {\n+      RETURN(SYNTAX_ERROR);\n+    }\n     AQL_ADD_PROCESSING_ATTRIBUTE(adt, VALUE);\n     break;\n   case STRING_VALUE:\n     break;\n   case FLOAT_VALUE:\n     break;\n   case INTEGER_VALUE:\n-    lvm_set_long(&p, *(long *)lexer->value);\n+    if(LVM_ERROR(lvm_set_long(&p, *(long *)lexer->value))) {\n+      RETURN(SYNTAX_ERROR);\n+    }\n     break;\n   default:\n     RETURN(SYNTAX_ERROR);\n@@ -340,7 +344,9 @@ PARSER(expr)\n     default:\n       RETURN(SYNTAX_ERROR);\n     }\n-    lvm_set_op(&p, op);\n+    if(LVM_ERROR(lvm_set_op(&p, op))) {\n+      RETURN(SYNTAX_ERROR);\n+    }\n     lvm_set_end(&p, saved_end);\n   }\n \n@@ -389,7 +395,9 @@ PARSER(comparison)\n     RETURN(SYNTAX_ERROR);\n   }\n \n-  lvm_set_relation(&p, rel);\n+  if(LVM_ERROR(lvm_set_relation(&p, rel))) {\n+    RETURN(SYNTAX_ERROR);\n+  }\n   lvm_set_end(&p, saved_end);\n \n   if(!PARSE(expr)) {\n@@ -422,7 +430,9 @@ PARSER(where)\n     connective = TOKEN == AND ? LVM_AND : LVM_OR;\n \n     saved_end = lvm_shift_for_operator(&p, saved_end);\n-    lvm_set_relation(&p, connective);\n+    if(LVM_ERROR(lvm_set_relation(&p, connective))) {\n+      RETURN(SYNTAX_ERROR);\n+    }\n     lvm_set_end(&p, saved_end);\n   \n     NEXT;"
+        },
+        {
+            "filename": "os/storage/antelope/aql.h",
+            "diff": "@@ -188,10 +188,10 @@ typedef struct aql_adt aql_adt_t;\n \n #define AQL_SET_FLAG(adt, flag)\t(((adt)->flags) |= (flag))\n #define AQL_GET_FLAGS(adt)\t\t((adt)->flags)\n-#define AQL_ADD_RELATION(adt, rel)\t\t\t\t\t\\\n-  strcpy((adt)->relations[(adt)->relation_count++], (rel))\n #define AQL_RELATION_COUNT(adt)\t((adt)->relation_count)\n-#define AQL_ADD_ATTRIBUTE(adt, attr, dom, size)\t\t\t\\\n+#define AQL_ADD_RELATION(adt, name) \\\n+    aql_add_relation(adt, name)\n+#define AQL_ADD_ATTRIBUTE(adt, attr, dom, size)\t\\\n     aql_add_attribute(adt, attr, dom, size, 0)\n #define AQL_ADD_PROCESSING_ATTRIBUTE(adt, attr)\t\t\t\\\n     aql_add_attribute((adt), (attr), DOMAIN_UNSPECIFIED, 0, 1)\n@@ -211,6 +211,7 @@ void lexer_rewind(lexer_t *);\n \n void aql_clear(aql_adt_t *adt);\n aql_status_t aql_parse(aql_adt_t *adt, char *query_string);\n+db_result_t aql_add_relation(aql_adt_t *adt, const char *name);\n db_result_t aql_add_attribute(aql_adt_t *adt, char *name,\n                                domain_t domain, unsigned element_size,\n                                int processed_only);"
+        },
+        {
+            "filename": "os/storage/antelope/db-options.h",
+            "diff": "@@ -108,7 +108,7 @@\n /* The maximum size of the LVM bytecode compiled from a\n    single database query. */\n #ifndef DB_VM_BYTECODE_SIZE\n-#define DB_VM_BYTECODE_SIZE\t\t128\n+#define DB_VM_BYTECODE_SIZE\t\t256\n #endif /* DB_VM_BYTECODE_SIZE */\n \n /*----------------------------------------------------------------------------*/"
+        },
+        {
+            "filename": "os/storage/antelope/lvm.c",
+            "diff": "@@ -82,10 +82,10 @@ typedef struct derivation derivation_t;\n \n /* Registered variables for a LVM expression. Their values may be \n    changed between executions of the expression. */\n-static variable_t variables[LVM_MAX_VARIABLE_ID - 1];\n+static variable_t variables[LVM_MAX_VARIABLE_ID];\n \n /* Range derivations of variables that are used for index searches. */\n-static derivation_t derivations[LVM_MAX_VARIABLE_ID - 1];\n+static derivation_t derivations[LVM_MAX_VARIABLE_ID];\n \n #if DEBUG\n static void\n@@ -187,7 +187,7 @@ eval_expr(lvm_instance_t *p, operator_t op, operand_t *result)\n       get_operand(p, &operand[i]);\n       break;\n     default:\n-      return SEMANTIC_ERROR;\n+      return LVM_SEMANTIC_ERROR;\n     }\n     value[i] = operand_to_long(&operand[i]);\n   }\n@@ -204,18 +204,18 @@ eval_expr(lvm_instance_t *p, operator_t op, operand_t *result)\n     break;\n   case LVM_DIV:\n     if(value[1] == 0) {\n-      return MATH_ERROR;\n+      return LVM_MATH_ERROR;\n     }\n     result_value = value[0] / value[1];\n     break;\n   default:\n-    return EXECUTION_ERROR;\n+    return LVM_EXECUTION_ERROR;\n   }\n \n   result->type = LVM_LONG;\n   result->value.l = result_value;\n \n-  return TRUE;\n+  return LVM_TRUE;\n }\n \n static int\n@@ -236,7 +236,7 @@ eval_logic(lvm_instance_t *p, operator_t *op)\n     for(i = 0; i < arguments; i++) {\n       type = get_type(p);\n       if(type != LVM_CMP_OP) {\n-\treturn SEMANTIC_ERROR;\n+\treturn LVM_SEMANTIC_ERROR;\n       }\n       operator = get_operator(p);\n       logic_result[i] = eval_logic(p, operator);\n@@ -248,9 +248,9 @@ eval_logic(lvm_instance_t *p, operator_t *op)\n     if(*op == LVM_NOT) {\n       return !logic_result[0];\n     } else if(*op == LVM_AND) {\n-      return logic_result[0] == TRUE && logic_result[1] == TRUE;\n+      return logic_result[0] == LVM_TRUE && logic_result[1] == LVM_TRUE;\n     } else {\n-      return logic_result[0] == TRUE || logic_result[1] == TRUE;\n+      return logic_result[0] == LVM_TRUE || logic_result[1] == LVM_TRUE;\n     }\n   }\n \n@@ -268,7 +268,7 @@ eval_logic(lvm_instance_t *p, operator_t *op)\n       get_operand(p, &operand);\n       break;\n     default:\n-      return SEMANTIC_ERROR;\n+      return LVM_SEMANTIC_ERROR;\n     }\n     result[i] = operand_to_long(&operand);\n   }\n@@ -294,7 +294,7 @@ eval_logic(lvm_instance_t *p, operator_t *op)\n     break;\n   }\n \n-  return EXECUTION_ERROR;\n+  return LVM_EXECUTION_ERROR;\n }\n \n void\n@@ -334,7 +334,8 @@ lvm_shift_for_operator(lvm_instance_t *p, lvm_ip_t end)\n \n   old_end = p->end;\n \n-  if(p->end + sizeof(operator_t) > p->size || end >= old_end) {\n+  if(p->end + sizeof(operator_t) + sizeof(node_type_t) > p->size ||\n+     end >= old_end) {\n     p->error = __LINE__;\n     return 0;\n   }\n@@ -369,13 +370,6 @@ lvm_set_end(lvm_instance_t *p, lvm_ip_t end)\n   return old_end;\n }\n \n-void\n-lvm_set_type(lvm_instance_t *p, node_type_t type)\n-{\n-  *(node_type_t *)(p->code + p->end) = type;\n-  p->end += sizeof(type);\n-}\n-\n lvm_status_t\n lvm_execute(lvm_instance_t *p)\n {\n@@ -384,14 +378,14 @@ lvm_execute(lvm_instance_t *p)\n   lvm_status_t status;\n \n   p->ip = 0;\n-  status = EXECUTION_ERROR;\n+  status = LVM_EXECUTION_ERROR;\n   type = get_type(p);\n   switch(type) {\n   case LVM_CMP_OP:\n     operator = get_operator(p);\n     status = eval_logic(p, operator);\n     if(!LVM_ERROR(status)) {\n-      PRINTF(\"The statement is %s\\n\", status == TRUE ? \"true\" : \"false\");\n+      PRINTF(\"The statement is %s\\n\", status == LVM_TRUE ? \"true\" : \"false\");\n     } else {\n       PRINTF(\"Execution error: %d\\n\", (int)status);\n     }\n@@ -403,39 +397,88 @@ lvm_execute(lvm_instance_t *p)\n   return status;\n }\n \n-void\n+lvm_status_t\n+lvm_set_type(lvm_instance_t *p, node_type_t type)\n+{\n+  if(p->end + sizeof(node_type_t) >= DB_VM_BYTECODE_SIZE) {\n+    PRINTF(\"Error: overflow in lvm_set_type\\n\");\n+    return LVM_STACK_OVERFLOW;\n+  }\n+\n+  *(node_type_t *)(p->code + p->end) = type;\n+  p->end += sizeof(type);\n+  return LVM_TRUE;\n+}\n+\n+lvm_status_t\n lvm_set_op(lvm_instance_t *p, operator_t op)\n {\n-  lvm_set_type(p, LVM_ARITH_OP);\n+  lvm_status_t status;\n+\n+  status = lvm_set_type(p, LVM_ARITH_OP);\n+  if(status != LVM_TRUE) {\n+    return status;\n+  }\n+\n+  if(p->end + sizeof(op) >= DB_VM_BYTECODE_SIZE) {\n+    PRINTF(\"Error: overflow in lvm_set_op\\n\");\n+    return LVM_STACK_OVERFLOW;\n+  }\n+\n   memcpy(&p->code[p->end], &op, sizeof(op));\n   p->end += sizeof(op);\n+  return LVM_TRUE;\n }\n \n-void\n+lvm_status_t\n lvm_set_relation(lvm_instance_t *p, operator_t op)\n {\n-  lvm_set_type(p, LVM_CMP_OP);\n+  lvm_status_t status;\n+\n+  status = lvm_set_type(p, LVM_CMP_OP);\n+  if(status != LVM_TRUE) {\n+    return status;\n+  }\n+\n+  if(p->end + sizeof(op) >= DB_VM_BYTECODE_SIZE) {\n+    PRINTF(\"Error: overflow in lvm_set_relation\\n\");\n+    return LVM_STACK_OVERFLOW;\n+  }\n+\n   memcpy(&p->code[p->end], &op, sizeof(op));\n   p->end += sizeof(op);\n+  return LVM_TRUE;\n }\n \n-void\n+lvm_status_t\n lvm_set_operand(lvm_instance_t *p, operand_t *op)\n {\n-  lvm_set_type(p, LVM_OPERAND);\n+  lvm_status_t status;\n+\n+  status = lvm_set_type(p, LVM_OPERAND);\n+  if(status != LVM_TRUE) {\n+    return status;\n+  }\n+\n+  if(p->end + sizeof(*op) >= DB_VM_BYTECODE_SIZE) {\n+    PRINTF(\"Error: overflow in lvm_set_operand\\n\");\n+    return LVM_STACK_OVERFLOW;\n+  }\n+\n   memcpy(&p->code[p->end], op, sizeof(*op));\n   p->end += sizeof(*op);\n+  return LVM_TRUE;\n }\n \n-void\n+lvm_status_t\n lvm_set_long(lvm_instance_t *p, long l)\n {\n   operand_t op;\n \n   op.type = LVM_LONG;\n   op.value.l = l;\n \n-  lvm_set_operand(p, &op);\n+  return lvm_set_operand(p, &op);\n }\n \n lvm_status_t\n@@ -446,7 +489,7 @@ lvm_register_variable(char *name, operand_type_t type)\n \n   id = lookup(name);\n   if(id == LVM_MAX_VARIABLE_ID) {\n-    return VARIABLE_LIMIT_REACHED;\n+    return LVM_VARIABLE_LIMIT_REACHED;\n   }\n \n   var = &variables[id];\n@@ -456,7 +499,7 @@ lvm_register_variable(char *name, operand_type_t type)\n     var->type = type;\n   }\n \n-  return TRUE;\n+  return LVM_TRUE;\n }\n \n lvm_status_t\n@@ -466,25 +509,28 @@ lvm_set_variable_value(char *name, operand_value_t value)\n \n   id = lookup(name);\n   if(id == LVM_MAX_VARIABLE_ID) {\n-    return INVALID_IDENTIFIER;\n+    return LVM_INVALID_IDENTIFIER;\n   }\n+\n   variables[id].value = value;\n-  return TRUE;\n+  return LVM_TRUE;\n }\n \n-void\n+lvm_status_t\n lvm_set_variable(lvm_instance_t *p, char *name)\n {\n   operand_t op;\n   variable_id_t id;\n \n   id = lookup(name);\n-  if(id < LVM_MAX_VARIABLE_ID) {\n-    PRINTF(\"var id = %d\\n\", id);\n-    op.type = LVM_VARIABLE;\n-    op.value.id = id;\n-    lvm_set_operand(p, &op);\n+  if(id == LVM_MAX_VARIABLE_ID) {\n+    return LVM_INVALID_IDENTIFIER;\n   }\n+\n+  PRINTF(\"var id = %d\\n\", id);\n+  op.type = LVM_VARIABLE;\n+  op.value.id = id;\n+  return lvm_set_operand(p, &op);\n }\n \n void\n@@ -598,7 +644,7 @@ derive_relation(lvm_instance_t *p, derivation_t *local_derivations)\n     derivation_t d2[LVM_MAX_VARIABLE_ID];\n \n     if(*operator != LVM_AND && *operator != LVM_OR) {\n-      return DERIVATION_ERROR;\n+      return LVM_DERIVATION_ERROR;\n     }\n \n     PRINTF(\"Attempting to infer ranges from a logical connective\\n\");\n@@ -608,15 +654,15 @@ derive_relation(lvm_instance_t *p, derivation_t *local_derivations)\n \n     if(LVM_ERROR(derive_relation(p, d1)) ||\n        LVM_ERROR(derive_relation(p, d2))) {\n-      return DERIVATION_ERROR;\n+      return LVM_DERIVATION_ERROR;\n     }\n \n     if(*operator == LVM_AND) {\n       create_intersection(local_derivations, d1, d2);\n     } else if(*operator == LVM_OR) {\n       create_union(local_derivations, d1, d2);\n     }\n-    return TRUE;\n+    return LVM_TRUE;\n   }\n \n   for(i = 0; i < 2; i++) {\n@@ -626,18 +672,18 @@ derive_relation(lvm_instance_t *p, derivation_t *local_derivations)\n       get_operand(p, &operand[i]);\n       break;\n     default:\n-      return DERIVATION_ERROR;\n+      return LVM_DERIVATION_ERROR;\n     }\n   }\n \n   if(operand[0].type == LVM_VARIABLE && operand[1].type == LVM_VARIABLE) {\n-    return DERIVATION_ERROR;\n+    return LVM_DERIVATION_ERROR;\n   }\n \n   /* Determine which of the operands that is the variable. */\n   if(operand[0].type == LVM_VARIABLE) {\n     if(operand[1].type == LVM_VARIABLE) {\n-      return DERIVATION_ERROR;\n+      return LVM_DERIVATION_ERROR;\n     }\n     variable_id = operand[0].value.id;\n     value = &operand[1].value;\n@@ -647,7 +693,7 @@ derive_relation(lvm_instance_t *p, derivation_t *local_derivations)\n   }\n \n   if(variable_id >= LVM_MAX_VARIABLE_ID) {\n-     return DERIVATION_ERROR;\n+     return LVM_DERIVATION_ERROR;\n   }\n \n   PRINTF(\"variable id %d, value %ld\\n\", variable_id, *(long *)value);\n@@ -675,12 +721,12 @@ derive_relation(lvm_instance_t *p, derivation_t *local_derivations)\n     derivation->max.l = value->l;\n     break;\n   default:\n-    return DERIVATION_ERROR;\n+    return LVM_DERIVATION_ERROR;\n   }\n \n   derivation->derived = 1;\n \n-  return TRUE;\n+  return LVM_TRUE;\n }\n \n lvm_status_t\n@@ -700,12 +746,12 @@ lvm_get_derived_range(lvm_instance_t *p, char *name,\n       if(derivations[i].derived) {\n         *min = derivations[i].min;\n         *max = derivations[i].max;\n-        return TRUE;\n+        return LVM_TRUE;\n       }\n-      return DERIVATION_ERROR;\n+      return LVM_DERIVATION_ERROR;\n     }\n   }\n-  return INVALID_IDENTIFIER;\n+  return LVM_INVALID_IDENTIFIER;\n }\n \n #if DEBUG\n@@ -755,7 +801,8 @@ print_operand(lvm_instance_t *p, lvm_ip_t index)\n \n   switch(operand.type) {\n   case LVM_VARIABLE:\n-  if(operand.value.id >= LVM_MAX_VARIABLE_ID || variables[operand.value.id].name == NULL) {\n+  if(operand.value.id >= LVM_MAX_VARIABLE_ID ||\n+     variables[operand.value.id].name == NULL) {\n     PRINTF(\"var(id:%d):?? \", operand.value.id);\n   } else {\n     PRINTF(\"var(%s):%ld \", variables[operand.value.id].name,"
+        },
+        {
+            "filename": "os/storage/antelope/lvm.h",
+            "diff": "@@ -45,16 +45,16 @@\n #include \"db-options.h\"\n \n enum lvm_status {\n-  FALSE = 0,\n-  TRUE = 1,\n-  INVALID_IDENTIFIER = 2,\n-  SEMANTIC_ERROR = 3,\n-  MATH_ERROR = 4,\n-  STACK_OVERFLOW = 5,\n-  TYPE_ERROR = 6,\n-  VARIABLE_LIMIT_REACHED = 7,\n-  EXECUTION_ERROR = 8,\n-  DERIVATION_ERROR = 9\n+  LVM_FALSE = 0,\n+  LVM_TRUE = 1,\n+  LVM_INVALID_IDENTIFIER = 2,\n+  LVM_SEMANTIC_ERROR = 3,\n+  LVM_MATH_ERROR = 4,\n+  LVM_STACK_OVERFLOW = 5,\n+  LVM_TYPE_ERROR = 6,\n+  LVM_VARIABLE_LIMIT_REACHED = 7,\n+  LVM_EXECUTION_ERROR = 8,\n+  LVM_DERIVATION_ERROR = 9\n };\n \n typedef enum lvm_status lvm_status_t;\n@@ -135,10 +135,10 @@ lvm_ip_t lvm_jump_to_operand(lvm_instance_t *p);\n lvm_ip_t lvm_shift_for_operator(lvm_instance_t *p, lvm_ip_t end);\n lvm_ip_t lvm_get_end(lvm_instance_t *p);\n lvm_ip_t lvm_set_end(lvm_instance_t *p, lvm_ip_t end);\n-void lvm_set_op(lvm_instance_t *p, operator_t op);\n-void lvm_set_relation(lvm_instance_t *p, operator_t op);\n-void lvm_set_operand(lvm_instance_t *p, operand_t *op);\n-void lvm_set_long(lvm_instance_t *p, long l);\n-void lvm_set_variable(lvm_instance_t *p, char *name);\n+lvm_status_t lvm_set_op(lvm_instance_t *p, operator_t op);\n+lvm_status_t lvm_set_relation(lvm_instance_t *p, operator_t op);\n+lvm_status_t lvm_set_operand(lvm_instance_t *p, operand_t *op);\n+lvm_status_t lvm_set_long(lvm_instance_t *p, long l);\n+lvm_status_t lvm_set_variable(lvm_instance_t *p, char *name);\n \n #endif /* LVM_H */"
+        },
+        {
+            "filename": "os/storage/antelope/relation.c",
+            "diff": "@@ -813,9 +813,9 @@ relation_process_select(void *handle_ptr)\n     }\n   }\n \n-  wanted_result = TRUE;\n+  wanted_result = LVM_TRUE;\n   if(AQL_GET_FLAGS(adt) & AQL_FLAG_INVERSE_LOGIC) {\n-    wanted_result = FALSE;\n+    wanted_result = LVM_FALSE;\n   }\n \n   /* Check whether the given predicate is true for this tuple. */"
+        }
+    ],
+    "commitTime": "2018-08-28 13:35:14"
+}

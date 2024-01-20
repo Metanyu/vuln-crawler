@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Cl\u00e9ment Lecigne",
+        "Vlad Stolyarov"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-20 22:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.47982",
+        "probability": "0.00132"
+    },
+    "exploitMaturity": "High",
+    "id": "SNYK-JAVA-ORGWEBJARSNPM-6137902",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7024"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-22 07:45:01",
+    "remediation": "There is no fixed version for org.webjars.npm:electron . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "org.webjars.npm:electron is a framework which lets you write cross-platform desktop applications using JavaScript, HTML and CSS. Affected versions of this package are vulnerable to Heap-based Buffer Overflow in the WebRTC framework, used to provide Real-Time Communications (RTC) capabilities via JavaScript APIs. "
+    },
+    "source_code": []
+}

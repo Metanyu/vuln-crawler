@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16757",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6132374",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6932"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 14:30:50",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free via the IPv4 IGMP implementation. An attacker can achieve privilege escalation or cause a system crash by exploiting a race condition to cause a timer be mistakenly registered on a RCU read locked object which is freed by another thread. "
+    },
+    "source_code": [
+        {
+            "filename": "net/ipv4/igmp.c",
+            "diff": "@@ -216,8 +216,10 @@ static void igmp_start_timer(struct ip_mc_list *im, int max_delay)\n \tint tv = get_random_u32_below(max_delay);\n \n \tim->tm_running = 1;\n-\tif (!mod_timer(&im->timer, jiffies+tv+2))\n-\t\trefcount_inc(&im->refcnt);\n+\tif (refcount_inc_not_zero(&im->refcnt)) {\n+\t\tif (mod_timer(&im->timer, jiffies + tv + 2))\n+\t\t\tip_ma_put(im);\n+\t}\n }\n \n static void igmp_gq_start_timer(struct in_device *in_dev)"
+        }
+    ],
+    "commitTime": "2023-11-24 15:25:56"
+}

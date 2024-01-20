@@ -1,0 +1,88 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-08-14 21:32:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19310",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGWEBJARSNPM-6085301",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-40013"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-06 11:43:58",
+    "remediation": "Upgrade org.webjars.npm:external-svg-loader to version 1.6.10 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "org.webjars.npm:external-svg-loader is a Plug 'n play external SVG loader Affected versions of this package are vulnerable to Cross-site Scripting (XSS) due to improper SVG sanitization. Exploiting this vulnerability is possible by crafting a malicious SVG. ",
+        "PoC": "<svg version=\"1.1\" baseProfile=\"full\" xmlns=\"http://www.w3.org/2000/svg\"> <animate onbegin=alert(1) attributeName=x dur=1s> </svg> <html> <head> <script src=\"./dist/svg-loader.js\" type=\"text/javascript\"></script> </head> <body> <svg data-src=\"data:image/svg+xml;base64,PHN2ZyB2ZXJzaW9uPSIxLjEiIGJhc2VQcm9maWxlPSJmdWxsIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxwb2x5Z29uIGlkPSJ0cmlhbmdsZSIgcG9pbnRzPSIwLDAgMCw1MCA1MCwwIiBmaWxsPSIjMDA5OTAwIiBzdHJva2U9IiMwMDQ0MDAiLz4KICA8YW5pbWF0ZSBvbmJlZ2luPWFsZXJ0KDEpIGF0dHJpYnV0ZU5hbWU9eCBkdXI9MXM+Cjwvc3ZnPgo=\"></svg> </body> </html> "
+    },
+    "source_code": [
+        {
+            "filename": "package.json",
+            "diff": "@@ -9,7 +9,7 @@\n         \"url\": \"https://github.com/shubhamjain/svg-loader.git\"\n     },\n     \"main\": \"dist/svg-loader.min.js\",\n-    \"version\": \"1.6.8\",\n+    \"version\": \"1.6.9\",\n     \"scripts\": {\n         \"postinstall\": \"npm-run-all build:*\",\n         \"build:js\": \"cross-env NODE_ENV=production webpack build\","
+        },
+        {
+            "filename": "svg-loader.js",
+            "diff": "@@ -62,6 +62,12 @@ const getAllEventNames = () => {\n         }\n     }\n \n+    // SVG <animate> events\n+    DOM_EVENTS.push('onbegin', 'onend', 'onrepeat');\n+\n+    // Some non-standard events, just in case the browser is handling them\n+    DOM_EVENTS.push('onfocusin', 'onfocusout', 'onbounce', 'onfinish', 'onshow');\n+\n     return DOM_EVENTS;\n };\n \n@@ -128,7 +134,7 @@ const renderBody = (elem, options, body) => {\n             }\n \n             // Remove \"javascript:...\" unless specifically enabled\n-            if ([\"href\", \"xlink:href\"].includes(name) && value.startsWith(\"javascript\") && !enableJs) {\n+            if ([\"href\", \"xlink:href\", \"values\"].includes(name) && value.startsWith(\"javascript\") && !enableJs) {\n                 attributesToRemove.push(name);\n             }\n         }\n@@ -391,4 +397,4 @@ globalThis.SVGLoader.destroyCache = async () => {\n             localStorage.removeItem(key);\n         }\n     });\n-}\n+}\n\\ No newline at end of file"
+        },
+        {
+            "filename": "test/icons/svg-xss-2.svg",
+            "diff": "@@ -0,0 +1,3 @@\n+<svg version=\"1.1\" baseProfile=\"full\" xmlns=\"http://www.w3.org/2000/svg\">\n+  <animate onbegin=alert(1) attributeName=x dur=1s>\n+</svg>\n\\ No newline at end of file"
+        },
+        {
+            "filename": "test/icons/svg-xss.svg",
+            "diff": "@@ -0,0 +1,3 @@\n+    <svg version=\"1.1\" baseProfile=\"full\" xmlns=\"http://www.w3.org/2000/svg\">\n+        <animate xlink:href=#xss attributeName=href values=javascript:alert(1) /><a id=xss><text x=20 y=20>XSS</text></a></svg>\n+    </svg>\n\\ No newline at end of file"
+        },
+        {
+            "filename": "test/index.html",
+            "diff": "@@ -1,6 +1,5 @@\n <html>\n     <head>\n-        <link rel=\"stylesheet\" href=\"/main.css\">\n         <style>\n             body {\n                 padding-bottom: 80px;\n@@ -61,6 +60,15 @@ <h1>\n     <div>This is a more complicated SVG with JS, only map with overlay message should be shown</div>\n     <svg data-src=\"./USStates.svg\"></svg>\n \n+    <div class=\"heading\">Icon with XSS</div>\n+    <div>Tricky XSS that needs to be filtered out. On clicking \"X\" nothing should happen </div>\n+    <svg data-src=\"/icons/svg-xss.svg\"></svg>\n+\n+    <div class=\"heading\">Icon with XSS 2</div>\n+    <div>Alert should not come</div>\n+    <svg data-src=\"/icons/svg-xss-2.svg\"></svg>\n+\n+\n     <div class=\"heading\">Icon with JS (enabled)</div>\n     <div>On hover alert should be thrown</div>\n     <svg data-src=\"/icons/cog-with-script.svg\" data-js=\"enabled\"></svg>"
+        }
+    ],
+    "commitTime": "2023-08-12 04:26:16"
+}

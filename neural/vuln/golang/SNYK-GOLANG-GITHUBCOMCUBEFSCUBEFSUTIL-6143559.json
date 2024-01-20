@@ -1,0 +1,56 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Ada Logics"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2024-01-03 17:54:16",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCUBEFSCUBEFSUTIL-6143559",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46740"
+        ],
+        "CWE": [
+            "CWE-330"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 11:34:34",
+    "remediation": "Upgrade github.com/cubefs/cubefs/util to version 3.3.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use of Insufficiently Random Values",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use of Insufficiently Random Values due to the use of an insecure random string generator for creating accessKey . An attacker could predict or guess the generated string and impersonate a user, thereby obtaining unauthorized access and elevated privileges. "
+    },
+    "source_code": [
+        {
+            "filename": "proto/packet.go",
+            "diff": "@@ -596,6 +596,8 @@ func (p *Packet) GetOpMsg() (m string) {\n \t\tm = \"OpLcNodeScan\"\n \tcase OpLcNodeSnapshotVerDel:\n \t\tm = \"OpLcNodeSnapshotVerDel\"\n+\tcase OpMetaReadDirOnly:\n+\t\tm = \"OpMetaReadDirOnly\"\n \tdefault:\n \t\tm = fmt.Sprintf(\"op:%v not found\", p.Opcode)\n \t}"
+        },
+        {
+            "filename": "sdk/data/stream/stream_writer.go",
+            "diff": "@@ -395,7 +395,8 @@ begin:\n \t\t\t\t}\n \t\t\t}\n \t\t\t// try append write, get response\n-\t\t\tlog.LogDebugf(\"action[streamer.write] doAppendWrite req %v FileOffset %v size %v\", req.ExtentKey, req.FileOffset, req.Size)\n+\t\t\tlog.LogDebugf(\"action[streamer.write] doAppendWrite req: ExtentKey(%v) FileOffset(%v) size(%v)\",\n+\t\t\t\treq.ExtentKey, req.FileOffset, req.Size)\n \t\t\tvar status int32\n \t\t\t// First, attempt sequential writes using neighboring extent keys. If the last extent has a different version,\n \t\t\t// it indicates that the extent may have been fully utilized by the previous version."
+        },
+        {
+            "filename": "util/string.go",
+            "diff": "@@ -15,9 +15,9 @@\n package util\n \n import (\n-\t\"math/rand\"\n+\t\"crypto/rand\"\n+\t\"math/big\"\n \t\"strings\"\n-\t\"time\"\n )\n \n func SubString(sourceString string, begin, end int) string {\n@@ -59,9 +59,9 @@ func RandomString(length int, seed RandomSeed) string {\n \truns := seed.Runes()\n \tresult := \"\"\n \tfor i := 0; i < length; i++ {\n-\t\trand.Seed(time.Now().UnixNano())\n-\t\trandNumber := rand.Intn(len(runs))\n-\t\tresult += string(runs[randNumber])\n+\t\tlenInt64 := int64(len(runs))\n+\t\trandNumber, _ := rand.Int(rand.Reader, big.NewInt(lenInt64))\n+\t\tresult += string(runs[randNumber.Uint64()])\n \t}\n \treturn result\n }"
+        }
+    ],
+    "commitTime": "2023-10-23 02:53:38"
+}

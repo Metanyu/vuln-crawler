@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Kwstubbs"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.2,
+    "disclosureTime": "2023-12-13 21:43:47",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12306",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-JELLYFINCONTROLLER-6124885",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48702"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-14 10:46:16",
+    "remediation": "Upgrade Jellyfin.Controller to version 10.8.13 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Remote Code Execution (RCE)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Remote Code Execution (RCE) via the ValidateVersion function. An attacker with administrative access can set up a network share and supply a UNC path to the /System/MediaEncoder/Path endpoint, which points to an executable on the network share, causing the server to execute the file in the local context. "
+    },
+    "source_code": [
+        {
+            "filename": "Jellyfin.Api/Controllers/ConfigurationController.cs",
+            "diff": "@@ -125,12 +125,14 @@ public ActionResult<MetadataOptions> GetDefaultMetadataOptions()\n         /// <param name=\"mediaEncoderPath\">Media encoder path form body.</param>\n         /// <response code=\"204\">Media encoder path updated.</response>\n         /// <returns>Status.</returns>\n+        [Obsolete(\"This endpoint is obsolete.\")]\n         [HttpPost(\"MediaEncoder/Path\")]\n         [Authorize(Policy = Policies.FirstTimeSetupOrElevated)]\n         [ProducesResponseType(StatusCodes.Status204NoContent)]\n         public ActionResult UpdateMediaEncoderPath([FromBody, Required] MediaEncoderPathDto mediaEncoderPath)\n         {\n-            _mediaEncoder.UpdateEncoderPath(mediaEncoderPath.Path, mediaEncoderPath.PathType);\n+            // API ENDPOINT DISABLED (NOOP) FOR SECURITY PURPOSES\n+            //_mediaEncoder.UpdateEncoderPath(mediaEncoderPath.Path, mediaEncoderPath.PathType);\n             return NoContent();\n         }\n     }"
+        }
+    ],
+    "commitTime": "2023-11-29 03:19:55"
+}

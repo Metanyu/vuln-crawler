@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-05 18:12:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.08261",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMTRAEFIKTRAEFIKV2PKGPROVIDERACME-6100745",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47124"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-07 06:27:05",
+    "remediation": "Upgrade github.com/traefik/traefik/v2/pkg/provider/acme to version 2.10.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Resource Exhaustion",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Resource Exhaustion via the ACME HTTP challenge process. An attacker can exploit the authorized delay to solve the challenge, which can be abused using methods similar to a slowloris attack. ",
+        "Workaround": "Replace the HTTPChallenge with the TLSChallenge or the DNSChallenge . "
+    },
+    "source_code": [
+        {
+            "filename": "pkg/provider/acme/challenge_http.go",
+            "diff": "@@ -11,10 +11,8 @@ import (\n \t\"sync\"\n \t\"time\"\n \n-\t\"github.com/cenkalti/backoff/v4\"\n \t\"github.com/go-acme/lego/v4/challenge/http01\"\n \t\"github.com/traefik/traefik/v2/pkg/log\"\n-\t\"github.com/traefik/traefik/v2/pkg/safe\"\n )\n \n // ChallengeHTTP HTTP challenge provider implements challenge.Provider.\n@@ -105,35 +103,18 @@ func (c *ChallengeHTTP) getTokenValue(ctx context.Context, token, domain string)\n \tlogger := log.FromContext(ctx)\n \tlogger.Debugf(\"Retrieving the ACME challenge for %s (token %q)...\", domain, token)\n \n-\tvar result []byte\n-\n-\toperation := func() error {\n-\t\tc.lock.RLock()\n-\t\tdefer c.lock.RUnlock()\n-\n-\t\tif _, ok := c.httpChallenges[token]; !ok {\n-\t\t\treturn fmt.Errorf(\"cannot find challenge for token %q (%s)\", token, domain)\n-\t\t}\n-\n-\t\tvar ok bool\n-\t\tresult, ok = c.httpChallenges[token][domain]\n-\t\tif !ok {\n-\t\t\treturn fmt.Errorf(\"cannot find challenge for %s (token %q)\", domain, token)\n-\t\t}\n+\tc.lock.RLock()\n+\tdefer c.lock.RUnlock()\n \n+\tif _, ok := c.httpChallenges[token]; !ok {\n+\t\tlogger.Errorf(\"Cannot retrieve the ACME challenge for %s (token %q)\", domain, token)\n \t\treturn nil\n \t}\n \n-\tnotify := func(err error, time time.Duration) {\n-\t\tlogger.Errorf(\"Error getting challenge for token retrying in %s\", time)\n-\t}\n-\n-\tebo := backoff.NewExponentialBackOff()\n-\tebo.MaxElapsedTime = 60 * time.Second\n-\terr := backoff.RetryNotify(safe.OperationWithRecover(operation), ebo, notify)\n-\tif err != nil {\n-\t\tlogger.Errorf(\"Cannot retrieve the ACME challenge for %s (token %q): %v\", domain, token, err)\n-\t\treturn []byte{}\n+\tresult, ok := c.httpChallenges[token][domain]\n+\tif !ok {\n+\t\tlogger.Errorf(\"Cannot retrieve the ACME challenge for %s (token %q)\", domain, token)\n+\t\treturn nil\n \t}\n \n \treturn result"
+        }
+    ],
+    "commitTime": "2023-11-13 14:58:09"
+}

@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Dimitrios Tatsis"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-05 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10905",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-NTPSECGPSD-6101980",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-43628"
+        ],
+        "CWE": [
+            "CWE-191"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-06 15:21:14",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Integer Overflow or Wraparound",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Integer Overflow or Wraparound due to improper handling of certain input, which may lead to an integer overflow condition. An attacker can cause a denial of service or potentially execute arbitrary code by sending crafted input to trigger the overflow. "
+    },
+    "source_code": [
+        {
+            "filename": "gpsd/net_ntrip.c",
+            "diff": "@@ -621,7 +621,7 @@ static socket_t ntrip_stream_get_req(const struct ntrip_stream_t *stream,\n /* lexer_getline() -- get one line, ending in \\n or \\0, from lexer->inbuffer,\n  * put in lexer->outbuffer.  NUL terminate outbuffer.\n  *\n- * Assume: inbufptr is correct.  inbuffer is NULL terminated.\n+ * Assume: inbufptr is correct.  inbuffer is NUL terminated.\n  *\n  * Can not handle buffer wrap.\n  *\n@@ -632,8 +632,14 @@ static void lexer_getline(struct gps_lexer_t *lexer)\n     unsigned i;\n \n     for (i = 0; i < sizeof(lexer->outbuffer) - 2; i++) {\n-        unsigned char u = *lexer->inbufptr++;\n+        unsigned char u;\n \n+        if (0 == lexer->inbuflen ||\n+            sizeof(lexer->inbuffer) <= lexer->inbuflen) {  // paranoia\n+            // nothing left to read,  ending not found\n+            break;\n+        }\n+        u = *lexer->inbufptr++;\n         lexer->outbuffer[i] = u;\n         lexer->inbuflen--;\n \n@@ -646,18 +652,15 @@ static void lexer_getline(struct gps_lexer_t *lexer)\n             i++;\n             break;\n         }\n-\n-        if (0 == lexer->inbuflen) {\n-            // nothing left to read,  ending not found\n-            i++;\n-            break;\n-        }\n     }\n     lexer->outbuffer[i] = '\\0';  // Ensure a NUL\n     lexer->outbuflen = i;\n }\n \n-/* parse the stream header\n+/* ntrip_stream_get_parse(s) -- read, then parse, the stream header.\n+ * Assume the entire header is ready to be read, and is less than\n+ * 1024 bytes.\n+ *\n  * Return: 0 == OK\n  *         less than zero == failure\n  */\n@@ -672,13 +675,14 @@ static int ntrip_stream_get_parse(struct gps_device_t *device)\n     struct gps_lexer_t *lexer = &device->lexer;\n     char *ibuf = (char *)lexer->inbuffer;\n     char *obuf = (char *)lexer->outbuffer;\n+    bool got_header;\n \n     GPSD_LOG(LOG_PROG, errout,\n              \"NTRIP: ntrip_stream_get_parse(fd %d)\\n\", dsock);\n     lexer_init(lexer, &device->context->errout);\n     /* We expect the header comes in as one TCP packet.\n      * dsock is still blocking, so get exactly 1024 bytes */\n-    while (-1 == (read_ret = read(dsock, ibuf, 1024))) {\n+    while (0 >= (read_ret = read(dsock, ibuf, 1024))) {\n         if (EINTR == errno) {\n             continue;\n         }\n@@ -688,7 +692,7 @@ static int ntrip_stream_get_parse(struct gps_device_t *device)\n         return -1;\n     }\n     ibuf[read_ret] = '\\0';   // Make a nice NUL terminated string.\n-    lexer->inbuflen = read_ret;\n+    lexer->inbuflen = (size_t)read_ret;\n     lexer_getline(lexer);\n     GPSD_LOG(LOG_IO, errout,\n              \"NTRIP: lexer_getline() >%s<\\n\",\n@@ -746,15 +750,15 @@ static int ntrip_stream_get_parse(struct gps_device_t *device)\n      *\n      */\n \n-    while (1) {\n+    got_header = false;\n+    while (0 < lexer->inbuflen) {\n         lexer_getline(lexer);\n         GPSD_LOG(LOG_IO, errout,\n                  \"NTRIP: lexer_getline() >%s<\\n\",\n                  gps_visibilize(dbgbuf, sizeof(dbgbuf),\n                                 (char *)lexer->outbuffer, lexer->outbuflen));\n \n-        /* Chunking not supported. Yet. Refuse the stream or it would\n-         * confuse the RTCM3 parser. */\n+        // Chunking needed?\n         if (0 == strncmp(obuf, NTRIP_CHUNKED, sizeof(NTRIP_CHUNKED))) {\n             GPSD_LOG(LOG_PROG, errout,\n                      \"NTRIP: caster sends chunked data\\n\");\n@@ -766,9 +770,17 @@ static int ntrip_stream_get_parse(struct gps_device_t *device)\n         }\n         if (0 == strncmp(obuf, NTRIP_BR, sizeof(NTRIP_BR))) {\n             // done\n+            got_header = true;\n             break;\n         }\n     }\n+    if (false == got_header) {\n+        GPSD_LOG(LOG_WARN, errout,\n+                 \"NTRIP: did not get end of headers.\\n\");\n+        /* do something about it? If we are not chunked it'll work out\n+         * anyway. */\n+    }\n+\n     opts = fcntl(dsock, F_GETFL);\n \n     if (-1 == opts) {\n@@ -782,10 +794,12 @@ static int ntrip_stream_get_parse(struct gps_device_t *device)\n     GPSD_LOG(LOG_IO, errout,\n              \"NTRIP: ntrip_stream_get_parse(), %zu leftover bytes\\n\",\n              lexer->inbuflen);\n-    if (0 == lexer->inbuflen) {\n+    if (0 == lexer->inbuflen ||\n+        sizeof(lexer->inbuffer) <= lexer->inbuflen) {  // paranoia\n         packet_reset(lexer);\n     } else {\n-        // The \"leftover\" is the start of the first chunk.\n+        /* The \"leftover\" is the start of the datastream. Chunked or\n+         * unchunked. */\n         if (lexer->inbufptr != lexer->inbuffer) {\n             // Shift inbufptr to the start.  Yes, a bit brutal.\n             memmove(lexer->inbuffer, lexer->inbufptr, lexer->inbuflen);"
+        }
+    ],
+    "commitTime": "2023-11-29 02:45:54"
+}

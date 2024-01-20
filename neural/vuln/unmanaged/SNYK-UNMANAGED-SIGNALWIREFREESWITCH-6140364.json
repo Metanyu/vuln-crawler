@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "sandrogauci",
+        "alfredfarrugia"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-27 17:42:59",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-SIGNALWIREFREESWITCH-6140364",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51443"
+        ],
+        "CWE": [
+            "CWE-703"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-28 14:57:42",
+    "remediation": "Upgrade signalwire/freeswitch to version 1.10.11 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Check or Handling of Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Check or Handling of Exceptional Conditions via the DTLS handshake process. An attacker can cause a denial of service by continuously sending a ClientHello DTLS message with an invalid CipherSuite to the server's port, leading to the teardown of media sessions and associated signaling. "
+    },
+    "source_code": [
+        {
+            "filename": "src/switch_rtp.c",
+            "diff": "@@ -3374,7 +3374,20 @@ static int do_dtls(switch_rtp_t *rtp_session, switch_dtls_t *dtls)\n \t\treturn 0;\n \t}\n \n-\tif (is_ice && !rtp_session->ice.cand_responsive) {\n+\tif (is_ice && !(rtp_session->ice.type & ICE_LITE) && !rtp_session->ice.cand_responsive) {\n+\t\tswitch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG6, \"Got DTLS packet but candidate is not responsive\\n\");\n+\n+\t\treturn 0;\n+\t}\n+\n+\tif (is_ice && !switch_cmp_addr(rtp_session->from_addr, rtp_session->ice.addr, SWITCH_TRUE)) {\n+\t\tchar tmp_buf1[80] = \"\";\n+\t\tchar tmp_buf2[80] = \"\";\n+\t\tconst char *host_from = switch_get_addr(tmp_buf1, sizeof(tmp_buf1), rtp_session->from_addr);\n+\t\tconst char *host_ice_cur_addr = switch_get_addr(tmp_buf2, sizeof(tmp_buf2), rtp_session->ice.addr);\n+\n+\t\tswitch_log_printf(SWITCH_CHANNEL_SESSION_LOG(rtp_session->session), SWITCH_LOG_DEBUG5, \"Got DTLS packet from [%s] whilst current ICE negotiated address is [%s]. Ignored.\\n\", host_from, host_ice_cur_addr);\n+\n \t\treturn 0;\n \t}\n "
+        }
+    ],
+    "commitTime": "2023-12-22 14:57:34"
+}

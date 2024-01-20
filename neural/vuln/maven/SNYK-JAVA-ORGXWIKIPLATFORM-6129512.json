@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.9,
+    "disclosureTime": "2023-12-15 21:01:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.26485",
+        "probability": "0.00064"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGXWIKIPLATFORM-6129512",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50721"
+        ],
+        "CWE": [
+            "CWE-95"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-17 12:21:19",
+    "remediation": "Upgrade org.xwiki.platform:xwiki-platform-search-ui to version 14.10.15, 15.5.2, 15.7-rc-1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection')",
+    "vulnDescription": {
+        "Overview": "org.xwiki.platform:xwiki-platform-search-ui is a Platform Search UI which allows searching on the full wiki using wildcards, searching by space, getting search result RSS feeds and more. By default provides a Database-backed search but allows pluging other engines (such as Lucene, Solr and more) Affected versions of this package are vulnerable to Improper Neutralization of Directives in Dynamically Evaluated Code ('Eval Injection') due to improper escaping of the id and label of search user interface extensions. An attacker can execute arbitrary code by injecting XWiki syntax containing script macros, including Groovy macros, which can compromise the confidentiality, integrity, and availability of the entire XWiki instance. This attack can be executed by any user who can edit a wiki page, such as a user's profile, which is editable by default. ",
+        "Workaround": "This vulnerability can be mitigated by manually applying a patch to the page XWiki.SearchAdmin . "
+    },
+    "source_code": [
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-search/xwiki-platform-search-ui/pom.xml",
+            "diff": "@@ -50,5 +50,34 @@\n       <groupId>org.webjars</groupId>\n       <artifactId>jquery</artifactId>\n     </dependency>\n+    <!-- Test dependencies. -->\n+    <dependency>\n+      <groupId>org.xwiki.platform</groupId>\n+      <artifactId>xwiki-platform-test-page</artifactId>\n+      <version>${project.version}</version>\n+      <scope>test</scope>\n+    </dependency>\n+    <dependency>\n+      <groupId>org.xwiki.platform</groupId>\n+      <artifactId>xwiki-platform-uiextension-api</artifactId>\n+      <version>${project.version}</version>\n+      <scope>test</scope>\n+      <type>test-jar</type>\n+    </dependency>\n+    <!-- Provides the component list for RenderingScriptService. -->\n+    <dependency>\n+      <groupId>org.xwiki.platform</groupId>\n+      <artifactId>xwiki-platform-rendering-xwiki</artifactId>\n+      <version>${project.version}</version>\n+      <type>test-jar</type>\n+      <scope>test</scope>\n+    </dependency>\n+    <dependency>\n+      <groupId>org.xwiki.platform</groupId>\n+      <artifactId>xwiki-platform-rendering-configuration-default</artifactId>\n+      <version>${project.version}</version>\n+      <type>test-jar</type>\n+      <scope>test</scope>\n+    </dependency>\n   </dependencies>\n </project>"
+        },
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-search/xwiki-platform-search-ui/src/main/resources/XWiki/SearchAdmin.xml",
+            "diff": "@@ -34,7 +34,7 @@\n   <title>Search administration</title>\n   <comment/>\n   <minorEdit>false</minorEdit>\n-  <syntaxId>xwiki/2.0</syntaxId>\n+  <syntaxId>xwiki/2.1</syntaxId>\n   <hidden>true</hidden>\n   <content>{{include reference='XWiki.SearchCode' /}}\n \n@@ -55,7 +55,8 @@\n     &lt;dd&gt;\n       &lt;select name='XWiki.SearchConfigClass_0_engine'&gt;\n       #foreach ($availableSearchExtension in $availableSearchExtensions)\n-        &lt;option value=\"$availableSearchExtension.id\" #if($availableSearchExtension.id == $searchEngine)selected='selected'#end&gt;$availableSearchExtension.parameters.label&lt;/option&gt;\n+        &lt;option value=\"$escapetool.xml($availableSearchExtension.id)\" #if($availableSearchExtension.id == $searchEngine)\n+        selected='selected'#end &gt;$escapetool.xml($availableSearchExtension.parameters.label)&lt;/option&gt;\n       #end\n       &lt;/select&gt;\n     &lt;/dd&gt;\n@@ -76,17 +77,20 @@\n     {{html clean=\"false\"}}\n     &lt;ul class=\"nav nav-tabs\" role=\"tablist\"&gt;\n       &lt;li role=\"presentation\" class=\"active\"&gt;\n-        &lt;a href=\"#${searchEngine}Config\" aria-controls=\"${searchEngine}Config\" role=\"tab\" data-toggle=\"tab\"&gt;\n-          $searchExtension.parameters.label\n+        &lt;a href=\"#${escapetool.xml($searchEngine)}Config\" aria-controls=\"${escapetool.xml($searchEngine)}Config\"\n+          role=\"tab\"\n+          data-toggle=\"tab\"&gt;\n+          $escapetool.xml($searchExtension.parameters.label)\n         &lt;/a&gt;\n       &lt;/li&gt;\n     &lt;/ul&gt;\n     {{/html}}\n \n     (% class=\"tab-content\" %)(((\n-      (% role=\"tabpanel\" class=\"tab-pane active\" id=\"${searchEngine}Config\" %)(((\n+      (% role=\"tabpanel\" class=\"tab-pane active\" id=\"${services.rendering.escape($searchEngine, 'xwiki/2.1')}Config\"\n+      %)(((\n         ## Use context='new' in the include so that we can use PR.\n-        {{include reference=\"$searchAdminPage\" context='new'}}\n+        {{include reference=\"$services.rendering.escape($searchAdminPage, 'xwiki/2.1')\" context='new'}}\n       )))\n     )))\n   #end"
+        },
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-search/xwiki-platform-search-ui/src/test/java/org/xwiki/search/ui/SearchAdminPageTest.java",
+            "diff": "@@ -0,0 +1,145 @@\n+/*\n+ * See the NOTICE file distributed with this work for additional\n+ * information regarding copyright ownership.\n+ *\n+ * This is free software; you can redistribute it and/or modify it\n+ * under the terms of the GNU Lesser General Public License as\n+ * published by the Free Software Foundation; either version 2.1 of\n+ * the License, or (at your option) any later version.\n+ *\n+ * This software is distributed in the hope that it will be useful,\n+ * but WITHOUT ANY WARRANTY; without even the implied warranty of\n+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU\n+ * Lesser General Public License for more details.\n+ *\n+ * You should have received a copy of the GNU Lesser General Public\n+ * License along with this software; if not, write to the Free\n+ * Software Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA\n+ * 02110-1301 USA, or see the FSF site: http://www.fsf.org.\n+ */\n+package org.xwiki.search.ui;\n+\n+import org.jsoup.nodes.Document;\n+import org.jsoup.nodes.Element;\n+import org.junit.jupiter.api.BeforeEach;\n+import org.junit.jupiter.api.Test;\n+import org.xwiki.bridge.event.DocumentCreatedEvent;\n+import org.xwiki.component.manager.ComponentManager;\n+import org.xwiki.component.wiki.internal.bridge.DefaultWikiObjectComponentManagerEventListener;\n+import org.xwiki.context.internal.concurrent.DefaultContextStoreManager;\n+import org.xwiki.model.reference.DocumentReference;\n+import org.xwiki.observation.EventListener;\n+import org.xwiki.rendering.RenderingScriptServiceComponentList;\n+import org.xwiki.rendering.internal.configuration.DefaultRenderingConfigurationComponentList;\n+import org.xwiki.test.annotation.ComponentList;\n+import org.xwiki.test.page.HTML50ComponentList;\n+import org.xwiki.test.page.PageTest;\n+import org.xwiki.test.page.TestNoScriptMacro;\n+import org.xwiki.test.page.XWikiSyntax21ComponentList;\n+import org.xwiki.uiextension.internal.UIExtensionClassDocumentInitializer;\n+import org.xwiki.uiextension.internal.WikiUIExtensionConstants;\n+import org.xwiki.uiextension.script.UIExtensionScriptServiceComponentList;\n+\n+import com.xpn.xwiki.doc.XWikiDocument;\n+import com.xpn.xwiki.objects.BaseObject;\n+\n+import static org.junit.jupiter.api.Assertions.assertEquals;\n+import static org.junit.jupiter.api.Assertions.assertNotNull;\n+import static org.mockito.ArgumentMatchers.any;\n+import static org.mockito.ArgumentMatchers.eq;\n+import static org.mockito.Mockito.when;\n+\n+/**\n+ * Page test for {@code XWiki.SearchAdmin}.\n+ *\n+ * @version $Id$\n+ */\n+@ComponentList({ UIExtensionClassDocumentInitializer.class, DefaultContextStoreManager.class, TestNoScriptMacro.class })\n+@UIExtensionScriptServiceComponentList\n+@RenderingScriptServiceComponentList\n+@DefaultRenderingConfigurationComponentList\n+@HTML50ComponentList\n+@XWikiSyntax21ComponentList\n+class SearchAdminPageTest extends PageTest\n+{\n+    private static final String WIKI_NAME = \"xwiki\";\n+\n+    private static final String XWIKI_SPACE = \"XWiki\";\n+\n+    private static final DocumentReference SEARCH_ADMIN_SHEET =\n+        new DocumentReference(WIKI_NAME, XWIKI_SPACE, \"SearchAdmin\");\n+\n+    private static final DocumentReference ADMIN_REFERENCE = new DocumentReference(WIKI_NAME, XWIKI_SPACE, \"Admin\");\n+\n+    @BeforeEach\n+    void setUp() throws Exception\n+    {\n+        // Initialize the UIExtension class.\n+        this.xwiki.initializeMandatoryDocuments(this.context);\n+\n+        when(this.oldcore.getMockAuthorizationManager().hasAccess(any(), eq(ADMIN_REFERENCE), any())).thenReturn(true);\n+\n+        // Register the component manager as wiki component manager so that the UIX can be registered on the wiki.\n+        this.componentManager.registerComponent(ComponentManager.class, \"wiki\", this.componentManager);\n+    }\n+\n+    @Test\n+    void escapesExtensionProperties() throws Exception\n+    {\n+        // Create a document with a UI extension to test on.\n+        DocumentReference docRef = new DocumentReference(WIKI_NAME, XWIKI_SPACE, \"Test\");\n+        XWikiDocument document = new XWikiDocument(docRef);\n+        // Set the author to admin so the UIX can be registered at wiki level.\n+        document.setAuthorReference(ADMIN_REFERENCE);\n+        BaseObject uiExtensionObject =\n+            document.newXObject(WikiUIExtensionConstants.UI_EXTENSION_CLASS, this.context);\n+        uiExtensionObject.setStringValue(WikiUIExtensionConstants.EXTENSION_POINT_ID_PROPERTY,\n+            \"org.xwiki.platform.search\");\n+        String id = \"\\\")}}{{noscript /}}\";\n+        uiExtensionObject.setStringValue(WikiUIExtensionConstants.ID_PROPERTY, id);\n+        String label = \"Label {{noscript /}}\";\n+        String adminPageName = \"\\\"}}{{noscript /}}Admin\";\n+        String adminPage = XWIKI_SPACE + \".\" + adminPageName;\n+        uiExtensionObject.setLargeStringValue(WikiUIExtensionConstants.PARAMETERS_PROPERTY, \"label=\" + label + \"\\n\"\n+            + \"admin=\" + adminPage);\n+        uiExtensionObject.setStringValue(WikiUIExtensionConstants.SCOPE_PROPERTY, \"wiki\");\n+        this.xwiki.saveDocument(document, this.context);\n+\n+        // The event listeners are not registered by default. We trigger it manually so that the UIX is registered and\n+        // can be found and rendered.\n+        this.componentManager\n+            .<EventListener>getInstance(EventListener.class,\n+                DefaultWikiObjectComponentManagerEventListener.EVENT_LISTENER_NAME)\n+            .onEvent(new DocumentCreatedEvent(), document, null);\n+\n+        // Create the fake search admin page.\n+        DocumentReference searchAdminReference = new DocumentReference(WIKI_NAME, XWIKI_SPACE, adminPageName);\n+        XWikiDocument searchAdminDocument = new XWikiDocument(searchAdminReference);\n+        String searchAdminPageContent = \"Search Admin Page Content\";\n+        searchAdminDocument.setContent(searchAdminPageContent);\n+        this.xwiki.saveDocument(searchAdminDocument, this.context);\n+\n+        // Load XWiki.SearchCode and XWiki.SearchConfigClass as the SearchAdmin page uses them.\n+        loadPage(new DocumentReference(WIKI_NAME, XWIKI_SPACE, \"SearchCode\"));\n+        loadPage(new DocumentReference(WIKI_NAME, XWIKI_SPACE, \"SearchConfigClass\"));\n+\n+        Document htmlPage = renderHTMLPage(SEARCH_ADMIN_SHEET);\n+\n+        Element optionElement = htmlPage.selectFirst(\"select option\");\n+        assertNotNull(optionElement);\n+        assertEquals(id, optionElement.attr(\"value\"));\n+        assertEquals(label, optionElement.text());\n+\n+        Element tabLink = htmlPage.selectFirst(\"ul.nav-tabs li a\");\n+        assertNotNull(tabLink);\n+        String tabId = String.format(\"%sConfig\", id);\n+        assertEquals(\"#\" + tabId, tabLink.attr(\"href\"));\n+        assertEquals(tabId, tabLink.attr(\"aria-controls\"));\n+        assertEquals(label, tabLink.text());\n+\n+        Element tabContent = htmlPage.selectFirst(\"div.tab-content div.tab-pane\");\n+        assertNotNull(tabContent);\n+        assertEquals(tabId, tabContent.attr(\"id\"));\n+        assertEquals(searchAdminPageContent, tabContent.text());\n+    }\n+}"
+        }
+    ],
+    "commitTime": "2023-08-09 14:22:23"
+}

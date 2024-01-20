@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Rohit Keshri"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.4,
+    "disclosureTime": "2023-12-21 21:56:24",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6138249",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7042"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:47:40",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference via the ath10k_wmi_tlv_op_pull_mgmt_tx_compl_ev() function in the drivers/net/wireless/ath/ath10k/wmi-tlv.c file. This issue could be exploited to trigger a denial of service. "
+    },
+    "source_code": [
+        {
+            "filename": "drivers/net/wireless/ath/ath10k/wmi-tlv.c",
+            "diff": "@@ -851,6 +851,10 @@ ath10k_wmi_tlv_op_pull_mgmt_tx_compl_ev(struct ath10k *ar, struct sk_buff *skb,\n \t}\n \n \tev = tb[WMI_TLV_TAG_STRUCT_MGMT_TX_COMPL_EVENT];\n+\tif (!ev) {\n+\t\tkfree(tb);\n+\t\treturn -EPROTO;\n+\t}\n \n \targ->desc_id = ev->desc_id;\n \targ->status = ev->status;"
+        }
+    ],
+    "commitTime": "2023-12-18 18:41:00"
+}

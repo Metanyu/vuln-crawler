@@ -1,0 +1,44 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "ESET researchers"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-17 14:52:00",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-PYTHON-TK1NTER-6129557",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ],
+        "Malicious_Packages_List": [
+            "Malicious_Packages_List-6330"
+        ]
+    },
+    "language": "python",
+    "malicious": true,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-17 15:06:06",
+    "remediation": "Avoid using all malicious instances of the tk1nter package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "tk1nter is a malicious package. This package contains a malicious code that steals cryptocurrency from the victim's machine. "
+    },
+    "source_code": []
+}

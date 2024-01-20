@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "johnax0"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.4,
+    "disclosureTime": "2024-01-03 21:50:26",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-CRAFTCMSCMS-6143588",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21622"
+        ],
+        "CWE": [
+            "CWE-269"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-04 15:22:10",
+    "remediation": "Upgrade craftcms/cms to version 3.9.6, 4.5.11 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Privilege Management",
+    "vulnDescription": {
+        "Overview": "craftcms/cms is a content management system. Affected versions of this package are vulnerable to Improper Privilege Management. An attacker can escalate privileges by manipulating user permission settings. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -11,7 +11,7 @@\n - Fixed a bug where dropdown option labels within Table fields weren\u2019t getting translated. ([#13914](https://github.com/craftcms/cms/issues/13914))\n - Fixed a bug where \u201cUpdating search indexes\u201d jobs were getting queued for Matrix block revisions. ([#13917](https://github.com/craftcms/cms/issues/13917))\n - Fixed a bug where control panel resources weren\u2019t getting published on demand. ([#13935](https://github.com/craftcms/cms/issues/13935))\n-- Fixed a privilege escalation vulnerability.\n+- Fixed privilege escalation vulnerabilities.\n \n ## 4.5.10 - 2023-11-07\n "
+        },
+        {
+            "filename": "src/controllers/ElementsController.php",
+            "diff": "@@ -1103,11 +1103,17 @@ public function actionSave(): ?Response\n         }\n \n         $this->element = $element;\n-\n-        $this->_applyParamsToElement($element);\n         $elementsService = Craft::$app->getElements();\n         $user = static::currentUser();\n \n+        // Check save permissions before and after applying POST params to the element\n+        // in case the request was tampered with.\n+        if (!$elementsService->canSave($element, $user)) {\n+            throw new ForbiddenHttpException('User not authorized to save this element.');\n+        }\n+\n+        $this->_applyParamsToElement($element);\n+\n         if (!$elementsService->canSave($element, $user)) {\n             throw new ForbiddenHttpException('User not authorized to save this element.');\n         }"
+        }
+    ],
+    "commitTime": "2023-11-16 16:45:41"
+}

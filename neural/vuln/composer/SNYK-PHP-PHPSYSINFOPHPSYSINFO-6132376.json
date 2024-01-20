@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Jiasheng He"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-19 12:30:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19098",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-PHPSYSINFOPHPSYSINFO-6132376",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49006"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-20 13:02:08",
+    "remediation": "Upgrade phpsysinfo/phpsysinfo to version 3.4.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via a crafted page in the XML.php file. An attacker can obtain sensitive information by enticing a user to visit a malicious page. This is only exploitable if the users have enabled the vulnerable functionality which is disabled by default. "
+    },
+    "source_code": [
+        {
+            "filename": "phpsysinfo.ini.new",
+            "diff": "@@ -47,6 +47,13 @@ ADD_PATHS=false\n ;\n ALLOWED=false\n \n+; Enable JSONP data mode (e.g. /phpsysinfo/xml.php?plugin=complete&jsonp&callback=getData)\n+; Disabled by default for security reasons.\n+; - false : JSONP data mode disabled\n+; - true : JSONP data mode enabled\n+;\n+;JSONP=false\n+\n ; List of sudo commands\n ; Example : SUDO_COMMANDS=\"iptables-save\" //execute \"sudo iptables-save\" instead \"iptables-save\"\n ;           SUDO_COMMANDS=false //no sudo commands"
+        },
+        {
+            "filename": "read_config.php",
+            "diff": "@@ -89,6 +89,11 @@\n         }\n     }\n \n+    if (isset($_GET['jsonp']) && (!defined('PSI_JSONP') || !PSI_JSONP)) {\n+        echo \"JSONP data mode not enabled in phpsysinfo.ini.\";\n+        die();\n+    }\n+\n     /* default error handler */\n     if (function_exists('errorHandlerPsi')) {\n         restore_error_handler();"
+        }
+    ],
+    "commitTime": "2023-05-24 08:39:48"
+}

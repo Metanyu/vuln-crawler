@@ -1,0 +1,72 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "cod3beat"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-12-12 21:51:54",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.17956",
+        "probability": "0.00052"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-PHENXPHPSVGLIB-6125684",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50252"
+        ],
+        "CWE": [
+            "CWE-15"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 14:10:37",
+    "remediation": "Upgrade phenx/php-svg-lib to version 0.5.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "External Control of System or Configuration Setting",
+    "vulnDescription": {
+        "Overview": "phenx/php-svg-lib is a library to read, parse and export to PDF SVG files. Affected versions of this package are vulnerable to External Control of System or Configuration Setting due to improper sanitization of the href attribute from the <use> tag when it is merged with an <image> tag. An attacker can cause an unsafe file read that may lead to PHAR Deserialization vulnerability in PHP versions prior to 8 by manipulating the href attribute. ",
+        "PoC": " <svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"> <image id=\"phar:///poc.phar\" xlink:href=\"file:///existing/safe/image.png\" /> <use href=\"phar:///poc.phar\" width=\"500\" height=\"500\"/> </svg> ",
+        "Workaround": "Systems utilizing php-svg-lib can implement input validation using logic similar to the following: $parser = xml_parser_create(\"utf-8\"); xml_parser_set_option($parser, XML_OPTION_CASE_FOLDING, false); xml_set_element_handler( $parser, function ($parser, $name, $attributes) { if (strtolower($name) === \"image\" || strtolower($name) === \"use\") { $attributes = array_change_key_case($attributes, CASE_LOWER); $urls = []; $urls[] = $attributes[\"xlink:href\"] ?? \"\"; $urls[] = $attributes[\"href\"] ?? \"\"; foreach ($urls as $url) { if (!empty($url)) { // perform validation here } } } // include other tag/attribute validation }, false ); if (($fp = fopen($url, \"r\")) !== false) { while ($line = fread($fp, 8192)) { xml_parse($parser, $line, false); } fclose($fp); xml_parse($parser, \"\", true); } xml_parser_free($parser); "
+    },
+    "source_code": [
+        {
+            "filename": "src/Svg/Tag/UseTag.php",
+            "diff": "@@ -85,7 +85,7 @@ public function handle($attributes)\n         }\n \n         $mergedAttributes = $this->reference->attributes;\n-        $attributesToNotMerge = ['x', 'y', 'width', 'height'];\n+        $attributesToNotMerge = ['x', 'y', 'width', 'height', 'href', 'xlink:href', 'id'];\n         foreach ($attributes as $attrKey => $attrVal) {\n             if (!in_array($attrKey, $attributesToNotMerge) && !isset($mergedAttributes[$attrKey])) {\n                 $mergedAttributes[$attrKey] = $attrVal;"
+        }
+    ],
+    "commitTime": "2023-12-11 20:56:08"
+}

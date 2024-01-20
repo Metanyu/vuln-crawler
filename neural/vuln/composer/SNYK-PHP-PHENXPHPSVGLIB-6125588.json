@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-13 13:32:21",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16258",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-PHENXPHPSVGLIB-6125588",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50251"
+        ],
+        "CWE": [
+            "CWE-674"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 13:01:38",
+    "remediation": "Upgrade phenx/php-svg-lib to version 0.5.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Recursion",
+    "vulnDescription": {
+        "Overview": "phenx/php-svg-lib is a library to read, parse and export to PDF SVG files. Affected versions of this package are vulnerable to Uncontrolled Recursion via the parsing of attributes in an SVG use tag, which can lead to infinite recursion. An attacker can cause a denial of service by crafting an SVG document that triggers this recursive behavior. This is only exploitable if the id attribute in the use tag is the same as the href or xlink:href link attribute, causing the parser to enter an infinite loop until memory resources are exhausted. ",
+        "PoC": " <svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\"> <use id=\"selfref\" xlink:href=\"#selfref\" /> </svg> "
+    },
+    "source_code": [
+        {
+            "filename": "src/Svg/Tag/UseTag.php",
+            "diff": "@@ -14,12 +14,19 @@ class UseTag extends AbstractTag\n     protected $y = 0;\n     protected $width;\n     protected $height;\n+    protected $instances = 0;\n \n     /** @var AbstractTag */\n     protected $reference;\n \n     protected function before($attributes)\n     {\n+        $this->instances++;\n+        if ($this->instances > 1) {\n+            //TODO: log circular reference error state\n+            return;\n+        }\n+\n         if (isset($attributes['x'])) {\n             $this->x = $attributes['x'];\n         }\n@@ -52,6 +59,9 @@ protected function before($attributes)\n     }\n \n     protected function after() {\n+        if ($this->instances > 0) {\n+            return;\n+        }\n         parent::after();\n \n         if ($this->reference) {\n@@ -63,6 +73,11 @@ protected function after() {\n \n     public function handle($attributes)\n     {\n+        if ($this->instances > 1) {\n+            //TODO: log circular reference error state\n+            return;\n+        }\n+\n         parent::handle($attributes);\n \n         if (!$this->reference) {\n@@ -87,6 +102,11 @@ public function handle($attributes)\n \n     public function handleEnd()\n     {\n+        $this->instances--;\n+        if ($this->instances > 0) {\n+            return;\n+        }\n+\n         parent::handleEnd();\n \n         if (!$this->reference) {"
+        }
+    ],
+    "commitTime": "2023-12-11 20:54:27"
+}

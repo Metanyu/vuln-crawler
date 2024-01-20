@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Tobias Scharnowski"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 2.9,
+    "disclosureTime": "2022-12-18 10:43:02",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10505",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137912",
+    "identifiers": {
+        "CVE": [
+            "CVE-2022-41972"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:04:39",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.9 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference which allows an attacker to inject a packet into the Bluetooth Low Energy stack. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/mac/ble/ble-l2cap.c",
+            "diff": "@@ -378,11 +378,16 @@ input_l2cap_credit(uint8_t *data)\n   uint16_t credits;\n   l2cap_channel_t *channel = get_channel_for_addr(packetbuf_addr(PACKETBUF_ADDR_SENDER));\n \n+  if(channel == NULL) {\n+    LOG_WARN(\"input_l2cap_credit: no channel found for sender address\\n\");\n+    return;\n+  }\n+\n /*  uint8_t  identifier = data[0]; */\n   memcpy(&len, &data[1], 2);\n \n   if(len != 4) {\n-    LOG_WARN(\"process_l2cap_credit: invalid len: %d\\n\", len);\n+    LOG_WARN(\"input_l2cap_credit: invalid len: %d\\n\", len);\n     return;\n   }\n "
+        }
+    ],
+    "commitTime": "2022-11-04 15:36:37"
+}

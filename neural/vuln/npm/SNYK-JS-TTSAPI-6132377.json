@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-19 15:30:29",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12985",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-TTSAPI-6132377",
+    "identifiers": {
+        "CVE": [
+            "CVE-2019-25158"
+        ],
+        "CWE": [
+            "CWE-78"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-20 13:04:00",
+    "remediation": "Upgrade tts-api to version 2.2.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "OS Command Injection",
+    "vulnDescription": {
+        "Overview": "tts-api is a Text to speech REST API for multiple TTS engines Affected versions of this package are vulnerable to OS Command Injection via the onSpeechDone function of the app.js file. An attacker can execute arbitrary OS commands by manipulating the input to the function. "
+    },
+    "source_code": [
+        {
+            "filename": "app.js",
+            "diff": "@@ -20,8 +20,7 @@ server.set('view engine', 'pug')\n \n \t.listen(port, function() {\n \n-\t\tvar port = this.address().port;\n-\t\tconsole.log('Listening at port', port);\n+\t\tconsole.log('Listening at port', this.address().port);\n \t});\n \n function renderForm(req, res) {\n@@ -33,17 +32,16 @@ function renderForm(req, res) {\n function processData(req, res) {\n \n \tvar body = req.body,\n-\t\texec = childProcess.exec,\n-\t\tcmd = getCmdWithArgs(body),\n-\t\tcbk = onSpeechDone.bind(this, {\n+\t\tcmdWithArgs = getCmdWithArgs(body) || {},\n+\t\thttpArgs = {\n \t\t\tres: res,\n \t\t\tfields: body\n-\t\t});\n+\t\t};\n \n-\tif (!cmd) {\n-\t\tcbk('Empty command generated');\n+\tif (cmdWithArgs instanceof Array) {\n+\t\trunSpeechProcessChain(cmdWithArgs, httpArgs);\n \t} else {\n-\t\texec(cmd, cbk);\n+\t\trunLastSpeechProcess(cmdWithArgs, httpArgs);\n \t}\n }\n \n@@ -60,71 +58,221 @@ function getCmdWithArgs(fields) {\n \t} else if (voice === 'espeak') {\n \t\treturn getEspeakCmdWithArgs(fields);\n \t}\n-\n-\treturn '';\n }\n \n function getGoogleSpeechCmdWithArgs(fields) {\n \n \tvar text = fields.textToSpeech,\n \t\tlanguage = fields.language,\n-\t\tspeed = fields.speed,\n-\n-\t\tcmd = 'google_speech' + ' -l ' + language + ' \\\"' + text + '\\\"' + ' -e overdrive 10 speed ' + speed;\n-\n-\treturn cmd;\n+\t\tspeed = fields.speed;\n+\n+\treturn {\n+\t\tcmd: 'google_speech',\n+\t\targs: [\n+\t\t\t'-v', 'warning',\n+\t\t\t'-l', language,\n+\t\t\ttext,\n+\t\t\t'-e',\n+\t\t\t'gain', '4',\n+\t\t\t'speed', speed\n+\t\t]\n+\t};\n }\n \n function getGttsCmdWithArgs(fields) {\n \n \tvar text = fields.textToSpeech,\n \t\tlanguage = fields.language,\n \t\tspeed = fields.speed,\n-\t\tspeedParam = speed ? ' -s' : '',\n-\n-\t\tcmd = 'gtts-cli' + ' -l ' + language + speedParam + ' --nocheck \\\"' + text + '\\\"' + ' | play -t mp3 -';\n-\n-\treturn cmd;\n+\t\tslowSpeed = fields.slowSpeed ? '-s' : '';\n+\n+\treturn [{\n+\t\tcmd: 'gtts-cli',\n+\t\targs: [\n+\t\t\t'-l', language,\n+\t\t\t'--nocheck',\n+\t\t\tslowSpeed,\n+\t\t\ttext\n+\t\t]\n+\t},{\n+\t\tcmd: 'play',\n+\t\targs: [\n+\t\t\t'-q',\n+\t\t\t'-t', 'mp3',\n+\t\t\t'-',\n+\t\t\t'gain', '4',\n+\t\t\t'speed', speed\n+\t\t]\n+\t}];\n }\n \n function getFestivalCmdWithArgs(fields) {\n \n \tvar text = fields.textToSpeech,\n-\t\tlanguage = fields.language,\n-\n-\t\tcmd = 'echo \"' + text + '\" | festival' + ' --tts --heap 1000000 --language ' + language;\n-\n-\treturn cmd;\n+\t\tlanguage = fields.language;\n+\n+\treturn [{\n+\t\tcmd: 'echo',\n+\t\targs: [\n+\t\t\ttext\n+\t\t]\n+\t},{\n+\t\tcmd: 'festival',\n+\t\targs: [\n+\t\t\t'--tts',\n+\t\t\t'--language', language,\n+\t\t\t'--heap', '1000000'\n+\t\t]\n+\t}];\n }\n \n function getEspeakCmdWithArgs(fields) {\n \n \tvar text = fields.textToSpeech,\n \t\tlanguage = fields.language,\n \t\tvoiceCode = '+f4',\n+\t\tvoice = language + voiceCode,\n \t\tspeed = Math.floor(fields.speed * 150),\n-\t\tpitch = '70',\n+\t\tpitch = '70';\n+\n+\treturn {\n+\t\tcmd: 'espeak',\n+\t\targs: [\n+\t\t\t'-v', voice,\n+\t\t\t'-s', speed,\n+\t\t\t'-p', pitch,\n+\t\t\ttext\n+\t\t]\n+\t};\n+}\n+\n+function runLastSpeechProcess(cmdWithArgs, httpArgs) {\n+\n+\tvar speechProcess = runSpeechProcess(cmdWithArgs);\n \n-\t\tcmd = 'espeak' + ' -v' + language + voiceCode + ' -s ' + speed + ' -p ' + pitch + ' \\\"' + text + '\\\"';\n+\tspeechProcess.on('error', onLastSpeechError.bind(this, httpArgs));\n+\tspeechProcess.on('close', onLastSpeechClose);\n+\tspeechProcess.on('exit', onLastSpeechExit.bind(this, httpArgs));\n \n-\treturn cmd;\n+\treturn speechProcess;\n }\n \n-function onSpeechDone(args, err, stdout, stderr) {\n+function runSpeechProcess(cmdWithArgs) {\n \n-\tvar res = args.res,\n-\t\tfields = args.fields;\n+\tvar newProcess = childProcess.spawn(cmdWithArgs.cmd, cmdWithArgs.args);\n+\n+\tnewProcess.stderr.on('data', onSpeechStandardError);\n+\n+\treturn newProcess;\n+}\n+\n+function onSpeechStandardError(buffer) {\n+\n+\tconsole.error('[stderr]:', buffer.toString('utf8'));\n+}\n+\n+function runSpeechProcessChain(cmdWithArgs, httpArgs) {\n+\n+\tvar speechProcs = {};\n+\n+\tfor (var i = 0; i < cmdWithArgs.length; i++) {\n+\t\tif (i !== cmdWithArgs.length - 1) {\n+\t\t\tvar getNextProcessCbk = getNextSpeechProcess.bind(speechProcs, i + 1);\n+\t\t\tspeechProcs[i] = runIntermediateSpeechProcess(cmdWithArgs[i], getNextProcessCbk);\n+\t\t} else {\n+\t\t\tspeechProcs[i] = runLastSpeechProcess(cmdWithArgs[i], httpArgs);\n+\t\t}\n+\t}\n+}\n+\n+function runIntermediateSpeechProcess(cmdWithArgs, procArgs) {\n+\n+\tvar speechProcess = runSpeechProcess(cmdWithArgs);\n+\n+\tspeechProcess.stdout.on('data', onIntermediateSpeechStandardOutput.bind(this, procArgs));\n+\tspeechProcess.on('error', onIntermediateSpeechError);\n+\tspeechProcess.on('close', onIntermediateSpeechClose.bind(this, procArgs));\n+\n+\treturn speechProcess;\n+}\n+\n+function getNextSpeechProcess(nextIndex) {\n+\n+\treturn this[nextIndex];\n+}\n+\n+function onIntermediateSpeechStandardOutput(getNextProc, data) {\n+\n+\tvar nextSpeechProcess = getNextProc(),\n+\t\tinputStream = nextSpeechProcess.stdin;\n+\n+\tif (inputStream.writable) {\n+\t\tinputStream.write(data);\n+\t}\n+}\n+\n+function onIntermediateSpeechClose(getNextProc, code) {\n+\n+\tvar nextSpeechProcess = getNextProc(),\n+\t\tinputStream = nextSpeechProcess.stdin;\n+\n+\tif (code) {\n+\t\tconsole.error('[intermediate exit code]:', code);\n+\t}\n+\n+\tinputStream.end();\n+}\n+\n+function onIntermediateSpeechError(err) {\n+\n+\tconsole.error('[intermediate error]:', util.inspect(err));\n+}\n+\n+function onLastSpeechClose(code) {\n+\n+\tif (code) {\n+\t\tconsole.error('[exit code]:', code);\n+\t}\n+}\n+\n+function onLastSpeechExit(args, err) {\n+\n+\tvar res = args.res;\n \n \tif (!err) {\n \t\tres.end();\n-\t\treturn;\n+\t} else {\n+\t\thandleSpeechError(args, err);\n \t}\n+}\n+\n+function onLastSpeechError(args, err) {\n+\n+\thandleSpeechError(args, err);\n+}\n+\n+function handleSpeechError(args, err) {\n+\n+\tvar res = args.res,\n+\t\tfields = args.fields,\n+\t\terrorHeaderMessage = '----[error]----',\n+\t\tdataHeaderMessage = '-----[data]-----',\n+\t\tinspectedError = util.inspect(err),\n+\t\tinspectedFields = util.inspect(fields);\n \n \tres.writeHead(500, {\n-\t\t'content-type': 'text/plain'\n+\t\t'Content-Type': 'text/plain; charset=utf-8'\n \t});\n-\tres.write('error:\\n\\n');\n-\tres.write(util.inspect(err) + '\\n\\n');\n-\tres.write('received data:\\n\\n');\n-\tres.end(util.inspect(fields));\n+\n+\tres.write(errorHeaderMessage + '\\n');\n+\tres.write(inspectedError + '\\n');\n+\tres.write(dataHeaderMessage + '\\n');\n+\tres.write(inspectedFields + '\\n');\n+\n+\tres.end();\n+\n+\tconsole.error(errorHeaderMessage);\n+\tconsole.error(inspectedError);\n+\tconsole.error(dataHeaderMessage);\n+\tconsole.error(inspectedFields);\n }"
+        }
+    ],
+    "commitTime": "2019-07-14 16:42:58"
+}

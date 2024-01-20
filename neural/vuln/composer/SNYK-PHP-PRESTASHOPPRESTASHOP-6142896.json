@@ -1,0 +1,48 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Rona Febriana"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.4,
+    "disclosureTime": "2024-01-02 22:45:21",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-PRESTASHOPPRESTASHOP-6142896",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21628"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-03 16:54:20",
+    "remediation": "Upgrade prestashop/prestashop to version 8.1.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting",
+    "vulnDescription": {
+        "Overview": "prestashop/prestashop is an Open Source e-commerce platform, committed to providing the best shopping cart experience for both merchants and customers. Affected versions of this package are vulnerable to Cross-site Scripting due to the improper santization. An attacker can inject malicious scripts into the database. "
+    },
+    "source_code": [
+        {
+            "filename": "classes/CustomerMessage.php",
+            "diff": "@@ -71,7 +71,7 @@ class CustomerMessageCore extends ObjectModel\n             'id_employee' => ['type' => self::TYPE_INT, 'validate' => 'isUnsignedId'],\n             'id_customer_thread' => ['type' => self::TYPE_INT],\n             'ip_address' => ['type' => self::TYPE_STRING, 'validate' => 'isIp2Long', 'size' => 15],\n-            'message' => ['type' => self::TYPE_HTML, 'required' => true, 'size' => 16777216],\n+            'message' => ['type' => self::TYPE_HTML, 'required' => true, 'size' => 16777216, 'validate' => 'isCleanHtml'],\n             'file_name' => ['type' => self::TYPE_STRING],\n             'user_agent' => ['type' => self::TYPE_STRING],\n             'private' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],"
+        }
+    ],
+    "commitTime": "2023-12-13 14:38:46"
+}

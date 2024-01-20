@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Andrew McCreight",
+        "Yury Delendik"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-20 15:46:23",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOX-6137731",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6873"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-21 16:11:02",
+    "remediation": "Upgrade Firefox to version 121.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Restriction of Operations within the Bounds of a Memory Buffer. An attacker can execute arbitrary code by exploiting the way memory is accessed and manipulated. "
+    },
+    "source_code": []
+}

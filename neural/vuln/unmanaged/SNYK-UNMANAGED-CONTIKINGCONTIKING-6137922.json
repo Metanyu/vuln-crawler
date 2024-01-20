@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2020-04-23 15:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.58900",
+        "probability": "0.00211"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137922",
+    "identifiers": {
+        "CVE": [
+            "CVE-2019-8359"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:33:32",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.4 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write. An issue was discovered in Contiki-NG through 4.3 and Contiki through 3.0. An out of bounds write is present in the data section during 6LoWPAN fragment re-assembly in the face of forged fragment offsets in os/net/ipv6/sicslowpan.c. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/ipv6/sicslowpan.c",
+            "diff": "@@ -231,6 +231,11 @@ static uint16_t my_tag;\n #define SICSLOWPAN_FRAGMENT_SIZE (127 - 2 - 15)\n #endif\n \n+/* Check the selected fragment size, since we use 8-bit integers to handle it. */\n+#if SICSLOWPAN_FRAGMENT_SIZE > 255\n+#error Too large SICSLOWPAN_FRAGMENT_SIZE set.\n+#endif\n+\n /* Assuming that the worst growth for uncompression is 38 bytes */\n #define SICSLOWPAN_FIRST_FRAGMENT_SIZE (SICSLOWPAN_FRAGMENT_SIZE + 38)\n \n@@ -306,16 +311,25 @@ static int\n store_fragment(uint8_t index, uint8_t offset)\n {\n   int i;\n+  int len;\n+\n+  len = packetbuf_datalen() - packetbuf_hdr_len;\n+\n+  if(len < 0 || len > SICSLOWPAN_FRAGMENT_SIZE) {\n+    /* Unacceptable fragment size. */\n+    return -1;\n+  }\n+\n   for(i = 0; i < SICSLOWPAN_FRAGMENT_BUFFERS; i++) {\n     if(frag_buf[i].len == 0) {\n-      /* copy over the data from packetbuf into the fragment buffer and store offset and len */\n+      /* copy over the data from packetbuf into the fragment buffer,\n+         and store offset and len */\n       frag_buf[i].offset = offset; /* frag offset */\n-      frag_buf[i].len = packetbuf_datalen() - packetbuf_hdr_len;\n+      frag_buf[i].len = len;\n       frag_buf[i].index = index;\n-      memcpy(frag_buf[i].data, packetbuf_ptr + packetbuf_hdr_len,\n-             packetbuf_datalen() - packetbuf_hdr_len);\n+      memcpy(frag_buf[i].data, packetbuf_ptr + packetbuf_hdr_len, len);\n       /* return the length of the stored fragment */\n-      return frag_buf[i].len;\n+      return len;\n     }\n   }\n   /* failed */\n@@ -396,23 +410,43 @@ add_fragment(uint16_t tag, uint16_t frag_size, uint8_t offset)\n /*---------------------------------------------------------------------------*/\n /* Copy all the fragments that are associated with a specific context\n    into uip */\n-static void\n+static bool\n copy_frags2uip(int context)\n {\n   int i;\n \n+  /* Check length fields before proceeding. */\n+  if(frag_info[context].len < frag_info[context].first_frag_len ||\n+     frag_info[context].len > sizeof(uip_buf)) {\n+    LOG_WARN(\"input: invalid total size of fragments\\n\");\n+    clear_fragments(context);\n+    return false;\n+  }\n+\n   /* Copy from the fragment context info buffer first */\n   memcpy((uint8_t *)UIP_IP_BUF, (uint8_t *)frag_info[context].first_frag,\n          frag_info[context].first_frag_len);\n+\n+  /* Ensure that no previous data is used for reassembly in case of missing fragments. */\n+  memset((uint8_t *)UIP_IP_BUF + frag_info[context].first_frag_len, 0,\n+         frag_info[context].len - frag_info[context].first_frag_len);\n+\n   for(i = 0; i < SICSLOWPAN_FRAGMENT_BUFFERS; i++) {\n     /* And also copy all matching fragments */\n     if(frag_buf[i].len > 0 && frag_buf[i].index == context) {\n+      if((frag_buf[i].offset << 3) + frag_buf[i].len > sizeof(uip_buf)) {\n+        LOG_WARN(\"input: invalid fragment offset\\n\");\n+        clear_fragments(context);\n+        return false;\n+      }\n       memcpy((uint8_t *)UIP_IP_BUF + (uint16_t)(frag_buf[i].offset << 3),\n              (uint8_t *)frag_buf[i].data, frag_buf[i].len);\n     }\n   }\n   /* deallocate all the fragments for this context */\n   clear_fragments(context);\n+\n+  return true;\n }\n #endif /* SICSLOWPAN_CONF_FRAG */\n \n@@ -1233,6 +1267,10 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)\n     exthdr->len = (2 + len) / 8 - 1;\n     exthdr->next = next;\n     last_nextheader = &exthdr->next;\n+    if(ip_len == 0 && (uint8_t *)exthdr - uip_buf + 2 + len > sizeof(uip_buf)) {\n+      LOG_DBG(\"uncompression: ext header points beyond uip buffer boundary\\n\");\n+      return;\n+    }\n     memcpy((uint8_t*)exthdr + 2, hc06_ptr, len);\n     hc06_ptr += len;\n     uncomp_hdr_len += (exthdr->len + 1) * 8;\n@@ -1729,11 +1767,17 @@ output(const linkaddr_t *localdest)\n     return 0;\n #endif /* SICSLOWPAN_CONF_FRAG */\n   } else {\n-\n     /*\n      * The packet does not need to be fragmented\n      * copy \"payload\" and send\n      */\n+\n+   if(uip_len < uncomp_hdr_len) {\n+     LOG_ERR(\"output: uip_len is smaller than uncomp_hdr_len (%d < %d)\",\n+             (int)uip_len, (int)uncomp_hdr_len);\n+     return 0;\n+    }\n+\n     memcpy(packetbuf_ptr + packetbuf_hdr_len, (uint8_t *)UIP_IP_BUF + uncomp_hdr_len,\n            uip_len - uncomp_hdr_len);\n     packetbuf_set_datalen(uip_len - uncomp_hdr_len + packetbuf_hdr_len);\n@@ -1923,10 +1967,16 @@ input(void)\n     int req_size = uncomp_hdr_len + (uint16_t)(frag_offset << 3)\n         + packetbuf_payload_len;\n     if(req_size > sizeof(uip_buf)) {\n+#if SICSLOWPAN_CONF_FRAG\n       LOG_ERR(\n-          \"input: packet dropped, minimum required IP_BUF size: %d+%d+%d=%d (current size: %u)\\n\",\n+          \"input: packet and fragment context %u dropped, minimum required IP_BUF size: %d+%d+%d=%d (current size: %u)\\n\",\n+          frag_context,\n           uncomp_hdr_len, (uint16_t)(frag_offset << 3),\n           packetbuf_payload_len, req_size, (unsigned)sizeof(uip_buf));\n+      /* Discard all fragments for this contex, as reassembling this particular fragment would\n+       * cause an overflow in uipbuf */\n+      clear_fragments(frag_context);\n+#endif /* SICSLOWPAN_CONF_FRAG */\n       return;\n     }\n   }\n@@ -1951,7 +2001,9 @@ input(void)\n     if(last_fragment != 0) {\n       frag_info[frag_context].reassembled_len = frag_size;\n       /* copy to uip */\n-      copy_frags2uip(frag_context);\n+      if(!copy_frags2uip(frag_context)) {\n+        return;\n+      }\n     }\n   }\n "
+        }
+    ],
+    "commitTime": "2019-09-26 16:08:15"
+}

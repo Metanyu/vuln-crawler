@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "grozdniyandy"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-08 04:45:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14160",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-MICROWEBERMICROWEBER-6113690",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48122"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-08 14:57:52",
+    "remediation": "Upgrade microweber/microweber to version 2.0.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "microweber/microweber is a new generation CMS with drag and drop. Affected versions of this package are vulnerable to Information Exposure via the HTTP GET method. An attacker can obtain sensitive information by sending crafted requests. "
+    },
+    "source_code": [
+        {
+            "filename": "src/MicroweberPackages/User/routes/api.php",
+            "diff": "@@ -88,6 +88,23 @@\n     return delete_user($input);\n })->middleware(['api']);\n \n+\n+Route::name('api.')\n+    ->prefix('api')\n+    ->middleware([\n+        'api.public',\n+        //  \\MicroweberPackages\\App\\Http\\Middleware\\VerifyCsrfToken::class,\n+        \\MicroweberPackages\\App\\Http\\Middleware\\XSS::class\n+    ])\n+    ->namespace('\\MicroweberPackages\\User\\Http\\Controllers')\n+    ->group(function () {\n+\n+        Route::post('user_login', function () {\n+            return user_login(request()->all());\n+        })->name('user_login')->middleware(['allowed_ips','throttle:60,1']);\n+\n+    });\n+\n Route::name('api.user.')\n     ->prefix('api/user')\n     ->middleware(["
+        }
+    ],
+    "commitTime": "2023-11-08 12:13:46"
+}

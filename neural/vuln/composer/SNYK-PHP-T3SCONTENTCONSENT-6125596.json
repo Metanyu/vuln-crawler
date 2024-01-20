@@ -1,0 +1,42 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Niels Lehmkuhl"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-13 23:12:32",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-T3SCONTENTCONSENT-6125596",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50462"
+        ],
+        "CWE": [
+            "CWE-639"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 13:34:07",
+    "remediation": "Upgrade t3s/content-consent to version 1.0.3, 2.0.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Authorization Bypass Through User-Controlled Key",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authorization Bypass Through User-Controlled Key due to improper verification of content element identifiers within the plugin. An attacker can display unauthorized content elements by exploiting the lack of access control checks. "
+    },
+    "source_code": []
+}

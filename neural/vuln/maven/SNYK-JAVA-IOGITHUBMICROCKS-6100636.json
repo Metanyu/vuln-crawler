@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.1,
+    "disclosureTime": "2023-12-04 17:45:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12352",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-IOGITHUBMICROCKS-6100636",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48910"
+        ],
+        "CWE": [
+            "CWE-918"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-07 06:26:04",
+    "remediation": "There is no fixed version for io.github.microcks:microcks-app . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Server-Side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Server-Side Request Forgery (SSRF) via the /jobs and /artifact/download endpoints. An attacker can access network resources and sensitive information by crafting a GET request. "
+    },
+    "source_code": []
+}

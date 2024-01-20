@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "YouGina"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.6,
+    "disclosureTime": "2023-12-20 15:30:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06917",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-MAINWPMAINWP-6140445",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-38519"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-29 12:55:36",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to SQL Injection. This could allow a malicious actor to directly interact with the database, including but not limited to stealing information. "
+    },
+    "source_code": [
+        {
+            "filename": "class/class-mainwp-db-client.php",
+            "diff": "@@ -656,6 +656,21 @@ public function get_wp_client_by( $by = 'client_id', $value = null, $obj = OBJEC\n \t\t$with_tags           = isset( $params['with_tags'] ) && $params['with_tags'] ? true : false;\n \t\t$group_ids           = isset( $params['by_tags'] ) ? $params['by_tags'] : '';\n \n+\t\t// valid group ids.\n+\t\tif ( is_array( $group_ids ) ) {\n+\t\t\t$group_ids = array_filter(\n+\t\t\t\t$group_ids,\n+\t\t\t\tfunction( $e ) {\n+\t\t\t\t\tif ( 'nogroups' === $e ) {\n+\t\t\t\t\t\treturn true;\n+\t\t\t\t\t}\n+\t\t\t\t\treturn ( is_numeric( $e ) && 0 < $e ) ? true : false;\n+\t\t\t\t}\n+\t\t\t);\n+\t\t} else {\n+\t\t\t$group_ids = '';\n+\t\t}\n+\n \t\t$select_sites  = '';\n \t\t$select_tags   = '';\n \t\t$where_clients = '';\n@@ -867,8 +882,7 @@ public function update_selected_sites_for_client( $client_id, $site_ids ) {\n \t\t$site_ids = array_filter(\n \t\t\t$site_ids,\n \t\t\tfunction( $e ) {\n-\t\t\t\t$e = intval( $e );\n-\t\t\t\treturn ( 0 < $e ) ? true : false;\n+\t\t\t\treturn ( is_numeric( $e ) && 0 < $e ) ? true : false;\n \t\t\t}\n \t\t);\n "
+        },
+        {
+            "filename": "class/class-mainwp-db.php",
+            "diff": "@@ -1076,7 +1076,7 @@ public function get_sql_search_websites_for_current_user( $params ) {\n \t\t$group_ids = array_filter(\n \t\t\t$group_ids,\n \t\t\tfunction( $e ) {\n-\t\t\t\tif ( 'nogroups' == $e ) {\n+\t\t\t\tif ( 'nogroups' === $e ) {\n \t\t\t\t\treturn true;\n \t\t\t\t}\n \t\t\t\t$e = intval( $e );\n@@ -1092,7 +1092,7 @@ function( $e ) {\n \t\t$client_ids = array_filter(\n \t\t\t$client_ids,\n \t\t\tfunction( $e ) {\n-\t\t\t\tif ( 'noclients' == $e ) {\n+\t\t\t\tif ( 'noclients' === $e ) {\n \t\t\t\t\treturn true;\n \t\t\t\t}\n \t\t\t\treturn is_numeric( $e ) && ! empty( $e ) ? true : false; // to valid client ids."
+        },
+        {
+            "filename": "class/class-mainwp-system.php",
+            "diff": "@@ -35,7 +35,7 @@ class MainWP_System {\n \t *\n \t * @var string Current plugin version.\n \t */\n-\tpublic static $version = '4.4.3.3';\n+\tpublic static $version = '4.4.3.4';\n \n \t/**\n \t * Private static variable to hold the single instance of the class."
+        },
+        {
+            "filename": "mainwp.php",
+            "diff": "@@ -8,7 +8,7 @@\n  * Author URI: https://mainwp.com\n  * Plugin URI: https://mainwp.com/\n  * Text Domain: mainwp\n- * Version:  4.4.3.3\n+ * Version:  4.4.3.4\n  *\n  * @package MainWP/Dashboard\n  *"
+        },
+        {
+            "filename": "readme.txt",
+            "diff": "@@ -7,7 +7,7 @@ Plugin URI: https://mainwp.com\n Requires at least: 5.4\n Tested up to: 6.2.2\n Requires PHP: 7.4\n-Stable tag: 4.4.3.3\n+Stable tag: 4.4.3.4\n License: GPLv3 or later\n License URI: https://www.gnu.org/licenses/gpl-3.0.html\n \n@@ -298,6 +298,9 @@ Yes, we have a quick FAQ with a lot more questions and answers [here](https://ma\n \n == Changelog ==\n \n+= 4.4.3.4 - 6-26-2023 =\n+* Security: Added `tag` parameter value validation on the Manage Clients page\n+\n = 4.4.3.3 - 6-19-2023 =\n * Added: Upcomming extension info data\n * Fixed: An issue with the negative search feature"
+        }
+    ],
+    "commitTime": "2023-07-26 11:56:08"
+}

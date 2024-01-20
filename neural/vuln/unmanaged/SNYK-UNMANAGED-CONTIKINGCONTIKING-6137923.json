@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2021-06-18 21:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.63006",
+        "probability": "0.00252"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137923",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-21281"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:36:25",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.6 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow. Contiki-NG is an open-source, cross-platform operating system for internet of things devices. A buffer overflow vulnerability exists in Contiki-NG versions prior to 4.6. After establishing a TCP socket using the tcp-socket library, it is possible for the remote end to send a packet with a data offset that is unvalidated. The problem has been patched in Contiki-NG 4.6. Users can apply the patch for this vulnerability out-of-band as a workaround. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/ipv6/uip6.c",
+            "diff": "@@ -1840,6 +1840,15 @@ uip_process(uint8_t flag)\n   /* Calculate the length of the data, if the application has sent\n      any data to us. */\n   c = (UIP_TCP_BUF->tcpoffset >> 4) << 2;\n+\n+  /* Check that the indicated length of the TCP header is not too large\n+     for the total packet length. */\n+  if(uip_len < c + UIP_IPH_LEN) {\n+    LOG_WARN(\"Dropping TCP packet with too large data offset (%u bytes)\\n\",\n+             (unsigned)c);\n+    goto drop;\n+  }\n+\n   /* uip_len will contain the length of the actual TCP data. This is\n      calculated by subtracing the length of the TCP header (in\n      c) and the length of the IP header (20 bytes). */"
+        }
+    ],
+    "commitTime": "2020-09-01 10:34:33"
+}

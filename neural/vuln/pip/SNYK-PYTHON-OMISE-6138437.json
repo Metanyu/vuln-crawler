@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-10-01 06:35:55",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-OMISE-6138437",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-200"
+        ],
+        "PVE": [
+            "PVE-2023-99954"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 13:47:37",
+    "remediation": "Upgrade omise to version 0.12.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "omise is an Omise Python client Affected versions of this package are vulnerable to Information Exposure via the logging system. "
+    },
+    "source_code": [
+        {
+            "filename": "omise/request.py",
+            "diff": "@@ -85,7 +85,6 @@ def send(self, method, path, payload=None, headers=None):\n         request_headers = self._build_headers(headers)\n \n         logger.info('Sending HTTP request: %s %s', method.upper(), request_path)\n-        logger.debug('Authorization: %s', self.api_key)\n         logger.debug('Payload: %s', request_payload)\n         logger.debug('Headers: %s', request_headers)\n \n@@ -108,7 +107,6 @@ def send_file(self, method, path, files=None, headers=None):\n         request_headers = self._build_file_header(headers)\n \n         logger.info('Sending HTTP request: %s %s', method.upper(), request_path)\n-        logger.debug('Authorization: %s', self.api_key)\n         logger.debug('Files: %s', request_files)\n         logger.debug('Headers: %s', request_headers)\n \n@@ -158,4 +156,4 @@ def _build_file_header(self, headers):\n         if self.api_version is not None:\n             headers['Omise-Version'] = self.api_version\n         headers['User-Agent'] = 'OmisePython/%s' % version.__VERSION__\n-        return headers\n\\ No newline at end of file\n+        return headers"
+        }
+    ],
+    "commitTime": "2022-11-22 09:17:57"
+}

@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-16 09:47:51",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06936",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-THORSTENPHPMYFAQ-6129530",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6890"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-17 14:41:08",
+    "remediation": "Upgrade thorsten/phpmyfaq to version 3.1.17 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "thorsten/phpmyfaq is a FAQ system for PHP and MySQL, PostgreSQL and other databases Affected versions of this package are vulnerable to Cross-site Scripting (XSS) due to insufficient input sanitization in the web page generation process. An attacker can manipulate the output of web pages by injecting malicious scripts into the content that is displayed to other users. This is only exploitable if the attacker has the ability to submit content that is stored and displayed by the application. "
+    },
+    "source_code": [
+        {
+            "filename": "phpmyfaq/src/phpMyFAQ/Helper/FaqHelper.php",
+            "diff": "@@ -187,11 +187,16 @@ public function createOverview(Category $category, Faq $faq, string $language =\n             $lastCategory = 0;\n             foreach ($faq->faqRecords as $data) {\n                 if ($data['category_id'] !== $lastCategory) {\n-                    $output .= sprintf('<h3>%s</h3>', $category->getPath($data['category_id'], ' &raquo; '));\n+                    $output .= sprintf(\n+                        '<h3>%s</h3>',\n+                        $this->cleanUpContent(\n+                            $this->cleanUpContent($category->getPath($data['category_id'], ' &raquo; '))\n+                        )\n+                    );\n                 }\n \n                 $output .= sprintf('<h4>%s</h4>', Strings::htmlentities($data['title']));\n-                $output .= sprintf('<article>%s</article>', $data['content']);\n+                $output .= sprintf('<article>%s</article>', $this->cleanUpContent($data['content']));\n                 $output .= sprintf(\n                     '<p>%s: %s<br>%s',\n                     $PMF_LANG['msgAuthor'],"
+        },
+        {
+            "filename": "phpmyfaq/src/phpMyFAQ/Helper/SearchHelper.php",
+            "diff": "@@ -258,14 +258,14 @@ public function renderSearchResult(SearchResultSet $resultSet, int $currentPage)\n                 );\n \n                 $oLink = new Link($currentUrl, $this->config);\n-                $oLink->text = $question;\n-                $oLink->itemTitle = $oLink->tooltip = $result->question;\n+                $oLink->text = Strings::htmlentities($question);\n+                $oLink->itemTitle = $oLink->tooltip = Strings::htmlentities($result->question);\n \n                 $html .= '<li>';\n                 $html .= $this->renderScore($result->score * 33);\n                 $html .= sprintf(\n                     '<strong>%s</strong>: %s<br>',\n-                    $categoryInfo[0]['name'],\n+                    Strings::htmlentities($categoryInfo[0]['name']),\n                     $oLink->toHtmlAnchor()\n                 );\n                 $html .= sprintf("
+        }
+    ],
+    "commitTime": "2023-07-27 06:02:56"
+}

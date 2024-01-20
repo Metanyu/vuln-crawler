@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Christian P\u00f6schl"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-09 07:51:15",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06910",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-HAIWENSEAFILE-6117651",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-28874"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-12 16:25:44",
+    "remediation": "Upgrade haiwen/seafile to version 9.0.8 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "URL Redirection to Untrusted Site",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to URL Redirection to Untrusted Site via the next parameter in the /accounts/login endpoint. An attacker can redirect users to arbitrary sites by manipulating the parameter value. ",
+        "PoC": " curl -v http://localhost.localdomain/accounts/login/?next=https://usd.de "
+    },
+    "source_code": []
+}

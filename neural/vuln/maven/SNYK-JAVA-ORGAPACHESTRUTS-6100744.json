@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Matthew McClain"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-05 09:33:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.58563",
+        "probability": "0.00209"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHESTRUTS-6100744",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41835"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-06 08:01:07",
+    "remediation": "Upgrade org.apache.struts:struts2-core to version 2.5.32, 6.1.2.2, 6.3.0.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service",
+    "vulnDescription": {
+        "Overview": "org.apache.struts:struts2-core is a popular open-source framework for developing web applications in the Java programming language. Affected versions of this package are vulnerable to Denial of Service when certain fields exceed the maxStringLength limit during multipart requests. An attacker can exploit this to leave uploaded files in the struts.multipart.saveDir even after the request has been denied resulting in excessive disk usage. "
+    },
+    "source_code": [
+        {
+            "filename": "core/src/main/java/org/apache/struts2/dispatcher/multipart/JakartaMultiPartRequest.java",
+            "diff": "@@ -111,7 +111,7 @@ protected void processFileField(FileItem item) {\n         LOG.debug(\"Item is a file upload\");\n \n         // Skip file uploads that don't have a file name - meaning that no file was selected.\n-        if (item.getName() == null || item.getName().trim().length() < 1) {\n+        if (item.getName() == null || item.getName().trim().isEmpty()) {\n             LOG.debug(\"No file has been uploaded for the field: {}\", item.getFieldName());\n             return;\n         }\n@@ -128,39 +128,42 @@ protected void processFileField(FileItem item) {\n     }\n \n     protected void processNormalFormField(FileItem item, String charset) throws UnsupportedEncodingException {\n-        LOG.debug(\"Item is a normal form field\");\n+        try {\n+            LOG.debug(\"Item is a normal form field\");\n \n-        List<String> values;\n-        if (params.get(item.getFieldName()) != null) {\n-            values = params.get(item.getFieldName());\n-        } else {\n-            values = new ArrayList<>();\n-        }\n+            List<String> values;\n+            if (params.get(item.getFieldName()) != null) {\n+                values = params.get(item.getFieldName());\n+            } else {\n+                values = new ArrayList<>();\n+            }\n \n-        long size = item.getSize();\n-        if (size == 0) {\n-            values.add(StringUtils.EMPTY);\n-        } else if (size > maxStringLength) {\n-          String errorKey = \"struts.messages.upload.error.parameter.too.long\";\n-          LocalizedMessage localizedMessage = new LocalizedMessage(this.getClass(), errorKey, null,\n-                  new Object[] { item.getFieldName(), maxStringLength, size });\n-\n-          if (!errors.contains(localizedMessage)) {\n-              errors.add(localizedMessage);\n-          }\n-          return;\n-\n-        } else if (charset != null) {\n-            values.add(item.getString(charset));\n-        } else {\n-            // note: see https://issues.apache.org/jira/browse/WW-633\n-            // basically, in some cases the charset may be null, so\n-            // we're just going to try to \"other\" method (no idea if this\n-            // will work)\n-            values.add(item.getString());\n+            long size = item.getSize();\n+            if (size == 0) {\n+                values.add(StringUtils.EMPTY);\n+            } else if (size > maxStringLength) {\n+                String errorKey = \"struts.messages.upload.error.parameter.too.long\";\n+                LocalizedMessage localizedMessage = new LocalizedMessage(this.getClass(), errorKey, null,\n+                    new Object[]{item.getFieldName(), maxStringLength, size});\n+\n+                if (!errors.contains(localizedMessage)) {\n+                    errors.add(localizedMessage);\n+                }\n+                return;\n+\n+            } else if (charset != null) {\n+                values.add(item.getString(charset));\n+            } else {\n+                // note: see https://issues.apache.org/jira/browse/WW-633\n+                // basically, in some cases the charset may be null, so\n+                // we're just going to try to \"other\" method (no idea if this\n+                // will work)\n+                values.add(item.getString());\n+            }\n+            params.put(item.getFieldName(), values);\n+        } finally {\n+            item.delete();\n         }\n-        params.put(item.getFieldName(), values);\n-        item.delete();\n     }\n \n     protected List<FileItem> parseRequest(HttpServletRequest servletRequest, String saveDir) throws FileUploadException {\n@@ -212,7 +215,7 @@ public String[] getContentType(String fieldName) {\n             contentTypes.add(fileItem.getContentType());\n         }\n \n-        return contentTypes.toArray(new String[contentTypes.size()]);\n+        return contentTypes.toArray(new String[0]);\n     }\n \n     /* (non-Javadoc)\n@@ -241,7 +244,7 @@ public UploadedFile[] getFile(String fieldName) {\n             fileList.add(new StrutsUploadedFile(storeLocation));\n         }\n \n-        return fileList.toArray(new UploadedFile[fileList.size()]);\n+        return fileList.toArray(new UploadedFile[0]);\n     }\n \n     /* (non-Javadoc)\n@@ -259,7 +262,7 @@ public String[] getFileNames(String fieldName) {\n             fileNames.add(getCanonicalName(fileItem.getName()));\n         }\n \n-        return fileNames.toArray(new String[fileNames.size()]);\n+        return fileNames.toArray(new String[0]);\n     }\n \n     /* (non-Javadoc)\n@@ -277,15 +280,15 @@ public String[] getFilesystemName(String fieldName) {\n             fileNames.add(((DiskFileItem) fileItem).getStoreLocation().getName());\n         }\n \n-        return fileNames.toArray(new String[fileNames.size()]);\n+        return fileNames.toArray(new String[0]);\n     }\n \n     /* (non-Javadoc)\n      * @see org.apache.struts2.dispatcher.multipart.MultiPartRequest#getParameter(java.lang.String)\n      */\n     public String getParameter(String name) {\n         List<String> v = params.get(name);\n-        if (v != null && v.size() > 0) {\n+        if (v != null && !v.isEmpty()) {\n             return v.get(0);\n         }\n \n@@ -304,8 +307,8 @@ public Enumeration<String> getParameterNames() {\n      */\n     public String[] getParameterValues(String name) {\n         List<String> v = params.get(name);\n-        if (v != null && v.size() > 0) {\n-            return v.toArray(new String[v.size()]);\n+        if (v != null && !v.isEmpty()) {\n+            return v.toArray(new String[0]);\n         }\n \n         return null;"
+        }
+    ],
+    "commitTime": "2023-09-03 06:57:26"
+}

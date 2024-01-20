@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-12 20:52:34",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-UMBRACOCMS-6124616",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49278"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-13 14:51:26",
+    "remediation": "Upgrade Umbraco.Cms to version 10.8.1, 12.3.4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Exposure of Sensitive Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Exposure of Sensitive Information via a brute force attack. An attacker can collect valid usernames by repeatedly attempting to authenticate with different usernames. "
+    },
+    "source_code": []
+}

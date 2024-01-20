@@ -1,0 +1,74 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "xorg-server"
+        }
+    ],
+    "credit": [
+        "Jan-Niklas Sohn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T13:48:36.753378Z",
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.4,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T11:03:26.621933Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "description": "## Overview Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the `DisableDevice` function. An attacker can cause an application crash or potentially execute arbitrary code in SSH X11 forwarding environments by exploiting this vulnerability. ## Remediation Upgrade `xorg-server` to version 21.1.11, 23.2.4 or higher. ## References - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/42f8d1828b4fc1e0b8165a767a0b74edcdbf3806) - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/5c4816afa7722ea47d1a7dea983a953e7b454d26) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2256542) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-XORGSERVER-6178997",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21886"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "xorg-server",
+    "publicationTime": "2024-01-18T14:52:06.213181Z",
+    "remediation": "Upgrade xorg-server to version 21.1.11, 23.2.4 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,21.1.11)",
+            "[22.1.0,23.2.4)"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the DisableDevice function. An attacker can cause an application crash or potentially execute arbitrary code in SSH X11 forwarding environments by exploiting this vulnerability. ",
+        "References": [
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/42f8d1828b4fc1e0b8165a767a0b74edcdbf3806",
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/5c4816afa7722ea47d1a7dea983a953e7b454d26",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2256542"
+        ]
+    },
+    "vulnerableVersions": "[,21.1.11) , [22.1.0,23.2.4)"
+}

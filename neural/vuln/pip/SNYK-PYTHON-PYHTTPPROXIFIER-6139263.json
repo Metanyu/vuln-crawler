@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Yehuda Gelb - Checkmarx"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-24 22:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-PYTHON-PYHTTPPROXIFIER-6139263",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "python",
+    "malicious": true,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-25 08:50:38",
+    "remediation": "Avoid using all malicious instances of the pyhttpproxifier package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "pyhttpproxifier is a malicious package. This package contains malicious code that downloads and executing malware on the victim machine. Note: This malicious package targets Windows systems. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,57 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-01 06:26:53",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-ABILIANDEVTOOLS-6133267",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-78"
+        ],
+        "PVE": [
+            "PVE-2023-62205"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 15:53:51",
+    "remediation": "Upgrade abilian-devtools to version 0.4.4 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Command Injection",
+    "vulnDescription": {
+        "Overview": "abilian-devtools is an A curated set of dependencies for quality software development Affected versions of this package are vulnerable to Command Injection due to improper user input sanitization. "
+    },
+    "source_code": [
+        {
+            "filename": "Makefile",
+            "diff": "@@ -45,76 +45,18 @@ clean-test: ## remove test and coverage artifacts\n \trm -fr htmlcov/\n \trm -fr .pytest_cache\n \n-lint/flake8: ## check style with flake8\n-\tflake8 src tests\n+lint:\n+\tadt all\n \n-lint/black: ## check style with black\n-\tblack --check src tests\n-\n-lint: lint/flake8 lint/black ## check style\n-\n-\n-test-with-coverage:\n-\t@echo \"--> Running Python tests\"\n-\tpy.test --cov $(PKG)\n-\t@echo \"\"\n-\n-test-with-typeguard:\n-\t@echo \"--> Running Python tests with typeguard\"\n-\tpytest --typeguard-packages=${PKG}\n-\t@echo \"\"\n-\n-\n-#\n-# Various Checkers\n-#\n-lint-ci: lint\n-\n-lint-all: lint lint-mypy lint-bandit\n-\n-lint-py:\n-\t@echo \"--> Linting Python files /w flake8\"\n-\tflake8 src tests\n-\t@echo \"\"\n-\n-lint-mypy:\n-\t@echo \"--> Typechecking Python files w/ mypy\"\n-\tmypy src tests\n-\t@echo \"\"\n-\n-lint-travis:\n-\t@echo \"--> Linting .travis.yml files\"\n-\ttravis lint --no-interactive\n-\t@echo \"\"\n-\n-lint-rst:\n-\t@echo \"--> Linting .rst files\"\n-\t-rst-lint *.rst\n-\t@echo \"\"\n-\n-lint-doc:\n-\t@echo \"--> Linting doc\"\n-\t@echo \"TODO\"\n-\t#sphinx-build -W -b dummy docs/ docs/_build/\n-\t#sphinx-build -b dummy docs/ docs/_build/\n-\t@echo \"\"\n-\n-lint-js:\n-\techo \"TODO\"\n \n #\n # Formatting\n #\n-format: format-py format-js\n-\n-format-py:\n+format:\n \tdocformatter -i -r src\n-\tblack src tests\n+\tblack src\n \tisort src tests\n \n-format-js:\n-\techo \"TODO\"\n-\n \n #\n # Everything else\n@@ -139,7 +81,7 @@ clean:\n \t\tdist build pip-wheel-metadata junit-*.xml htmlcov coverage.xml\n \n tidy: clean\n-\trm -rf .tox .nox .dox .travis-solo\n+\trm -rf .nox\n \trm -rf node_modules\n \trm -rf instance\n "
+        },
+        {
+            "filename": "pyproject.toml",
+            "diff": "@@ -27,6 +27,7 @@ pytest = \"^7\"\n pytest-cov = \"^4\"\n profilehooks = \"*\"\n pytest-xdist = \"*\"\n+pytest-randomly = \"*\"\n # pytest-testmon = \"^1.2.0\"\n nox = \"*\"\n "
+        },
+        {
+            "filename": "src/abilian/devtools/main.py",
+            "diff": "@@ -2,7 +2,8 @@\n #\n # SPDX-License-Identifier: MIT\n \n-import os\n+import shlex\n+import subprocess\n import sys\n from pathlib import Path\n \n@@ -13,8 +14,9 @@\n \n def run(cmd):\n     typer.secho(cmd, fg=typer.colors.GREEN)\n-    result = os.system(cmd)\n-    if result:\n+    args = shlex.split(cmd)\n+    p = subprocess.Popen(args)\n+    if p.returncode != 0:\n         sys.exit()\n \n \n@@ -28,11 +30,11 @@ def check(args: list[str]):\n         else:\n             args2.append(arg)\n \n-    args_str = ' '.join(args2)\n+    args_str = \" \".join(args2)\n \n     run(f\"ruff {args_str}\")\n     run(f\"flake8 {args_str}\")\n-    run(\"mypy --show-error-codes {args_str}\")\n+    run(f\"mypy --show-error-codes {args_str}\")\n     run(\"pyright\")\n     run(\"vulture --min-confidence 80 .\")\n     run(\"deptry .\")\n@@ -63,9 +65,7 @@ def all():\n \n @app.callback()\n def main():\n-    \"\"\"\n-    Abilian Dev Tool command-line runner.\n-    \"\"\"\n+    \"\"\"Abilian Dev Tool command-line runner.\"\"\"\n \n \n if __name__ == \"__main__\":"
+        }
+    ],
+    "commitTime": "2023-01-09 18:44:06"
+}

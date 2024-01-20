@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "4qwerty7"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.7,
+    "disclosureTime": "2024-01-02 20:51:37",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-TIANNKERNELSU-6142624",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49794"
+        ],
+        "CWE": [
+            "CWE-290"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 11:56:34",
+    "remediation": "Upgrade tiann/KernelSU to version 0.7.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass by Spoofing",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authentication Bypass by Spoofing due to improper validation of application package names. An attacker can gain root permissions on the device by installing a malicious APK with a package name identical to the official KernelSU Manager. "
+    },
+    "source_code": []
+}

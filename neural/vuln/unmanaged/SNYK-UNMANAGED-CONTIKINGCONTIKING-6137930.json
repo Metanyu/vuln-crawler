@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2021-03-24 14:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.48708",
+        "probability": "0.00135"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137930",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-28362"
+        ],
+        "CWE": [
+            "CWE-191"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:49:11",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Integer Underflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Integer Underflow. An issue was discovered in Contiki through 3.0. When sending an ICMPv6 error message because of invalid extension header options in an incoming IPv6 packet, there is an attempt to remove the RPL extension headers. Because the packet length and the extension header length are unchecked (with respect to the available data) at this stage, and these variables are susceptible to integer underflow, it is possible to construct an invalid extension header that will cause memory corruption issues and lead to a Denial-of-Service condition. This is related to rpl-ext-header.c. "
+    },
+    "source_code": []
+}

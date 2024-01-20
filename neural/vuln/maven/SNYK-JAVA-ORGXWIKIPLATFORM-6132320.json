@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-12-19 21:39:31",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12304",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGXWIKIPLATFORM-6132320",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50732"
+        ],
+        "CWE": [
+            "CWE-863"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-20 11:49:41",
+    "remediation": "Upgrade org.xwiki.platform:xwiki-platform-index-tree-macro to version 14.10.7, 15.2-rc-1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Authorization",
+    "vulnDescription": {
+        "Overview": "org.xwiki.platform:xwiki-platform-index-tree-macro is a macro used to display a hierarchy of XWiki documents by using a tree. Affected versions of this package are vulnerable to Improper Authorization. An attacker can execute Velocity scripts without the required permissions by manipulating the document title in a crafted document. ",
+        "Workaround": "A possible workaround is to modify the page XWiki.DocumentTreeMacros, search for the code #set ($discard = $translatedDocument.setTitle($translatedDocument.title)) , and change it to #set ($discard = $translatedDocument.setcomment('')) "
+    },
+    "source_code": [
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-index/xwiki-platform-index-tree/xwiki-platform-index-tree-macro/src/main/resources/XWiki/DocumentTreeMacros.xml",
+            "diff": "@@ -354,10 +354,6 @@\n   #if ($canViewDoc &amp;&amp; $docTreeConfig.showDocumentTitle)\n     ## Display the translated title.\n     #set ($translatedDocument = $xwiki.getDocument($documentReference).translatedDocument)\n-    ## Make sure the displayed title is not affected by the sheet request parameter (e.g. when $translatedDocument is\n-    ## the current document). By setting the title (even if we don't change it) the internal document instance is cloned\n-    ## so it's going to be different than the current document instance (which is the target of the sheet parameter).\n-    #set ($discard = $translatedDocument.setTitle($translatedDocument.title))\n     #set ($plainTitle = $translatedDocument.plainTitle)\n     #if (!$stringtool.isBlank($plainTitle))\n       #set ($label = $plainTitle)"
+        }
+    ],
+    "commitTime": "2023-03-08 15:49:30"
+}

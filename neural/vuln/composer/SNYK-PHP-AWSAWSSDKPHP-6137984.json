@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Takeshi Kaneko"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 3.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "low"
+        }
+    ],
+    "cvssScore": 6,
+    "disclosureTime": "2023-12-21 23:16:13",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-AWSAWSSDKPHP-6137984",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51651"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-22 12:09:01",
+    "remediation": "Upgrade aws/aws-sdk-php to version 3.288.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Path Traversal",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Path Traversal via the buildEndpoint method in the RestSerializer component. This could lead to an arbitrary object being accessed. Note: The buildEndpoint method relies on the Guzzle Psr7 UriResolver utility, which strips dot segments from the request path in accordance with RFC 3986 . "
+    },
+    "source_code": [
+        {
+            "filename": ".changes/nextrelease/s3-dot-segment.json",
+            "diff": "@@ -0,0 +1,7 @@\n+[\n+  {\n+    \"type\": \"bugfix\",\n+    \"category\": \"s3\",\n+    \"description\": \"Disables transformation of request URI paths with dot segments\"\n+  }\n+]"
+        },
+        {
+            "filename": "src/Api/Serializer/RestSerializer.php",
+            "diff": "@@ -242,14 +242,21 @@ function (array $matches) use ($varDefinitions) {\n                 $path = rtrim($path, '/');\n             }\n             $relative = $path . $relative;\n+\n+            if (strpos($relative, '../') !== false) {\n+                if ($relative[0] !== '/') {\n+                    $relative = '/' . $relative;\n+                }\n+                return new Uri($this->endpoint . $relative);\n+            }\n         }\n         // If endpoint has path, remove leading '/' to preserve URI resolution.\n         if ($path && $relative[0] === '/') {\n             $relative = substr($relative, 1);\n         }\n \n-        //Append path to endpoint when leading '//...' present\n-        // as uri cannot be properly resolved\n+        //Append path to endpoint when leading '//...'\n+        // present as uri cannot be properly resolved\n         if ($this->api->isModifiedModel()\n             && strpos($relative, '//') === 0\n         ) {"
+        },
+        {
+            "filename": "tests/S3/S3ClientTest.php",
+            "diff": "@@ -2321,4 +2321,57 @@ public function testDoesNotComputeMD5($options, $operation)\n         );\n         $s3->execute($command);\n     }\n+\n+    /**\n+     * @dataProvider dotSegmentProvider\n+     */\n+    public function testHandlesDotSegmentsInKey($key, $expectedUri)\n+    {\n+        $s3 = $this->getTestClient('s3');\n+        $this->addMockResults($s3, [[]]);\n+        $command = $s3->getCommand('getObject', ['Bucket' => 'foo', 'Key' => $key]);\n+        $command->getHandlerList()->appendSign(\n+            Middleware::tap(function ($cmd, $req) use ($expectedUri) {\n+                $this->assertSame($expectedUri, (string) $req->getUri());\n+            })\n+        );\n+        $s3->execute($command);\n+    }\n+\n+    public function dotSegmentProvider()\n+    {\n+        return [\n+            ['../foo' , 'https://foo.s3.amazonaws.com/../foo'],\n+            ['bar/../../foo', 'https://foo.s3.amazonaws.com/bar/../../foo'],\n+            ['/../foo', 'https://foo.s3.amazonaws.com//../foo'],\n+            ['foo/bar/../baz', 'https://foo.s3.amazonaws.com/foo/bar/../baz']\n+        ];\n+    }\n+\n+    /**\n+     * @dataProvider dotSegmentPathStyleProvider\n+     */\n+    public function testHandlesDotSegmentsInKeyWithPathStyle($key, $expectedUri)\n+    {\n+        $s3 = $this->getTestClient('s3', ['use_path_style_endpoint' => true]);\n+        $this->addMockResults($s3, [[]]);\n+        $command = $s3->getCommand('getObject', ['Bucket' => 'foo', 'Key' => $key]);\n+        $command->getHandlerList()->appendSign(\n+            Middleware::tap(function ($cmd, $req) use ($expectedUri) {\n+                $this->assertSame($expectedUri, (string) $req->getUri());\n+            })\n+        );\n+        $s3->execute($command);\n+    }\n+\n+    public function dotSegmentPathStyleProvider()\n+    {\n+        return [\n+            ['../foo' , 'https://s3.amazonaws.com/foo/foo/../foo'],\n+            ['bar/../../foo', 'https://s3.amazonaws.com/foo/foo/bar/../../foo'],\n+            ['/../foo', 'https://s3.amazonaws.com/foo/foo//../foo'],\n+            ['foo/bar/../baz', 'https://s3.amazonaws.com/foo/foo/foo/bar/../baz'],\n+        ];\n+    }\n+\n }"
+        }
+    ],
+    "commitTime": "2023-11-22 19:30:39"
+}

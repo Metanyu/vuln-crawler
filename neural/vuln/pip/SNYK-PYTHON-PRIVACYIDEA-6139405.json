@@ -1,0 +1,61 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.4,
+    "disclosureTime": "2023-10-01 06:37:02",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-PRIVACYIDEA-6139405",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-338"
+        ],
+        "PVE": [
+            "PVE-2023-61122"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-25 22:19:19",
+    "remediation": "Upgrade privacyIDEA to version 3.9 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use of Cryptographically Weak Pseudo-Random Number Generator (PRNG) in its use of the built-in random module. "
+    },
+    "source_code": [
+        {
+            "filename": "privacyidea/config.py",
+            "diff": "@@ -2,7 +2,7 @@\n \n import os\n import logging\n-import random\n+import secrets\n import string\n log = logging.getLogger(__name__)\n basedir = os.path.abspath(os.path.dirname(__file__))\n@@ -33,10 +33,10 @@\n \n def _random_password(size):\n     log.info(\"SECRET_KEY not set in config. Generating a random key.\")\n-    passwd = [random.choice(string.ascii_lowercase + \\\n+    passwd = [secrets.choice(string.ascii_lowercase + \\\n                             string.ascii_uppercase + string.digits) for _x in range(size)]\n     # return shuffled password\n-    random.shuffle(passwd)\n+    secrets.shuffle(passwd)\n     return \"\".join(passwd)\n \n "
+        },
+        {
+            "filename": "privacyidea/lib/crypto.py",
+            "diff": "@@ -47,7 +47,7 @@\n import hmac\n import logging\n from hashlib import sha256\n-import random\n+import secrets\n import string\n import binascii\n import ctypes\n@@ -649,7 +649,7 @@ def get_alphanum_str(length=16):\n     \"\"\"\n     ret = \"\"\n     for i in range(length):\n-        ret += random.choice(string.ascii_letters + string.digits)\n+        ret += secrets.choice(string.ascii_letters + string.digits)\n     return ret\n \n \n@@ -865,7 +865,7 @@ def generate_password(size=6, characters=string.ascii_lowercase +\n     # fill the password until size with allowed characters\n     passwd.extend(urandom.choice(characters) for _x in range(size - len(requirements)))\n     # return shuffled password\n-    random.shuffle(passwd)\n+    secrets.shuffle(passwd)\n     return \"\".join(passwd)\n \n "
+        },
+        {
+            "filename": "privacyidea/lib/subscriptions.py",
+            "diff": "@@ -210,7 +210,8 @@ def raise_exception_probability(subscription=None):\n     if not subscription:\n         # No subscription at all. We are in a kind of demo mode and return\n         # True with a 50% chance\n-        return random.randrange(0, 2)\n+        # This is only for probability, so we use the less secure but faster random module\n+        return random.randrange(0, 2)  # nosec B311\n \n     expire = subscription.get(\"date_till\")\n     delta = datetime.datetime.now() - expire\n@@ -220,7 +221,8 @@ def raise_exception_probability(subscription=None):\n         # After 74 days we get 80%\n         # After 94 days we get 100%\n         p = 0.2 + ((delta.days-14.0)/30.0) * 0.3\n-        return random.random() < p\n+        # This is only for probability, so we use the less secure but faster random module\n+        return random.random() < p  # nosec B311\n \n     return False\n \n@@ -239,7 +241,8 @@ def subscription_exceeded_probability(active_tokens, allowed_tokens):\n     # old, hard behaviour\n     # return active_tokens > allowed_tokens\n     if active_tokens > allowed_tokens:\n-        prob_check = random.randrange(active_tokens +1)\n+        # This is only for probability, so we use the less secure but faster random module\n+        prob_check = random.randrange(active_tokens + 1)  # nosec B311\n         return prob_check > allowed_tokens\n     else:\n         return False"
+        },
+        {
+            "filename": "privacyidea/lib/tokens/questionnairetoken.py",
+            "diff": "@@ -38,7 +38,7 @@\n from privacyidea.lib.decorators import check_token_locked\n from privacyidea.lib.policy import SCOPE, ACTION, GROUP, get_action_values_from_options\n from privacyidea.lib.crypto import safe_compare\n-import random\n+import secrets\n import json\n import datetime\n \n@@ -229,7 +229,7 @@ def create_challenge(self, transactionid=None, options=None):\n             used_questions = []\n         # Reduce the allowed questions\n         remaining_questions = {k: v for (k, v) in questions.items() if k not in used_questions}\n-        message_id = random.choice(list(remaining_questions))\n+        message_id = secrets.choice(list(remaining_questions))\n         message = remaining_questions[message_id]\n         used_questions = (options.get(\"data\", \"\") + \",{0!s}\".format(message_id)).strip(\",\")\n "
+        }
+    ],
+    "commitTime": "2023-06-04 11:41:00"
+}

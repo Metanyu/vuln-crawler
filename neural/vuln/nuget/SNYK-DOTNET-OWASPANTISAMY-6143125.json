@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "David K"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.1,
+    "disclosureTime": "2024-01-02 16:38:28",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-OWASPANTISAMY-6143125",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51652"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2024-01-03 16:10:01",
+    "remediation": "Upgrade OWASP.AntiSamy to version 1.2.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "vulnDescription": {
+        "Overview": "OWASP.AntiSamy is a library for performing fast, configurable cleansing of HTML coming from untrusted sources. Affected versions of this package are vulnerable to Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') due to flawed parsing of the HTML being sanitized. An attacker can manipulate its output to execute scripts by crafting inputs that exploit the parsing process. Note: This is only exploitable if the preserveComments directive is set to true and specific tags are allowed in the policy file. ",
+        "Workaround": "This vulnerability can be mitigated by manually editing the AntiSamy policy file to either remove the preserveComments directive or set its value to false , and ensuring the noscript tag is removed or not allowed by the policy. "
+    },
+    "source_code": [
+        {
+            "filename": "OWASP.AntiSamyTests/Html/AntiSamyTest.cs",
+            "diff": "@@ -903,6 +903,10 @@ public void TestSmuggledTagsInStyleContent()\n                 .Should().NotContain(\"script\");\n             antisamy.Scan(\"<select<style/>k<input<</>input/onfocus=alert(1)>\", policy).GetCleanHtml()\n                 .Should().NotContain(\"input\");\n+            antisamy.Scan(\"<style/><listing/>]]><noembed></style><img src=x onerror=mxss(1)></noembed>\", policy).GetCleanHtml()\n+               .Should().NotContain(\"mxss\");\n+            antisamy.Scan(\"<style/><math>'<noframes ></style><img src=x onerror=mxss(1)></noframes>'\", policy).GetCleanHtml()\n+               .Should().NotContain(\"mxss\");\n         }\n \n         [Test]"
+        }
+    ],
+    "commitTime": "2023-07-03 02:52:38"
+}

@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Timothee Desurmont"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.2,
+    "disclosureTime": "2023-11-07 22:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGWEBJARSNPM-6114719",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-26158"
+        ],
+        "CWE": [
+            "CWE-1321"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-12 16:23:08",
+    "remediation": "There is no fixed version for org.webjars.npm:mockjs . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Prototype Pollution",
+    "vulnDescription": {
+        "Affected environments": "The following environments are susceptible to a Prototype Pollution attack: Application server Web server Web browser ",
+        "Details": "Prototype Pollution is a vulnerability affecting JavaScript. Prototype Pollution refers to the ability to inject properties into existing JavaScript language construct prototypes, such as objects. JavaScript allows all Object attributes to be altered, including their magical attributes such as __proto__ , constructor and prototype . An attacker manipulates these attributes to overwrite, or pollute, a JavaScript application object prototype of the base object by injecting other values. Properties on the Object.prototype are then inherited by all the JavaScript objects through the prototype chain. When that happens, this leads to either denial of service by triggering JavaScript exceptions, or it tampers with the application source code to force the code path that the attacker injects, thereby leading to remote code execution. There are two main ways in which the pollution of prototypes occurs: Unsafe Object recursive merge Property definition by path Unsafe Object recursive merge The logic of a vulnerable recursive merge function follows the following high-level model: merge (target, source) foreach property of source if property exists and is an object on both the target and the source merge(target[property], source[property]) else target[property] = source[property] When the source object contains a property named __proto__ defined with Object.defineProperty() , the condition that checks if the property exists and is an object on both the target and the source passes and the merge recurses with the target, being the prototype of Object and the source of Object as defined by the attacker. Properties are then copied on the Object prototype. Clone operations are a special sub-class of unsafe recursive merges, which occur when a recursive merge is conducted on an empty object: merge({},source) . lodash and Hoek are examples of libraries susceptible to recursive merge attacks. Property definition by path There are a few JavaScript libraries that use an API to define property values on an object based on a given path. The function that is generally affected contains this signature: theFunction(object, path, value) If the attacker can control the value of \u201cpath\u201d, they can set this value to __proto__.myValue . myValue is then assigned to the prototype of the class of the object. ",
+        "How to prevent": " Freeze the prototype\u2014 use Object.freeze (Object.prototype) . Require schema validation of JSON input. Avoid using unsafe recursive merge functions. Consider using objects without prototypes (for example, Object.create(null) ), breaking the prototype chain and preventing pollution. As a best practice use Map instead of Object . For more information on this vulnerability type: Arteau, Oliver. \u201cJavaScript prototype pollution attack in NodeJS application.\u201d GitHub, 26 May 2018 ",
+        "Overview": "org.webjars.npm:mockjs is a simulation data generator to help the front-end to develop and prototype separate from the back-end progress and reduce some monotony particularly while writing automated tests. Affected versions of this package are vulnerable to Prototype Pollution via the Util.extend function due to missing check if the attribute resolves to the object prototype. By adding or modifying attributes of an object prototype, it is possible to create attributes that exist on every object, or replace critical attributes with malicious ones. This can be problematic if the software depends on existence or non-existence of certain attributes, or uses pre-defined attributes of object prototype (such as hasOwnProperty, toString or valueOf). User controlled inputs inside the extend() method of the Mock.Handler, Mock.Random, Mock.RE.Handler or Mock.Util, will allow an attacker to exploit this vulnerability. ",
+        "PoC": "// poc_Handler.js var Mock = require('mockjs') let BAD_JSON = JSON.parse('{\"__proto__\":{\"polluted\":true}}'); console.log(`[+] Before prototype pollution : ${{}.polluted}`); Mock.Handler.extend({}, BAD_JSON); Mock.Handler.extend({}, {}, BAD_JSON); Mock.Handler.extend({}, {}, {}, BAD_JSON); console.log(`[+] After prototype pollution : ${{}.polluted}`); // poc_Random.js var Mock = require('mockjs') let BAD_JSON = JSON.parse('{\"__proto__\":{\"polluted\":true}}'); console.log(`[+] Before prototype pollution : ${{}.polluted}`); Mock.Random.extend({}, BAD_JSON); Mock.Random.extend({}, {}, BAD_JSON); Mock.Random.extend({}, {}, {}, BAD_JSON); console.log(`[+] After prototype pollution : ${{}.polluted}`); // poc_RE.js var Mock = require('mockjs') let BAD_JSON = JSON.parse('{\"__proto__\":{\"polluted\":true}}'); console.log(`[+] Before prototype pollution : ${{}.polluted}`); Mock.RE.Handler.extend({}, BAD_JSON); Mock.RE.Handler.extend({}, {}, BAD_JSON); Mock.RE.Handler.extend({}, {}, {}, BAD_JSON); console.log(`[+] After prototype pollution : ${{}.polluted}`); // poc_Util.js var Mock = require('mockjs') let BAD_JSON = JSON.parse('{\"__proto__\":{\"polluted\":true}}'); console.log(`[+] Before prototype pollution : ${{}.polluted}`); Mock.Util.extend({}, BAD_JSON); Mock.Util.extend({}, {}, BAD_JSON); Mock.Util.extend({}, {}, {}, BAD_JSON); console.log(`[+] After prototype pollution : ${{}.polluted}`); ",
+        "Types of attacks": "There are a few methods by which Prototype Pollution can be manipulated: Type Origin Short description Denial of service (DoS) Client This is the most likely attack. DoS occurs when Object holds generic functions that are implicitly called for various operations (for example, toString and valueOf ). The attacker pollutes Object.prototype.someattr and alters its state to an unexpected value such as Int or Object . In this case, the code fails and is likely to cause a denial of service. For example: if an attacker pollutes Object.prototype.toString by defining it as an integer, if the codebase at any point was reliant on someobject.toString() it would fail. Remote Code Execution Client Remote code execution is generally only possible in cases where the codebase evaluates a specific attribute of an object, and then executes that evaluation. For example: eval(someobject.someattr) . In this case, if the attacker pollutes Object.prototype.someattr they are likely to be able to leverage this in order to execute code. Property Injection Client The attacker pollutes properties that the codebase relies on for their informative value, including security properties such as cookies or tokens. For example: if a codebase checks privileges for someuser.isAdmin , then when the attacker pollutes Object.prototype.isAdmin and sets it to equal true , they can then achieve admin privileges. ",
+        "Workaround": "By using a denylist of dangerous attributes, this weakness can be eliminated. Add the following line in the Util.extend function: js if ([\"__proto__\", \"constructor\", \"prototype\"].includes(name)) continue // src/mock/handler.js Util.extend = function extend() { var target = arguments[0] || {}, i = 1, length = arguments.length, options, name, src, copy, clone if (length === 1) { target = this i = 0 } for (; i < length; i++) { options = arguments[i] if (!options) continue for (name in options) { if ([\"__proto__\", \"constructor\", \"prototype\"].includes(name)) continue src = target[name] copy = options[name] if (target === copy) continue if (copy === undefined) continue if (Util.isArray(copy) || Util.isObject(copy)) { if (Util.isArray(copy)) clone = src && Util.isArray(src) ? src : [] if (Util.isObject(copy)) clone = src && Util.isObject(src) ? src : {} target[name] = Util.extend(clone, copy) } else { target[name] = copy } } } return target } "
+    },
+    "source_code": []
+}

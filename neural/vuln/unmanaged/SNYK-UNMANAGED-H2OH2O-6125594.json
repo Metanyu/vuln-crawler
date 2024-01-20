@@ -1,0 +1,90 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-12 20:52:38",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-H2OH2O-6125594",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41337"
+        ],
+        "CWE": [
+            "CWE-347"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 13:55:00",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Verification of Cryptographic Signature",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Verification of Cryptographic Signature when it is configured to listen to multiple addresses or ports, with each of them using different backend servers. An attacker with the ability to observe or manipulate packets between the client and server and who is also configured as a backend for the server, can misdirect client requests to an unintended backend, potentially exposing the contents of HTTPS requests. Notes: An H2O instance is vulnerable to this attack only if all of the following conditions are met: The instance is configured to listen to different addresses or ports using the listen directive at the host level . The instance is configured to connect to backend servers managed by multiple entities. ",
+        "Workaround": "This vulnerability can be mitigated by stopping the use of host-level listen directives in favor of global-level ones. "
+    },
+    "source_code": [
+        {
+            "filename": "deps/picotls/include/picotls.h",
+            "diff": "@@ -922,6 +922,13 @@ struct st_ptls_context_t {\n      * (optional) list of supported tls12 cipher-suites terminated by NULL\n      */\n     ptls_cipher_suite_t **tls12_cipher_suites;\n+    /**\n+     * (optional) session ID Context to segment resumption\n+     */\n+    struct {\n+        uint8_t bytes[PTLS_SHA256_DIGEST_SIZE];\n+        uint8_t is_set : 1;\n+    } ticket_context;\n };\n \n typedef struct st_ptls_raw_extension_t {"
+        },
+        {
+            "filename": "deps/picotls/lib/picotls.c",
+            "diff": "@@ -1706,10 +1706,13 @@ static int encode_session_identifier(ptls_context_t *ctx, ptls_buffer_t *buf, ui\n         ptls_buffer_push16(buf, csid);\n         /* ticket_age_add */\n         ptls_buffer_push32(buf, ticket_age_add);\n-        /* server-name */\n+        /* session ID context */\n         ptls_buffer_push_block(buf, 2, {\n-            if (server_name != NULL)\n+            if (ctx->ticket_context.is_set) {\n+                ptls_buffer_pushv(buf, ctx->ticket_context.bytes, sizeof(ctx->ticket_context.bytes));\n+            } else if (server_name != NULL) {\n                 ptls_buffer_pushv(buf, server_name, strlen(server_name));\n+            }\n         });\n         /* alpn */\n         ptls_buffer_push_block(buf, 1, {\n@@ -1722,7 +1725,7 @@ static int encode_session_identifier(ptls_context_t *ctx, ptls_buffer_t *buf, ui\n     return ret;\n }\n \n-int decode_session_identifier(uint64_t *issued_at, ptls_iovec_t *psk, uint32_t *ticket_age_add, ptls_iovec_t *server_name,\n+int decode_session_identifier(uint64_t *issued_at, ptls_iovec_t *psk, uint32_t *ticket_age_add, ptls_iovec_t *ticket_ctx,\n                               uint16_t *key_exchange_id, uint16_t *csid, ptls_iovec_t *negotiated_protocol, const uint8_t *src,\n                               const uint8_t *const end)\n {\n@@ -1748,7 +1751,7 @@ int decode_session_identifier(uint64_t *issued_at, ptls_iovec_t *psk, uint32_t *\n         if ((ret = ptls_decode32(ticket_age_add, &src, end)) != 0)\n             goto Exit;\n         ptls_decode_open_block(src, end, 2, {\n-            *server_name = ptls_iovec_init(src, end - src);\n+            *ticket_ctx = ptls_iovec_init(src, end - src);\n             src = end;\n         });\n         ptls_decode_open_block(src, end, 1, {\n@@ -4006,7 +4009,7 @@ static int try_psk_handshake(ptls_t *tls, size_t *psk_index, int *accept_early_d\n                              ptls_iovec_t ch_trunc)\n {\n     ptls_buffer_t decbuf;\n-    ptls_iovec_t ticket_psk, ticket_server_name, ticket_negotiated_protocol;\n+    ptls_iovec_t ticket_psk, ticket_ctx, ticket_negotiated_protocol;\n     uint64_t issue_at, now = tls->ctx->get_time->cb(tls->ctx->get_time);\n     uint32_t age_add;\n     uint16_t ticket_key_exchange_id, ticket_csid;\n@@ -4029,7 +4032,7 @@ static int try_psk_handshake(ptls_t *tls, size_t *psk_index, int *accept_early_d\n         default: /* decryption failure */\n             continue;\n         }\n-        if (decode_session_identifier(&issue_at, &ticket_psk, &age_add, &ticket_server_name, &ticket_key_exchange_id, &ticket_csid,\n+        if (decode_session_identifier(&issue_at, &ticket_psk, &age_add, &ticket_ctx, &ticket_key_exchange_id, &ticket_csid,\n                                       &ticket_negotiated_protocol, decbuf.base, decbuf.base + decbuf.off) != 0)\n             continue;\n         /* check age */\n@@ -4046,15 +4049,22 @@ static int try_psk_handshake(ptls_t *tls, size_t *psk_index, int *accept_early_d\n             if (tls->ctx->max_early_data_size != 0 && delta <= PTLS_EARLY_DATA_MAX_DELAY)\n                 *accept_early_data = 1;\n         }\n-        /* check server-name */\n-        if (ticket_server_name.len != 0) {\n-            if (tls->server_name == NULL)\n-                continue;\n-            if (!vec_is_string(ticket_server_name, tls->server_name))\n+        /* check ticket context */\n+        if (tls->ctx->ticket_context.is_set) {\n+            if (!(ticket_ctx.len == sizeof(tls->ctx->ticket_context.bytes) &&\n+                  memcmp(ticket_ctx.base, tls->ctx->ticket_context.bytes, ticket_ctx.len) == 0))\n                 continue;\n         } else {\n-            if (tls->server_name != NULL)\n-                continue;\n+            /* check server-name */\n+            if (ticket_ctx.len != 0) {\n+                if (tls->server_name == NULL)\n+                    continue;\n+                if (!vec_is_string(ticket_ctx, tls->server_name))\n+                    continue;\n+            } else {\n+                if (tls->server_name != NULL)\n+                    continue;\n+            }\n         }\n         { /* check key-exchange */\n             ptls_key_exchange_algorithm_t **a;"
+        },
+        {
+            "filename": "h2o.xcodeproj/project.pbxproj",
+            "diff": "@@ -698,6 +698,7 @@\n \t\t0821950F2685262B00E3EFCF /* cc-pico.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = \"cc-pico.c\"; sourceTree = \"<group>\"; };\n \t\t0829879326E1F3530053638F /* rate.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = rate.h; sourceTree = \"<group>\"; };\n \t\t0829879526E1F3700053638F /* rate.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = rate.c; sourceTree = \"<group>\"; };\n+\t\t082B0FF52AAAE83A0091B1D5 /* 80resume-context.t */ = {isa = PBXFileReference; lastKnownFileType = text; path = \"80resume-context.t\"; sourceTree = \"<group>\"; xcLanguageSpecificationIdentifier = xcode.lang.perl; };\n \t\t082E148C2692F51000603AED /* driver.cc */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = driver.cc; sourceTree = \"<group>\"; };\n \t\t082E1B402692F52100603AED /* driver_common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = driver_common.h; sourceTree = \"<group>\"; };\n \t\t082E1B412692F52100603AED /* quicly_mock.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = quicly_mock.h; sourceTree = \"<group>\"; };\n@@ -2389,6 +2390,7 @@\n \t\t\t\t10952D591C5082F7000D664C /* 80issues-from-proxy-reproxy-to-different-host.t */,\n \t\t\t\tE9BCE6911FF326AC003CEA11 /* 80no-handler-vs-h2-post.t */,\n \t\t\t\t109EEFD81D77B336001F11D1 /* 80one-byte-window.t */,\n+\t\t\t\t082B0FF52AAAE83A0091B1D5 /* 80resume-context.t */,\n \t\t\t\t106530A81D8A21A7005B2C60 /* 80reverse-proxy-missing-content-length-for-post.t */,\n \t\t\t\tE9414F8F24ED1D5300273C59 /* 80reverse-proxy-truncated-chunked.t */,\n \t\t\t\t10B6D4501C727315005F0CF8 /* 80yaml-merge.t */,"
+        },
+        {
+            "filename": "src/main.c",
+            "diff": "@@ -1399,6 +1399,12 @@ static const char *listener_setup_ssl_picotls(struct listener_config_t *listener\n         pctx->ctx.emit_certificate = NULL;\n     }\n \n+    /* setup session ticket context so that resumption will succeed only against the same certificate */\n+    assert(sizeof(pctx->ctx.ticket_context.bytes) == PTLS_SHA256_DIGEST_SIZE);\n+    ptls_calc_hash(&ptls_openssl_sha256, pctx->ctx.ticket_context.bytes, pctx->ctx.certificates.list[0].base,\n+                   pctx->ctx.certificates.list[0].len);\n+    pctx->ctx.ticket_context.is_set = 1;\n+\n     if (listener->quic.ctx != NULL) {\n #if H2O_USE_FUSION\n         /* rebuild and replace the cipher suite list, replacing the corresponding ones to fusion */\n@@ -1583,6 +1589,18 @@ static int load_ssl_identity(h2o_configurator_command_t *cmd, SSL_CTX *ssl_ctx,\n         assert(ret == 1);\n     }\n \n+    /* set session resumption context so that resumption will succeed only against the same certificate */\n+    if (raw_pubkey_count == 0) {\n+        uint8_t session_ctx[SSL_MAX_SID_CTX_LENGTH];\n+        unsigned session_ctx_len;\n+        H2O_BUILD_ASSERT(sizeof(session_ctx) == SHA256_DIGEST_LENGTH);\n+        int ret = X509_digest(SSL_CTX_get0_certificate(ssl_ctx), EVP_sha256(), session_ctx, &session_ctx_len);\n+        assert(ret == 1);\n+        assert(session_ctx_len == sizeof(session_ctx));\n+        ret = SSL_CTX_set_session_id_context(ssl_ctx, session_ctx, sizeof(session_ctx));\n+        assert(ret == 1);\n+    }\n+\n     return 0;\n }\n \n@@ -2067,7 +2085,6 @@ static int listener_setup_ssl(h2o_configurator_command_t *cmd, h2o_configurator_\n         }\n #endif\n \n-        SSL_CTX_set_session_id_context(identity->ossl, H2O_SESSID_CTX, H2O_SESSID_CTX_LEN);\n         setup_ecc_key(identity->ossl);\n         if (cipher_suite != NULL && SSL_CTX_set_cipher_list(identity->ossl, (*cipher_suite)->data.scalar) != 1) {\n             h2o_configurator_errprintf(cmd, *cipher_suite, \"failed to setup SSL cipher suite\\n\");"
+        },
+        {
+            "filename": "src/ssl.c",
+            "diff": "@@ -140,7 +140,6 @@ static void setup_cache_enable(SSL_CTX **contexts, size_t num_contexts, int asyn\n     size_t i;\n     for (i = 0; i != num_contexts; ++i) {\n         SSL_CTX_set_session_cache_mode(contexts[i], SSL_SESS_CACHE_SERVER | SSL_SESS_CACHE_NO_AUTO_CLEAR);\n-        SSL_CTX_set_session_id_context(contexts[i], H2O_SESSID_CTX, H2O_SESSID_CTX_LEN);\n         SSL_CTX_set_timeout(contexts[i], conf.lifetime);\n         if (async_resumption)\n             h2o_socket_ssl_async_resumption_setup_ctx(contexts[i]);"
+        },
+        {
+            "filename": "t/80resume-context.t",
+            "diff": "@@ -0,0 +1,128 @@\n+use strict;\n+use warnings;\n+use File::Temp qw(tempdir);\n+use Net::EmptyPort qw(check_port);\n+use Test::More;\n+use t::Util;\n+\n+plan skip_all => 'openssl not found'\n+    unless prog_exists('openssl');\n+\n+my $tempdir = tempdir(CLEANUP => 1);\n+\n+diag `openssl version`;\n+\n+# first port serves index.txt, alt port serves alice.txt\n+my ($local_port, $alt_port) = (empty_port(), empty_port());\n+my $server = spawn_h2o_raw(<< \"EOT\", [$local_port, $alt_port]);\n+hosts:\n+  localhost.examp1e.net:\n+    listen:\n+      host: 127.0.0.1\n+      port: $local_port\n+      ssl:\n+        key-file: examples/h2o/server.key\n+        certificate-file: examples/h2o/server.crt\n+    paths:\n+      /:\n+        file.file: t/assets/doc_root/index.txt\n+  alternate.localhost.examp1e.net:\n+    listen:\n+      host: 127.0.0.1\n+      port: $alt_port\n+      ssl:\n+        key-file: examples/h2o/alternate.key\n+        certificate-file: examples/h2o/alternate.crt\n+    paths:\n+      /:\n+        file.file: t/assets/doc_root/alice.txt\n+EOT\n+\n+subtest \"tls/1.2-session-id\" => sub {\n+    subtest \"without-sni\" => sub {\n+        run_tests(\"-tls1_2 -no_ticket\");\n+    };\n+    subtest \"with-sni\" => sub {\n+        run_tests(\"-tls1_2 -no_ticket -servername localhost.examp1e.net\");\n+    };\n+};\n+\n+subtest \"tls/1.2-ticket\" => sub {\n+    subtest \"without-sni\" => sub {\n+        run_tests(\"-tls1_2\");\n+    };\n+    subtest \"with-sni\" => sub {\n+        run_tests(\"-tls1_2 -servername localhost.examp1e.net\");\n+    };\n+};\n+subtest \"tls/1.3-ticket\" => sub {\n+    plan skip_all => \"openssl s_client does not support tls/1.3\"\n+        unless openssl_supports_tls13();\n+    subtest \"without-sni\" => sub {\n+        run_tests(\"-tls1_3\");\n+    };\n+    subtest \"with-sni\" => sub {\n+        run_tests(\"-tls1_3 -servername localhost.examp1e.net\");\n+    };\n+};\n+\n+done_testing;\n+\n+sub run_tests {\n+    my $opts = shift;\n+    unlink \"$tempdir/session\";\n+    subtest \"full handshake\" => sub {\n+        my $output = run_client(\"$opts -sess_out $tempdir/session -connect 127.0.0.1:$local_port\", \"localhost.examp1e.net\");\n+        is get_common_name($output), \"localhost.examp1e.net\", \"common name\";\n+        like get_resp($output), qr/^hello/s, \"response\";\n+    };\n+    subtest \"resume same port\" => sub {\n+        my $output = run_client(\"$opts -sess_in $tempdir/session -connect 127.0.0.1:$local_port\", \"localhost.examp1e.net\");\n+        is get_common_name($output), \"localhost.examp1e.net\", \"common name\";\n+        like get_resp($output), qr/^hello/s, \"response\";\n+    };\n+    subtest \"resume alt port\" => sub {\n+        my $output = run_client(\"$opts -sess_in $tempdir/session -connect 127.0.0.1:$alt_port\", \"localhost.examp1e.net\");\n+        is get_common_name($output), \"alternate.localhost.examp1e.net\", \"common name\";\n+        like get_resp($output), qr/^Alice/s, \"response\";\n+    };\n+};\n+\n+sub run_client {\n+    my ($ossl_opts, $authority) = @_;\n+\n+    diag $ossl_opts;\n+    #sleep 100 if $ossl_opts =~ /tls1_3.*servername.*sess_in/;\n+    my $pid = open my $fh, \"|-\", \"exec openssl s_client $ossl_opts > $tempdir/out 2>&1\"\n+        or die \"failed to spawn s_client:$?\";\n+    $fh->autoflush(1);\n+    print $fh \"GET / HTTP/1.0\\r\\nHost: $authority\\r\\n\\r\\n\";\n+\n+    while (waitpid($pid, 0) != $pid) {}\n+\n+    close $fh;\n+\n+    open $fh, \"<\", \"$tempdir/out\"\n+        or die \"failed to open $tempdir/out:$!\";\n+    my $output = do {\n+        local $/;\n+        <$fh>;\n+    };\n+    $output =~ /(.*read \\d+ bytes.*)/m\n+        and diag $1;\n+    $output;\n+}\n+\n+sub get_common_name {\n+    my $s = shift;\n+    $s =~ m{^subject=/?CN\\s*=\\s*(.*)}m\n+        or die \"failed to extract common name from text:\\n$s\";\n+    $1;\n+}\n+\n+sub get_resp {\n+    my $s = shift;\n+    $s =~ m{\\nHTTP/1.1 200 OK\\r\\n(.*?)\\r\\n\\r\\n}s\n+        or die \"failed to locate HTTP response in text:\\n$s\";\n+    $';\n+}"
+        }
+    ],
+    "commitTime": "2023-12-12 12:31:47"
+}

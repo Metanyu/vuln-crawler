@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Yuchuan Meng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-07 20:45:17",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBDE265-6112476",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49465"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 13:22:07",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the derive_spatial_luma_vector_prediction function at motion.cc file. "
+    },
+    "source_code": [
+        {
+            "filename": "libde265/motion.cc",
+            "diff": "@@ -1864,7 +1864,14 @@ void derive_spatial_luma_vector_prediction(base_context* ctx,\n       logmvcand(vi);\n \n       const de265_image* imgX = NULL;\n-      if (vi.predFlag[X]) imgX = ctx->get_image(shdr->RefPicList[X][ vi.refIdx[X] ]);\n+      if (vi.predFlag[X]) {\n+        if (vi.refIdx[X] < 0 || vi.refIdx[X] >= MAX_NUM_REF_PICS) {\n+          return;\n+        }\n+\n+        imgX = ctx->get_image(shdr->RefPicList[X][ vi.refIdx[X] ]);\n+      }\n+\n       const de265_image* imgY = NULL;\n       if (vi.predFlag[Y]) {\n         if (vi.refIdx[Y] < 0 || vi.refIdx[Y] >= MAX_NUM_REF_PICS) {"
+        }
+    ],
+    "commitTime": "2023-11-23 18:43:55"
+}

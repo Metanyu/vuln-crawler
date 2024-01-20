@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Crypt0Cr33py"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8.7,
+    "disclosureTime": "2023-12-11 01:43:47",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12303",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-DJAISSMONICA-6117573",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50465"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-12 10:36:17",
+    "remediation": "There is no fixed version for djaiss/monica . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "vulnDescription": {
+        "Overview": "djaiss/monica is a Monica is a personal CRM. Affected versions of this package are vulnerable to Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') via an SVG document uploaded by an authenticated user. An attacker can inject arbitrary web script or HTML by uploading a malicious SVG file. "
+    },
+    "source_code": []
+}

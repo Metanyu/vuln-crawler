@@ -1,0 +1,102 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Harry Sintonen"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 4.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-06 07:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.17906",
+        "probability": "0.00052"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-CURL-6129737",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46218"
+        ],
+        "CWE": [
+            "CWE-201"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 13:25:37",
+    "remediation": "Upgrade curl to version 8.5.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "curl is a command line tool and library for transferring data with URL syntax, supporting DICT, FILE, FTP, FTPS, GOPHER, GOPHERS, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, POP3, POP3S, RTMP, RTMPS, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP. libcurl offers a myriad of powerful features. Affected versions of this package are vulnerable to Information Exposure in the function that verifies a given cookie domain against the Public Suffix List. This flaw allows a malicious HTTP server to set \"super cookies\" in curl that are then passed back to more origins than what is otherwise allowed or possible. "
+    },
+    "source_code": [
+        {
+            "filename": "lib/cookie.c",
+            "diff": "@@ -1027,15 +1027,23 @@ Curl_cookie_add(struct Curl_easy *data,\n    * dereference it.\n    */\n   if(data && (domain && co->domain && !Curl_host_is_ipnum(co->domain))) {\n-    const psl_ctx_t *psl = Curl_psl_use(data);\n-    int acceptable;\n-\n-    if(psl) {\n-      acceptable = psl_is_cookie_domain_acceptable(psl, domain, co->domain);\n-      Curl_psl_release(data);\n+    bool acceptable = FALSE;\n+    char lcase[256];\n+    char lcookie[256];\n+    size_t dlen = strlen(domain);\n+    size_t clen = strlen(co->domain);\n+    if((dlen < sizeof(lcase)) && (clen < sizeof(lcookie))) {\n+      const psl_ctx_t *psl = Curl_psl_use(data);\n+      if(psl) {\n+        /* the PSL check requires lowercase domain name and pattern */\n+        Curl_strntolower(lcase, domain, dlen + 1);\n+        Curl_strntolower(lcookie, co->domain, clen + 1);\n+        acceptable = psl_is_cookie_domain_acceptable(psl, lcase, lcookie);\n+        Curl_psl_release(data);\n+      }\n+      else\n+        acceptable = !bad_domain(domain, strlen(domain));\n     }\n-    else\n-      acceptable = !bad_domain(domain, strlen(domain));\n \n     if(!acceptable) {\n       infof(data, \"cookie '%s' dropped, domain '%s' must not \""
+        }
+    ],
+    "commitTime": "2023-11-23 09:08:56"
+}

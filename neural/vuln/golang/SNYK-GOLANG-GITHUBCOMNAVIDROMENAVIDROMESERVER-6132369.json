@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "crazygolem"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.6,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-19 23:37:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06916",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMNAVIDROMENAVIDROMESERVER-6132369",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51442"
+        ],
+        "CWE": [
+            "CWE-287"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-20 12:30:24",
+    "remediation": "Upgrade github.com/navidrome/navidrome/server to version 0.50.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass by Assumed-Immutable Data",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authentication Bypass by Assumed-Immutable Data via the subsonic /rest/ authentication endpoint. An attacker can gain unauthorized access to any known account by providing a JWT signed with a hardcoded key. Note: This is only exploitable on instances that have never been restarted. ",
+        "Workaround": "This vulnerability can be mitigated by restarting the Navidrome instance, which will cause the application to load a properly generated random key, rendering the hardcoded fallback key ineffective. "
+    },
+    "source_code": [
+        {
+            "filename": "core/auth/auth.go",
+            "diff": "@@ -6,6 +6,7 @@ import (\n \t\"time\"\n \n \t\"github.com/go-chi/jwtauth/v5\"\n+\t\"github.com/google/uuid\"\n \t\"github.com/lestrrat-go/jwx/v2/jwt\"\n \t\"github.com/navidrome/navidrome/conf\"\n \t\"github.com/navidrome/navidrome/consts\"\n@@ -23,9 +24,10 @@ var (\n func Init(ds model.DataStore) {\n \tonce.Do(func() {\n \t\tlog.Info(\"Setting Session Timeout\", \"value\", conf.Server.SessionTimeout)\n-\t\tsecret, err := ds.Property(context.TODO()).DefaultGet(consts.JWTSecretKey, \"not so secret\")\n-\t\tif err != nil {\n+\t\tsecret, err := ds.Property(context.TODO()).Get(consts.JWTSecretKey)\n+\t\tif err != nil || secret == \"\" {\n \t\t\tlog.Error(\"No JWT secret found in DB. Setting a temp one, but please report this error\", err)\n+\t\t\tsecret = uuid.NewString()\n \t\t}\n \t\tSecret = []byte(secret)\n \t\tTokenAuth = jwtauth.New(\"HS256\", Secret, nil)"
+        },
+        {
+            "filename": "server/server.go",
+            "diff": "@@ -34,8 +34,8 @@ type Server struct {\n \n func New(ds model.DataStore, broker events.Broker) *Server {\n \ts := &Server{ds: ds, broker: broker}\n-\tauth.Init(s.ds)\n \tinitialSetup(ds)\n+\tauth.Init(s.ds)\n \ts.initRoutes()\n \ts.mountAuthenticationRoutes()\n \ts.mountRootRedirector()"
+        }
+    ],
+    "commitTime": "2023-12-14 00:00:05"
+}

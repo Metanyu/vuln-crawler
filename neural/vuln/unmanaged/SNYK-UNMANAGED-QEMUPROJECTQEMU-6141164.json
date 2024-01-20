@@ -1,0 +1,59 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.9,
+    "disclosureTime": "2024-01-02 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-QEMUPROJECTQEMU-6141164",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6693"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-02 13:39:21",
+    "remediation": "There is no fixed version for qemu-project/qemu . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow in the virtio_net_flush_tx function. An attacker can overwrite the local out_sg variable on the stack and send it to the wire, leading to an information leak. "
+    },
+    "source_code": []
+}

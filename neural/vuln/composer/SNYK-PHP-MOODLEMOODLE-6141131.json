@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2022-05-13 01:12:55",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.45312",
+        "probability": "0.00116"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-MOODLEMOODLE-6141131",
+    "identifiers": {
+        "CVE": [
+            "CVE-2012-6099"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-01 12:51:09",
+    "remediation": "Upgrade moodle/moodle to version 2.4.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "moodle/moodle is a learning platform. Affected versions of this package are vulnerable to Improper Input Validation due to improper validation of pathnames in the backup/converter/moodle1/lib.php script. An attacker can read arbitrary files by leveraging the backup-restoration feature. This is only exploitable if the attacker has the ability to restore backups. "
+    },
+    "source_code": [
+        {
+            "filename": "backup/converter/moodle1/lib.php",
+            "diff": "@@ -642,7 +642,9 @@ public static function find_referenced_files($text) {\n         }\n         foreach ($matches[2] as $match) {\n             $file = str_replace(array('$@FILEPHP@$', '$@SLASH@$', '$@FORCEDOWNLOAD@$'), array('', '/', ''), $match);\n-            $files[] = rawurldecode($file);\n+            if ($file === clean_param($file, PARAM_PATH)) {\n+                $files[] = rawurldecode($file);\n+            }\n         }\n \n         return array_unique($files);\n@@ -1210,6 +1212,10 @@ public function migrate_file($sourcepath, $filepath = '/', $filename = null, $so\n \n         $sourcefullpath = $this->basepath.'/'.$sourcepath;\n \n+        if ($sourcefullpath !== clean_param($sourcefullpath, PARAM_PATH)) {\n+            throw new moodle1_convert_exception('file_invalid_path', $sourcefullpath);\n+        }\n+\n         if (!is_readable($sourcefullpath)) {\n             throw new moodle1_convert_exception('file_not_readable', $sourcefullpath);\n         }"
+        }
+    ],
+    "commitTime": "2013-01-08 00:53:38"
+}

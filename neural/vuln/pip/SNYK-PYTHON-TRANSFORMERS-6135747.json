@@ -1,0 +1,83 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Peng Zhou"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9,
+    "disclosureTime": "2023-12-20 15:46:36",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12051",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-TRANSFORMERS-6135747",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6730"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 12:05:02",
+    "remediation": "Upgrade transformers to version 4.36.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Deserialization of Untrusted Data",
+    "vulnDescription": {
+        "Details": "Serialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like Remote Method Invocation (RMI) , Java Management Extension (JMX) , Java Messaging System (JMS) , Action Message Format (AMF) , Java Server Faces (JSF) ViewState , etc. Deserialization of untrusted data ( CWE-502 ) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution. ",
+        "Overview": "transformers is a State-of-the-art Machine Learning for JAX, PyTorch and TensorFlow Affected versions of this package are vulnerable to Deserialization of Untrusted Data via the index_name and index_path parameters to the RagRetriever.from_pretrained() function. These can be used to load malicious pickle files remotely, bypassing file checks to execute code on the host. "
+    },
+    "source_code": [
+        {
+            "filename": "docs/source/en/model_doc/transfo-xl.md",
+            "diff": "@@ -22,11 +22,17 @@ This model is in maintenance mode only, so we won't accept any new PRs changing\n \n We recommend switching to more recent models for improved security.\n \n-In case you would still like to use `TransfoXL` in your experiments, we recommend using the [Hub checkpoint](https://huggingface.co/transfo-xl-wt103) with a specific revision to ensure you are downloading safe files from the Hub:\n+In case you would still like to use `TransfoXL` in your experiments, we recommend using the [Hub checkpoint](https://huggingface.co/transfo-xl-wt103) with a specific revision to ensure you are downloading safe files from the Hub.\n \n-```\n+You will need to set the environment variable `TRUST_REMOTE_CODE` to `True` in order to allow the\n+usage of `pickle.load()`:\n+\n+```python\n+import os\n from transformers import TransfoXLTokenizer, TransfoXLLMHeadModel\n \n+os.environ[\"TRUST_REMOTE_CODE\"] = \"True\"\n+\n checkpoint = 'transfo-xl-wt103'\n revision = '40a186da79458c9f9de846edfaea79c412137f97'\n "
+        },
+        {
+            "filename": "src/transformers/models/deprecated/transfo_xl/tokenization_transfo_xl.py",
+            "diff": "@@ -34,6 +34,7 @@\n     is_torch_available,\n     logging,\n     requires_backends,\n+    strtobool,\n     torch_only_method,\n )\n \n@@ -212,6 +213,14 @@ def __init__(\n             vocab_dict = None\n             if pretrained_vocab_file is not None:\n                 # Priority on pickle files (support PyTorch and TF)\n+                if not strtobool(os.environ.get(\"TRUST_REMOTE_CODE\", \"False\")):\n+                    raise ValueError(\n+                        \"This part uses `pickle.load` which is insecure and will execute arbitrary code that is \"\n+                        \"potentially malicious. It's recommended to never unpickle data that could have come from an \"\n+                        \"untrusted source, or that could have been tampered with. If you already verified the pickle \"\n+                        \"data and decided to use it, you can set the environment variable \"\n+                        \"`TRUST_REMOTE_CODE` to `True` to allow it.\"\n+                    )\n                 with open(pretrained_vocab_file, \"rb\") as f:\n                     vocab_dict = pickle.load(f)\n \n@@ -790,6 +799,13 @@ def get_lm_corpus(datadir, dataset):\n         corpus = torch.load(fn_pickle)\n     elif os.path.exists(fn):\n         logger.info(\"Loading cached dataset from pickle...\")\n+        if not strtobool(os.environ.get(\"TRUST_REMOTE_CODE\", \"False\")):\n+            raise ValueError(\n+                \"This part uses `pickle.load` which is insecure and will execute arbitrary code that is potentially \"\n+                \"malicious. It's recommended to never unpickle data that could have come from an untrusted source, or \"\n+                \"that could have been tampered with. If you already verified the pickle data and decided to use it, \"\n+                \"you can set the environment variable `TRUST_REMOTE_CODE` to `True` to allow it.\"\n+            )\n         with open(fn, \"rb\") as fp:\n             corpus = pickle.load(fp)\n     else:"
+        },
+        {
+            "filename": "src/transformers/models/rag/retrieval_rag.py",
+            "diff": "@@ -23,7 +23,7 @@\n \n from ...tokenization_utils import PreTrainedTokenizer\n from ...tokenization_utils_base import BatchEncoding\n-from ...utils import cached_file, is_datasets_available, is_faiss_available, logging, requires_backends\n+from ...utils import cached_file, is_datasets_available, is_faiss_available, logging, requires_backends, strtobool\n from .configuration_rag import RagConfig\n from .tokenization_rag import RagTokenizer\n \n@@ -131,6 +131,13 @@ def _resolve_path(self, index_path, filename):\n     def _load_passages(self):\n         logger.info(f\"Loading passages from {self.index_path}\")\n         passages_path = self._resolve_path(self.index_path, self.PASSAGE_FILENAME)\n+        if not strtobool(os.environ.get(\"TRUST_REMOTE_CODE\", \"False\")):\n+            raise ValueError(\n+                \"This part uses `pickle.load` which is insecure and will execute arbitrary code that is potentially \"\n+                \"malicious. It's recommended to never unpickle data that could have come from an untrusted source, or \"\n+                \"that could have been tampered with. If you already verified the pickle data and decided to use it, \"\n+                \"you can set the environment variable `TRUST_REMOTE_CODE` to `True` to allow it.\"\n+            )\n         with open(passages_path, \"rb\") as passages_file:\n             passages = pickle.load(passages_file)\n         return passages\n@@ -140,6 +147,13 @@ def _deserialize_index(self):\n         resolved_index_path = self._resolve_path(self.index_path, self.INDEX_FILENAME + \".index.dpr\")\n         self.index = faiss.read_index(resolved_index_path)\n         resolved_meta_path = self._resolve_path(self.index_path, self.INDEX_FILENAME + \".index_meta.dpr\")\n+        if not strtobool(os.environ.get(\"TRUST_REMOTE_CODE\", \"False\")):\n+            raise ValueError(\n+                \"This part uses `pickle.load` which is insecure and will execute arbitrary code that is potentially \"\n+                \"malicious. It's recommended to never unpickle data that could have come from an untrusted source, or \"\n+                \"that could have been tampered with. If you already verified the pickle data and decided to use it, \"\n+                \"you can set the environment variable `TRUST_REMOTE_CODE` to `True` to allow it.\"\n+            )\n         with open(resolved_meta_path, \"rb\") as metadata_file:\n             self.index_id_to_db_id = pickle.load(metadata_file)\n         assert ("
+        },
+        {
+            "filename": "tests/models/rag/test_retrieval_rag.py",
+            "diff": "@@ -14,7 +14,6 @@\n \n import json\n import os\n-import pickle\n import shutil\n import tempfile\n from unittest import TestCase\n@@ -174,37 +173,6 @@ def get_dummy_custom_hf_index_retriever(self, from_disk: bool):\n             )\n         return retriever\n \n-    def get_dummy_legacy_index_retriever(self):\n-        dataset = Dataset.from_dict(\n-            {\n-                \"id\": [\"0\", \"1\"],\n-                \"text\": [\"foo\", \"bar\"],\n-                \"title\": [\"Foo\", \"Bar\"],\n-                \"embeddings\": [np.ones(self.retrieval_vector_size + 1), 2 * np.ones(self.retrieval_vector_size + 1)],\n-            }\n-        )\n-        dataset.add_faiss_index(\"embeddings\", string_factory=\"Flat\", metric_type=faiss.METRIC_INNER_PRODUCT)\n-\n-        index_file_name = os.path.join(self.tmpdirname, \"hf_bert_base.hnswSQ8_correct_phi_128.c_index\")\n-        dataset.save_faiss_index(\"embeddings\", index_file_name + \".index.dpr\")\n-        pickle.dump(dataset[\"id\"], open(index_file_name + \".index_meta.dpr\", \"wb\"))\n-\n-        passages_file_name = os.path.join(self.tmpdirname, \"psgs_w100.tsv.pkl\")\n-        passages = {sample[\"id\"]: [sample[\"text\"], sample[\"title\"]] for sample in dataset}\n-        pickle.dump(passages, open(passages_file_name, \"wb\"))\n-\n-        config = RagConfig(\n-            retrieval_vector_size=self.retrieval_vector_size,\n-            question_encoder=DPRConfig().to_dict(),\n-            generator=BartConfig().to_dict(),\n-            index_name=\"legacy\",\n-            index_path=self.tmpdirname,\n-        )\n-        retriever = RagRetriever(\n-            config, question_encoder_tokenizer=self.get_dpr_tokenizer(), generator_tokenizer=self.get_bart_tokenizer()\n-        )\n-        return retriever\n-\n     def test_canonical_hf_index_retriever_retrieve(self):\n         n_docs = 1\n         retriever = self.get_dummy_canonical_hf_index_retriever()\n@@ -288,33 +256,6 @@ def test_custom_hf_index_retriever_save_and_from_pretrained_from_disk(self):\n             out = retriever.retrieve(hidden_states, n_docs=1)\n             self.assertTrue(out is not None)\n \n-    def test_legacy_index_retriever_retrieve(self):\n-        n_docs = 1\n-        retriever = self.get_dummy_legacy_index_retriever()\n-        hidden_states = np.array(\n-            [np.ones(self.retrieval_vector_size), -np.ones(self.retrieval_vector_size)], dtype=np.float32\n-        )\n-        retrieved_doc_embeds, doc_ids, doc_dicts = retriever.retrieve(hidden_states, n_docs=n_docs)\n-        self.assertEqual(retrieved_doc_embeds.shape, (2, n_docs, self.retrieval_vector_size))\n-        self.assertEqual(len(doc_dicts), 2)\n-        self.assertEqual(sorted(doc_dicts[0]), [\"text\", \"title\"])\n-        self.assertEqual(len(doc_dicts[0][\"text\"]), n_docs)\n-        self.assertEqual(doc_dicts[0][\"text\"][0], \"bar\")  # max inner product is reached with second doc\n-        self.assertEqual(doc_dicts[1][\"text\"][0], \"foo\")  # max inner product is reached with first doc\n-        self.assertListEqual(doc_ids.tolist(), [[1], [0]])\n-\n-    def test_legacy_hf_index_retriever_save_and_from_pretrained(self):\n-        retriever = self.get_dummy_legacy_index_retriever()\n-        with tempfile.TemporaryDirectory() as tmp_dirname:\n-            retriever.save_pretrained(tmp_dirname)\n-            retriever = RagRetriever.from_pretrained(tmp_dirname)\n-            self.assertIsInstance(retriever, RagRetriever)\n-            hidden_states = np.array(\n-                [np.ones(self.retrieval_vector_size), -np.ones(self.retrieval_vector_size)], dtype=np.float32\n-            )\n-            out = retriever.retrieve(hidden_states, n_docs=1)\n-            self.assertTrue(out is not None)\n-\n     @require_torch\n     @require_tokenizers\n     @require_sentencepiece"
+        }
+    ],
+    "commitTime": "2023-12-04 15:48:37"
+}

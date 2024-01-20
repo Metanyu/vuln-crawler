@@ -1,0 +1,73 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "mysql"
+        }
+    ],
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2024-01-17T01:11:30.465293Z",
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:H/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2024-01-17T13:50:08.083557Z",
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.9,
+    "description": "## Overview Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') due to an unspecified issue in the server optimizer. An attacker with high privileges can cause a denial of service by exploiting this vulnerability. ## Remediation Upgrade `mysql` to version 8.0.36, 8.2.1 or higher. ## References - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2258782) - [Security Advisory](https://www.oracle.com/security-alerts/cpujan2024.html#AppendixMSQL) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-MYSQL-6173320",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-20971"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "mysql",
+    "publicationTime": "2024-01-18T11:44:28.425753Z",
+    "remediation": "Upgrade mysql to version 8.0.36, 8.2.1 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,8.0.36)",
+            "[8.0.0,8.2.1)"
+        ]
+    },
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') due to an unspecified issue in the server optimizer. An attacker with high privileges can cause a denial of service by exploiting this vulnerability. ",
+        "References": [
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2258782",
+            "https://www.oracle.com/security-alerts/cpujan2024.html#AppendixMSQL"
+        ]
+    },
+    "vulnerableVersions": "[,8.0.36) , [8.0.0,8.2.1)"
+}

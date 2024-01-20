@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "junwha0511"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-29 05:44:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19064",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-MICROPYTHONMICROPYTHON-6140432",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7152"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-29 08:21:55",
+    "remediation": "Upgrade micropython/micropython to version 1.22.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free because poll_set_add_fd frees previously allocated fds at m_renew , when fd is allocated for a poll object. An attacker can try to malform an object or fd by using each other, leading to unintended behavior of the package. "
+    },
+    "source_code": [
+        {
+            "filename": "extmod/modselect.c",
+            "diff": "@@ -41,6 +41,7 @@\n \n #if MICROPY_PY_SELECT_POSIX_OPTIMISATIONS\n \n+#include <string.h>\n #include <poll.h>\n \n #if !((MP_STREAM_POLL_RD) == (POLLIN) && \\\n@@ -142,14 +143,47 @@ STATIC void poll_obj_set_revents(poll_obj_t *poll_obj, mp_uint_t revents) {\n     }\n }\n \n+// How much (in pollfds) to grow the allocation for poll_set->pollfds by.\n+#define POLL_SET_ALLOC_INCREMENT (4)\n+\n STATIC struct pollfd *poll_set_add_fd(poll_set_t *poll_set, int fd) {\n     struct pollfd *free_slot = NULL;\n \n     if (poll_set->used == poll_set->max_used) {\n         // No free slots below max_used, so expand max_used (and possibly allocate).\n         if (poll_set->max_used >= poll_set->alloc) {\n-            poll_set->pollfds = m_renew(struct pollfd, poll_set->pollfds, poll_set->alloc, poll_set->alloc + 4);\n-            poll_set->alloc += 4;\n+            size_t new_alloc = poll_set->alloc + POLL_SET_ALLOC_INCREMENT;\n+            // Try to grow in-place.\n+            struct pollfd *new_fds = m_renew_maybe(struct pollfd, poll_set->pollfds, poll_set->alloc, new_alloc, false);\n+            if (!new_fds) {\n+                // Failed to grow in-place. Do a new allocation and copy over the pollfd values.\n+                new_fds = m_new(struct pollfd, new_alloc);\n+                memcpy(new_fds, poll_set->pollfds, sizeof(struct pollfd) * poll_set->alloc);\n+\n+                // Update existing poll_obj_t to update their pollfd field to\n+                // point to the same offset inside the new allocation.\n+                for (mp_uint_t i = 0; i < poll_set->map.alloc; ++i) {\n+                    if (!mp_map_slot_is_filled(&poll_set->map, i)) {\n+                        continue;\n+                    }\n+\n+                    poll_obj_t *poll_obj = MP_OBJ_TO_PTR(poll_set->map.table[i].value);\n+                    if (!poll_obj) {\n+                        // This is the one we're currently adding,\n+                        // poll_set_add_obj doesn't assign elem->value until\n+                        // afterwards.\n+                        continue;\n+                    }\n+\n+                    poll_obj->pollfd = new_fds + (poll_obj->pollfd - poll_set->pollfds);\n+                }\n+\n+                // Delete the old allocation.\n+                m_del(struct pollfd, poll_set->pollfds, poll_set->alloc);\n+            }\n+\n+            poll_set->pollfds = new_fds;\n+            poll_set->alloc = new_alloc;\n         }\n         free_slot = &poll_set->pollfds[poll_set->max_used++];\n     } else {"
+        },
+        {
+            "filename": "tests/extmod/select_poll_fd.py",
+            "diff": "@@ -34,11 +34,22 @@\n # Poll for input, should return an empty list.\n print(poller.poll(0))\n \n-# Test registering a very large number of file descriptors.\n+# Test registering a very large number of file descriptors (will trigger\n+# EINVAL due to more than OPEN_MAX fds).\n poller = select.poll()\n for fd in range(6000):\n     poller.register(fd)\n try:\n     poller.poll()\n+    assert False\n except OSError as er:\n     print(er.errno == errno.EINVAL)\n+\n+# Register stdout/stderr, plus many extra ones to trigger the fd vector\n+# resizing. Then unregister the excess ones and verify poll still works.\n+poller = select.poll()\n+for fd in range(1, 1000):\n+    poller.register(fd)\n+for i in range(3, 1000):\n+    poller.unregister(i)\n+print(sorted(poller.poll()))"
+        }
+    ],
+    "commitTime": "2023-12-21 00:04:59"
+}

@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-29 17:55:47",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06918",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-HAIL-6141135",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51663"
+        ],
+        "CWE": [
+            "CWE-289"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 14:05:25",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass by Alternate Name",
+    "vulnDescription": {
+        "Overview": "hail is a Scalable library for exploring and analyzing genomic data. Affected versions of this package are vulnerable to Authentication Bypass by Alternate Name due to improper verification of user domain validity based on OpenID Connect (OIDC) email addresses. An attacker can create accounts and utilize resources in unauthorized clusters by changing their email address to match the target domain. This account can then be used to run jobs and potentially create Azure Tenants if they possess Azure Active Directory Administrator access. This is only exploitable if Hail Batch billing projects are enabled. "
+    },
+    "source_code": [
+        {
+            "filename": "auth/auth/auth.py",
+            "diff": "@@ -59,7 +59,6 @@\n uvloop.install()\n \n CLOUD = get_global_config()['cloud']\n-ORGANIZATION_DOMAIN = os.environ['HAIL_ORGANIZATION_DOMAIN']\n DEFAULT_NAMESPACE = os.environ['HAIL_DEFAULT_NAMESPACE']\n \n is_test_deployment = DEFAULT_NAMESPACE != 'default'\n@@ -333,7 +332,8 @@ async def callback(request) -> web.Response:\n     cleanup_session(session)\n \n     try:\n-        flow_result = request.app[AppKeys.FLOW_CLIENT].receive_callback(request, flow_dict)\n+        flow_client = request.app[AppKeys.FLOW_CLIENT]\n+        flow_result = flow_client.receive_callback(request, flow_dict)\n         login_id = flow_result.login_id\n     except asyncio.CancelledError:\n         raise\n@@ -352,10 +352,11 @@ async def callback(request) -> web.Response:\n \n         assert caller == 'signup'\n \n-        username, domain = flow_result.email.split('@')\n+        username, _ = flow_result.unverified_email.split('@')\n         username = ''.join(c for c in username if c.isalnum())\n \n-        if domain != ORGANIZATION_DOMAIN:\n+        assert flow_client.organization_id() is not None\n+        if flow_result.organization_id != flow_client.organization_id():\n             raise web.HTTPUnauthorized()\n \n         try:"
+        },
+        {
+            "filename": "hail/python/hailtop/auth/flow.py",
+            "diff": "@@ -4,6 +4,7 @@\n from cryptography.hazmat.primitives import serialization\n import json\n import logging\n+import os\n import urllib.parse\n from typing import Any, Dict, List, Mapping, Optional, TypedDict, ClassVar\n \n@@ -21,13 +22,26 @@\n \n \n class FlowResult:\n-    def __init__(self, login_id: str, email: str, token: Mapping[Any, Any]):\n+    def __init__(self,\n+                 login_id: str,\n+                 unverified_email: str,\n+                 organization_id: Optional[str],\n+                 token: Mapping[Any, Any]):\n         self.login_id = login_id\n-        self.email = email\n+        self.unverified_email = unverified_email\n+        self.organization_id = organization_id  # In Azure, a Tenant ID. In Google, a domain name.\n         self.token = token\n \n \n class Flow(abc.ABC):\n+    @abc.abstractmethod\n+    async def organization_id(self) -> str:\n+        \"\"\"\n+        The unique identifier of the organization (e.g. Azure Tenant, Google Organization) in\n+        which this Hail Batch instance lives.\n+        \"\"\"\n+        raise NotImplementedError\n+\n     @abc.abstractmethod\n     def initiate_flow(self, redirect_uri: str) -> dict:\n         \"\"\"\n@@ -64,7 +78,6 @@ async def get_identity_uid_from_access_token(session: httpx.ClientSession, acces\n         \"\"\"\n         raise NotImplementedError\n \n-\n class GoogleFlow(Flow):\n     scopes: ClassVar[List[str]] = [\n         'https://www.googleapis.com/auth/userinfo.profile',\n@@ -75,6 +88,11 @@ class GoogleFlow(Flow):\n     def __init__(self, credentials_file: str):\n         self._credentials_file = credentials_file\n \n+    def organization_id(self) -> str:\n+        if organization_id := os.environ.get('HAIL_ORGANIZATION_DOMAIN'):\n+            return organization_id\n+        raise ValueError('Only available in the auth pod')\n+\n     def initiate_flow(self, redirect_uri: str) -> dict:\n         flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(\n             self._credentials_file, scopes=GoogleFlow.scopes, state=None\n@@ -98,7 +116,7 @@ def receive_callback(self, request: aiohttp.web.Request, flow_dict: dict) -> Flo\n             flow.credentials.id_token, google.auth.transport.requests.Request()  # type: ignore\n         )\n         email = token['email']\n-        return FlowResult(email, email, token)\n+        return FlowResult(email, email, token.get('hd'), token)\n \n     @staticmethod\n     def perform_installed_app_login_flow(oauth2_client: Dict[str, Any]) -> Dict[str, Any]:\n@@ -134,12 +152,12 @@ async def get_identity_uid_from_access_token(session: httpx.ClientSession, acces\n             if not (is_human_with_hail_audience or is_service_account):\n                 return None\n \n-            email = userinfo['email']\n-            if email.endswith('iam.gserviceaccount.com'):\n+            domain = userinfo.get('hd')\n+            if domain == 'iam.gserviceaccount.com':\n                 return userinfo['sub']\n             # We don't currently track user's unique GCP IAM ID (sub) in the database, just their email,\n             # but we should eventually use the sub as that is guaranteed to be unique to the user.\n-            return email\n+            return userinfo['email']\n         except httpx.ClientResponseError as e:\n             if e.status in (400, 401):\n                 return None\n@@ -163,8 +181,16 @@ def __init__(self, credentials_file: str):\n         self._client = msal.ConfidentialClientApplication(data['appId'], data['password'], authority)\n         self._tenant_id = tenant_id\n \n+    def organization_id(self) -> str:\n+        return self._tenant_id\n+\n     def initiate_flow(self, redirect_uri: str) -> dict:\n-        flow = self._client.initiate_auth_code_flow(scopes=[], redirect_uri=redirect_uri)\n+        flow = self._client.initiate_auth_code_flow(\n+            scopes=[],  # confusingly, scopes=[] is the only way to get the openid, profile, and\n+                        # offline_access scopes\n+                        # https://github.com/AzureAD/microsoft-authentication-library-for-python/blob/dev/msal/application.py#L568-L580\n+            redirect_uri=redirect_uri\n+        )\n         return {\n             'flow': flow,\n             'authorization_url': flow['auth_uri'],\n@@ -184,7 +210,12 @@ def receive_callback(self, request: aiohttp.web.Request, flow_dict: dict) -> Flo\n         if tid != self._tenant_id:\n             raise ValueError('invalid tenant id')\n \n-        return FlowResult(token['id_token_claims']['oid'], token['id_token_claims']['preferred_username'], token)\n+        return FlowResult(\n+            token['id_token_claims']['oid'],\n+            token['id_token_claims']['preferred_username'],\n+            token['id_token_claims']['tid'],\n+            token\n+        )\n \n     @staticmethod\n     def perform_installed_app_login_flow(oauth2_client: Dict[str, Any]) -> Dict[str, Any]:"
+        }
+    ],
+    "commitTime": "2023-12-29 04:17:59"
+}

@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "junwha0511"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-29 07:44:18",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.24698",
+        "probability": "0.00062"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-MICROPYTHONMICROPYTHON-6140436",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7158"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-29 13:04:51",
+    "remediation": "Upgrade micropython/micropython to version 1.22.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the slice_indices function. An attacker can potentially execute arbitrary code or disrupt service by manipulating the input to this function. "
+    },
+    "source_code": [
+        {
+            "filename": "py/objslice.c",
+            "diff": "@@ -54,7 +54,7 @@ STATIC mp_obj_t slice_unary_op(mp_unary_op_t op, mp_obj_t o_in) {\n \n #if MICROPY_PY_BUILTINS_SLICE_INDICES\n STATIC mp_obj_t slice_indices(mp_obj_t self_in, mp_obj_t length_obj) {\n-    mp_int_t length = mp_obj_int_get_checked(length_obj);\n+    mp_int_t length = mp_obj_get_int(length_obj);\n     mp_bound_slice_t bound_indices;\n     mp_obj_slice_indices(self_in, length, &bound_indices);\n "
+        },
+        {
+            "filename": "tests/basics/slice_indices.py",
+            "diff": "@@ -25,3 +25,8 @@ def __getitem__(self, idx):\n print(A()[2:7:-2].indices(5))\n print(A()[7:2:2].indices(5))\n print(A()[7:2:-2].indices(5))\n+\n+try:\n+    print(A()[::].indices(None))\n+except TypeError:\n+    print(\"TypeError\")"
+        }
+    ],
+    "commitTime": "2023-11-21 11:28:57"
+}

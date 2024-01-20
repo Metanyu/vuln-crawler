@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "cangkuai"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-11 22:50:52",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12565",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMMOJOCNBASE64CAPTCHA-6120445",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-45292"
+        ],
+        "CWE": [
+            "CWE-305"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 15:47:55",
+    "remediation": "Upgrade github.com/mojocn/base64Captcha to version 1.3.6 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass by Primary Weakness",
+    "vulnDescription": {
+        "Overview": "github.com/mojocn/base64Captcha is an a flexible and various captcha package. Affected versions of this package are vulnerable to Authentication Bypass by Primary Weakness via the default implementation of Verify to check a Captcha. An attacker can bypass the verification process by providing a non-existent id as the first parameter, an empty string as the second parameter, and setting the third parameter to true, which incorrectly results in the Captcha being considered correct. ",
+        "PoC": "package main import ( \"fmt\" \"strconv\" \"testing\" \"github.com/mojocn/base64Captcha\" ) func TestCat(t *testing.T) { var store = base64Captcha.DefaultMemStore fmt.Println(strconv.FormatBool(store.Verify(\"dsad\", \"\", true))) } "
+    },
+    "source_code": [
+        {
+            "filename": "store_memory.go",
+            "diff": "@@ -66,6 +66,9 @@ func (s *memoryStore) Set(id string, value string) error {\n }\n \n func (s *memoryStore) Verify(id, answer string, clear bool) bool {\n+\tif id == \"\" || answer == \"\" {\n+\t\treturn false\n+\t}\n \tv := s.Get(id, clear)\n \treturn v != \"\" && v == answer\n }"
+        },
+        {
+            "filename": "store_memory_test.go",
+            "diff": "@@ -143,6 +143,10 @@ func Test_memoryStore_Verify(t *testing.T) {\n \tif got {\n \t\tt.Error(\"failed3\")\n \t}\n+\tgot = DefaultMemStore.Verify(\"saaf\", \"\", true)\n+\tif got {\n+\t\tt.Error(\"CVE-2023-45292 GO-2023-2386\")\n+\t}\n }\n \n func Test_memoryStore_Get(t *testing.T) {"
+        }
+    ],
+    "commitTime": "2023-12-08 12:48:09"
+}

@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Sanineng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.3,
+    "disclosureTime": "2023-12-29 00:43:43",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.07934",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-WINTERCMSWINTER-6140447",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52085"
+        ],
+        "CWE": [
+            "CWE-1336"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-29 12:42:47",
+    "remediation": "Upgrade wintercms/winter to version 1.2.4 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Special Elements Used in a Template Engine",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Special Elements Used in a Template Engine due to improper verification in the ColorPicker FormWidget. An attacker with access to backend forms can achieve local file inclusion by providing a malicious value that is used in the compilation of custom stylesheets. "
+    },
+    "source_code": [
+        {
+            "filename": "modules/backend/formwidgets/ColorPicker.php",
+            "diff": "@@ -59,6 +59,16 @@ class ColorPicker extends FormWidgetBase\n      */\n     public $formats = 'hex';\n \n+    /**\n+     * @var array|string[] Patterns to validate colour string on save\n+     */\n+    protected array $validationPatterns = [\n+        'cmyk' => '/^cmyk\\((\\d{1,2}\\.?\\d{0,2}%,? ?){4}\\)$/',\n+        'hex' => '/^#[\\w\\d]{6}$/',\n+        'hsl' => '/^hsla\\((\\d{1,3}\\.?\\d{0,2}%?, ?){3}\\d\\.?\\d{0,2}?\\)$/',\n+        'rgb' => '/^rgba\\((\\d{1,3}\\.?\\d{0,2}, ?){3}\\d\\.?\\d{0,2}?\\)$/',\n+    ];\n+\n     //\n     // Object properties\n     //\n@@ -244,6 +254,33 @@ protected function loadAssets()\n      */\n     public function getSaveValue($value)\n     {\n-        return strlen($value) ? $value : null;\n+        if (!strlen($value)) {\n+            return null;\n+        }\n+\n+        switch (is_array($this->formats) ? 'all' : $this->formats) {\n+            case 'cmyk':\n+            case 'hex':\n+            case 'hsl':\n+            case 'rgb':\n+                if (!preg_match($this->validationPatterns[$this->formats], $value)) {\n+                    throw new ApplicationException(Lang::get('backend::lang.field.colors_invalid_input'));\n+                }\n+                break;\n+            case 'all':\n+                $valid = false;\n+                foreach ($this->validationPatterns as $pattern) {\n+                    if (preg_match($pattern, $value)) {\n+                        $valid = true;\n+                        break;\n+                    }\n+                }\n+                if (!$valid) {\n+                    throw new ApplicationException(Lang::get('backend::lang.field.colors_invalid_input'));\n+                }\n+                break;\n+        }\n+\n+        return $value;\n     }\n }"
+        },
+        {
+            "filename": "modules/backend/lang/en/lang.php",
+            "diff": "@@ -11,6 +11,7 @@\n         'options_method_not_exists' => \"The model class :model must define a method :method() returning options for the ':field' form field.\",\n         'options_static_method_invalid_value' => \"The static method ':method()' on :class did not return a valid options array.\",\n         'colors_method_not_exists' => \"The model class :model must define a method :method() returning html color HEX codes for the ':field' form field.\",\n+        'colors_invalid_input' => 'The color value supplied is invalid, please try again.',\n     ],\n     'widget' => [\n         'not_registered' => \"A widget class name ':name' has not been registered\","
+        },
+        {
+            "filename": "modules/backend/tests/formwidgets/ColorPickerTest.php",
+            "diff": "@@ -0,0 +1,128 @@\n+<?php\n+\n+namespace Backend\\Tests\\FormWidgets;\n+\n+use Backend\\Classes\\Controller;\n+use Backend\\Classes\\FormField;\n+use Backend\\FormWidgets\\ColorPicker;\n+use System\\Tests\\Bootstrap\\PluginTestCase;\n+use Winter\\Storm\\Exception\\ApplicationException;\n+\n+class ColorPickerTest extends PluginTestCase\n+{\n+    public function testDefaultSaveValue(): void\n+    {\n+        $widget = $this->makeWidget();\n+\n+        // Default only expects hex\n+        $this->assertEquals('#3498DB', $widget->getSaveValue('#3498DB'));\n+\n+        // Getting a non-hex value should throw an exception\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('rgba(51.9, 152, 219, 1)');\n+\n+        // Test a bunch of hex values\n+        $this->assertEquals('#3498DB', $widget->getSaveValue('#3498DB'));\n+        $this->assertEquals('#2980B9', $widget->getSaveValue('#2980B9'));\n+        $this->assertEquals('#9B59B6', $widget->getSaveValue('#9B59B6'));\n+    }\n+\n+    public function testRgbSaveValue(): void\n+    {\n+        $widget = $this->makeWidget([\n+            'formats' => 'rgb'\n+        ]);\n+\n+        // Config specifies only rgb\n+        $this->assertEquals('rgba(51.9, 152, 219, 1)', $widget->getSaveValue('rgba(51.9, 152, 219, 1)'));\n+\n+        // Getting a non-rgb value should throw an exception\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('#3498DB');\n+\n+        // Test a bunch of rgb values\n+        $this->assertEquals('rgba(1, 1, 1, 1)', $widget->getSaveValue('rgba(1, 1, 1, 1)'));\n+        $this->assertEquals('rgba(155, 89, 182, 0.5)', $widget->getSaveValue('rgba(155, 89, 182, 0.5)'));\n+        $this->assertEquals('rgba(1, 89, 182, 0.55)', $widget->getSaveValue('rgba(1, 89, 182, 0.55)'));\n+    }\n+\n+    public function testCmykSaveValue(): void\n+    {\n+        $widget = $this->makeWidget([\n+            'formats' => 'cmyk'\n+        ]);\n+\n+        // Config specifies only cmyk\n+        $this->assertEquals('cmyk(76.3%, 30.6%, 0%, 14.1%)', $widget->getSaveValue('cmyk(76.3%, 30.6%, 0%, 14.1%)'));\n+\n+        // Getting a non-cmyk value should throw an exception\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('#3498DB');\n+\n+        // Test a bunch of cmyk values\n+        $this->assertEquals('cmyk(14.8%, 51.1%, 0%, 28.6%)', $widget->getSaveValue('cmyk(14.8%, 51.1%, 0%, 28.6%)'));\n+        $this->assertEquals('cmyk(17%, 60.75%, 0%, 32.22%)', $widget->getSaveValue('cmyk(17%, 60.75%, 0%, 32.22%)'));\n+        $this->assertEquals('cmyk(17.9%, 60.75%, 0%, 32.2%)', $widget->getSaveValue('cmyk(17.9%, 60.75%, 0%, 32.2%)'));\n+    }\n+\n+    public function testHslaSaveValue(): void\n+    {\n+        $widget = $this->makeWidget([\n+            'formats' => 'hsl'\n+        ]);\n+\n+        // Config specifies only hsl\n+        $this->assertEquals('hsla(204.1, 69.9%, 53.1%, 1)', $widget->getSaveValue('hsla(204.1, 69.9%, 53.1%, 1)'));\n+\n+        // Getting a non-hsl value should throw an exception\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('#3498DB');\n+\n+        // Test a bunch of hsl values\n+        $this->assertEquals('hsla(282.3, 43.6%, 47.2%, 1)', $widget->getSaveValue('hsla(282.3, 43.6%, 47.2%, 1)'));\n+        $this->assertEquals('hsla(282.3, 43.6%, 47.2%, 0.1)', $widget->getSaveValue('hsla(282.3, 43.6%, 47.2%, 0.1)'));\n+        $this->assertEquals('hsla(282, 43.6%, 47.2%, 0.1)', $widget->getSaveValue('hsla(282, 43.6%, 47.2%, 0.1)'));\n+        $this->assertEquals('hsla(282, 43.56%, 47.2%, 0.1)', $widget->getSaveValue('hsla(282, 43.56%, 47.2%, 0.1)'));\n+        $this->assertEquals('hsla(282.22, 43%, 47.2%, 0.1)', $widget->getSaveValue('hsla(282.22, 43%, 47.2%, 0.1)'));\n+    }\n+\n+    public function testAllSaveValue(): void\n+    {\n+        $widget = $this->makeWidget([\n+            'formats' => 'all'\n+        ]);\n+\n+        // Config allows for any valid format\n+        $this->assertEquals('#3498DB', $widget->getSaveValue('#3498DB'));\n+        $this->assertEquals('rgba(51.9, 152, 219, 1)', $widget->getSaveValue('rgba(51.9, 152, 219, 1)'));\n+        $this->assertEquals('cmyk(76.3%, 30.6%, 0%, 14.1%)', $widget->getSaveValue('cmyk(76.3%, 30.6%, 0%, 14.1%)'));\n+        $this->assertEquals('hsla(204.1, 69.9%, 53.1%, 1)', $widget->getSaveValue('hsla(204.1, 69.9%, 53.1%, 1)'));\n+\n+        // Getting a invalid value should throw an exception\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('#Winter Is Awesome');\n+\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('rgba(51.9, 152, 219, 1) -- test');\n+\n+        $this->expectException(ApplicationException::class);\n+        $widget->getSaveValue('Test(51.9, 152, 219, 1)');\n+    }\n+\n+    public function testAllowCustomSaveValue(): void\n+    {\n+        $widget = $this->makeWidget([\n+            'formats' => 'custom'\n+        ]);\n+\n+        // Config allows for any format\n+        $this->assertEquals('rgba(51.9, 152, 219, 1)', $widget->getSaveValue('rgba(51.9, 152, 219, 1)'));\n+        $this->assertEquals('#Winter Is Awesome', $widget->getSaveValue('#Winter Is Awesome'));\n+        $this->assertEquals('Test(51.9, 152, 219, 1)', $widget->getSaveValue('Test(51.9, 152, 219, 1)'));\n+    }\n+\n+    protected function makeWidget(array $config = []): ColorPicker\n+    {\n+        return new ColorPicker(new Controller(), new FormField('test', 'Test'), $config);\n+    }\n+}"
+        }
+    ],
+    "commitTime": "2023-12-14 06:18:03"
+}

@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8,
+    "disclosureTime": "2023-12-13 08:44:13",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-KIBANA-6125695",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46675"
+        ],
+        "CWE": [
+            "CWE-532"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-14 14:30:50",
+    "remediation": "Upgrade kibana to version 7.17.16, 8.11.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Insertion of Sensitive Information into Log File",
+    "vulnDescription": {
+        "Overview": "kibana is an open source (Apache Licensed), browser-based analytics and search dashboard for Elasticsearch. Affected versions of this package are vulnerable to Insertion of Sensitive Information into Log File due to improper handling of error conditions or when debug level logging is enabled. An attacker can obtain sensitive information such as account credentials, API keys, private keys, bearer tokens, and session data by inducing an error in the communication with Elasticsearch or enabling debug level logging, which causes this information to be logged. "
+    },
+    "source_code": []
+}

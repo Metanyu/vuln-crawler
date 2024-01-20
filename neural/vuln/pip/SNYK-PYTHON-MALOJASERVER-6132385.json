@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-18 19:31:12",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-MALOJASERVER-6132385",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 13:25:56",
+    "remediation": "Upgrade malojaserver to version 3.2.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Scripting (XSS)",
+    "vulnDescription": {
+        "Details": "A cross-site scripting attack occurs when the attacker tricks a legitimate web-based application or site to accept a request as originating from a trusted source. This is done by escaping the context of the web application; the web application then delivers that data to its users along with other trusted dynamic content, without validating it. The browser unknowingly executes malicious script on the client side (through client-side languages; usually JavaScript or HTML) in order to perform actions that are otherwise typically blocked by the browser\u2019s Same Origin Policy. Injecting malicious code is the most prevalent manner by which XSS is exploited; for this reason, escaping characters in order to prevent this manipulation is the top method for securing code against this vulnerability. Escaping means that the application is coded to mark key characters, and particularly key characters included in user input, to prevent those characters from being interpreted in a dangerous context. For example, in HTML, < can be coded as &lt ; and > can be coded as &gt ; in order to be interpreted and displayed as themselves in text, while within the code itself, they are used for HTML tags. If malicious content is injected into an application that escapes special characters and that malicious content uses < and > as HTML tags, those characters are nonetheless not interpreted as HTML tags by the browser if they\u2019ve been correctly escaped in the application code and in this way the attempted attack is diverted. The most prominent use of XSS is to steal cookies (source: OWASP HttpOnly) and hijack user sessions, but XSS exploits have been used to expose sensitive information, enable access to privileged services and functionality and deliver malware. Types of attacks There are a few methods by which XSS can be manipulated: Type Origin Description Stored Server The malicious code is inserted in the application (usually as a link) by the attacker. The code is activated every time a user clicks the link. Reflected Server The attacker delivers a malicious link externally from the vulnerable web site application to a user. When clicked, malicious code is sent to the vulnerable web site, which reflects the attack back to the user\u2019s browser. DOM-based Client The attacker forces the user\u2019s browser to render a malicious page. The data in the page itself delivers the cross-site scripting data. Mutated The attacker injects code that appears safe, but is then rewritten and modified by the browser, while parsing the markup. An example is rebalancing unclosed quotation marks or even adding quotation marks to unquoted parameters. Affected environments The following environments are susceptible to an XSS attack: Web servers Application servers Web application environments How to prevent This section describes the top best practices designed to specifically protect your code: Sanitize data input in an HTTP request before reflecting it back, ensuring all data is validated, filtered or escaped before echoing anything back to the user, such as the values of query parameters during searches. Convert special characters such as ? , & , / , < , > and spaces to their respective HTML or URL encoded equivalents. Give users the option to disable client-side scripts. Redirect invalid requests. Detect simultaneous logins, including those from two separate IP addresses, and invalidate those sessions. Use and enforce a Content Security Policy (source: Wikipedia) to disable any features that might be manipulated for an XSS attack. Read the documentation for any of the libraries referenced in your code to understand which elements allow for embedded HTML. ",
+        "Overview": "malojaserver is a Self-hosted music scrobble database Affected versions of this package are vulnerable to Cross-site Scripting (XSS) via the error page mechanism. An attacker can execute unauthorized scripts in the user's browser context by sending a crafted URL that includes malicious HTML content. This is only exploitable if the user visits a malicious link pointing to the affected server. "
+    },
+    "source_code": [
+        {
+            "filename": "dev/releases/3.2.yml",
+            "diff": "@@ -33,6 +33,7 @@ minor_release_name: \"Nicole\"\n     - \"[Technical] Upgraded all third party modules to use requests module and send User Agent\"\n 3.2.2:\n     notes:\n+    - \"[Security] Fixed XSS vulnerability in error page (Disclosed by https://github.com/NULLYUKI)\"\n     - \"[Architecture] Reworked the default directory selection\"\n     - \"[Feature] Added option to show scrobbles on tile charts\"\n     - \"[Bugfix] Fixed Last.fm authentication\"\n\\ No newline at end of file"
+        },
+        {
+            "filename": "maloja/__pkginfo__.py",
+            "diff": "@@ -4,7 +4,7 @@\n # you know what f*ck it\n # this is hardcoded for now because of that damn project / package name discrepancy\n # i'll fix it one day\n-VERSION = \"3.2.1\"\n+VERSION = \"3.2.2\"\n HOMEPAGE = \"https://github.com/krateng/maloja\"\n \n "
+        },
+        {
+            "filename": "maloja/data_files/config/rules/predefined/krateng_kpopgirlgroups.tsv",
+            "diff": "@@ -217,6 +217,8 @@ countas\t\t\tPristin V\t\tPristin\n \n # CLC\n countas\t\t\tSorn\t\t\t\tCLC\n+countas\t\t\tYeeun\t\t\t\tCLC\n+countas\t\t\tSeungyeon\t\t\tCLC\n \n # Popular Remixes\n artistintitle\tAreia Remix\t\t\t\tAreia"
+        },
+        {
+            "filename": "maloja/web/jinja/error.jinja",
+            "diff": "@@ -8,8 +8,8 @@\n \t\t\t\t<div style=\"background-image:url('/favicon.png')\"></div>\n \t\t\t</td>\n \t\t\t<td class=\"text\">\n-\t\t\t\t<h1>{{ error_desc }}</h1><br/>\n-\t\t\t\t{{ error_full_desc }}\n+\t\t\t\t<h1>{{ error_desc | e }}</h1><br/>\n+\t\t\t\t{{ error_full_desc | e }}\n \n \t\t\t</td>\n \t\t</tr>"
+        },
+        {
+            "filename": "pyproject.toml",
+            "diff": "@@ -1,6 +1,6 @@\n [project]\n name = \"malojaserver\"\n-version = \"3.2.1\"\n+version = \"3.2.2\"\n description = \"Self-hosted music scrobble database\"\n readme = \"./README.md\"\n requires-python = \">=3.10\""
+        }
+    ],
+    "commitTime": "2023-12-17 03:02:13"
+}

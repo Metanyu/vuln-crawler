@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Mauro Matteo Cascella"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-21 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19087",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6138237",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6546"
+        ],
+        "CWE": [
+            "CWE-362"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 11:53:20",
+    "remediation": "Upgrade torvalds/linux to version 6.5-rc7 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Race Condition in the n_gsm kernel module. A local unprivileged user could use this vulnerability to escalate their privileges on the system. Note: The flaw occurs when two threads execute the GSMIOC_SETCONF ioctl on the same tty file descriptor with the gsm line discipline enabled and leads to a use-after-free on a struct gsm_dlci while restarting the gsm mux . "
+    },
+    "source_code": [
+        {
+            "filename": "drivers/tty/n_gsm.c",
+            "diff": "@@ -3042,12 +3042,13 @@ static void gsm_error(struct gsm_mux *gsm)\n static void gsm_cleanup_mux(struct gsm_mux *gsm, bool disc)\n {\n \tint i;\n-\tstruct gsm_dlci *dlci = gsm->dlci[0];\n+\tstruct gsm_dlci *dlci;\n \tstruct gsm_msg *txq, *ntxq;\n \n \tgsm->dead = true;\n \tmutex_lock(&gsm->mutex);\n \n+\tdlci = gsm->dlci[0];\n \tif (dlci) {\n \t\tif (disc && dlci->state != DLCI_CLOSED) {\n \t\t\tgsm_dlci_begin_close(dlci);"
+        }
+    ],
+    "commitTime": "2023-08-11 19:17:02"
+}

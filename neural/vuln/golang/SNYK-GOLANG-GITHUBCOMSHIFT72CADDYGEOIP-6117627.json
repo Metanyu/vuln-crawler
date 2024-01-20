@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "adryd325"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-11 00:30:32",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12558",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMSHIFT72CADDYGEOIP-6117627",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50463"
+        ],
+        "CWE": [
+            "CWE-290"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 16:12:04",
+    "remediation": "There is no fixed version for github.com/shift72/caddy-geo-ip . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass by Spoofing",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authentication Bypass by Spoofing via the trust_header X-Forwarded-For configuration. An attacker can spoof their source IP address by sending a crafted X-Forwarded-For header, which may allow them to bypass security mechanisms such as the trusted_proxy directive in reverse_proxy or IP address range restrictions. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,90 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "chehrhar"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "CHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "CHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.7,
+    "disclosureTime": "2023-12-14 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10600",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGKEYCLOAK-6128851",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6563"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 12:37:08",
+    "remediation": "Upgrade org.keycloak:keycloak-model-jpa to version 21.0.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Overview": "org.keycloak:keycloak-model-jpa is an Identity and Access Management module for Keycloak JPA. Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling due to an unconstrained memory consumption issue when the consents tab of the admin User Interface is accessed. An attacker can cause excessive memory and CPU consumption, potentially crashing the system by creating multiple user sessions and opening the consents tab, which attempts to load a large number of offline client sessions. Note: This is only exploitable if the environment has millions of offline tokens (more than 500,000 users with each having at least 2 saved sessions). ",
+        "Workaround": "This vulnerability can be mitigated by blocking the consents URL if using a reverse proxy, removing the consents application tab from the account console theme, or entirely disabling offline user profiles. "
+    },
+    "source_code": [
+        {
+            "filename": "model/jpa/src/main/java/org/keycloak/models/jpa/session/JpaUserSessionPersisterProvider.java",
+            "diff": "@@ -352,7 +352,7 @@ public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, ClientM\n         query.setParameter(\"offline\", offlineStr);\n         query.setParameter(\"realmId\", realm.getId());\n \n-        return loadUserSessionsWithClientSessions(query, offlineStr);\n+        return loadUserSessionsWithClientSessions(query, offlineStr, true);\n     }\n \n     @Override\n@@ -368,7 +368,7 @@ public Stream<UserSessionModel> loadUserSessionsStream(RealmModel realm, UserMod\n         query.setParameter(\"realmId\", realm.getId());\n         query.setParameter(\"userId\", user.getId());\n \n-        return loadUserSessionsWithClientSessions(query, offlineStr);\n+        return loadUserSessionsWithClientSessions(query, offlineStr, true);\n     }\n \n     public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Integer maxResults, boolean offline,\n@@ -379,10 +379,20 @@ public Stream<UserSessionModel> loadUserSessionsStream(Integer firstResult, Inte\n             .setParameter(\"offline\", offlineStr)\n             .setParameter(\"lastSessionId\", lastUserSessionId), firstResult, maxResults);\n \n-        return loadUserSessionsWithClientSessions(query, offlineStr);\n+        return loadUserSessionsWithClientSessions(query, offlineStr, false);\n     }\n \n-    private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr) {\n+    /**\n+     *\n+     * @param query\n+     * @param offlineStr\n+     * @param useExact If {@code true}, then only client sessions from the user sessions\n+     *          obtained from the {@code query} are loaded. If {@code false}, then IDs of user sessions\n+     *          returned by the query is taken as limits, and all client sessions are loaded that belong\n+     *          to user sessions whose ID is in between the minimum and maximum ID from this result.\n+     * @return\n+     */\n+    private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<PersistentUserSessionEntity> query, String offlineStr, boolean useExact) {\n \n         List<PersistentUserSessionAdapter> userSessionAdapters = closing(query.getResultStream()\n                 .map(this::toAdapter)\n@@ -392,16 +402,25 @@ private Stream<UserSessionModel> loadUserSessionsWithClientSessions(TypedQuery<P\n         Map<String, PersistentUserSessionAdapter> sessionsById = userSessionAdapters.stream()\n                 .collect(Collectors.toMap(UserSessionModel::getId, Function.identity()));\n \n+        Set<String> userSessionIds = sessionsById.keySet();\n+\n         Set<String> removedClientUUIDs = new HashSet<>();\n \n         if (!sessionsById.isEmpty()) {\n-            String fromUserSessionId = userSessionAdapters.get(0).getId();\n-            String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();\n-\n-            TypedQuery<PersistentClientSessionEntity> queryClientSessions = em.createNamedQuery(\"findClientSessionsOrderedById\", PersistentClientSessionEntity.class);\n-            queryClientSessions.setParameter(\"offline\", offlineStr);\n-            queryClientSessions.setParameter(\"fromSessionId\", fromUserSessionId);\n-            queryClientSessions.setParameter(\"toSessionId\", toUserSessionId);\n+            TypedQuery<PersistentClientSessionEntity> queryClientSessions;\n+            if (useExact) {\n+                queryClientSessions = em.createNamedQuery(\"findClientSessionsOrderedByIdExact\", PersistentClientSessionEntity.class);\n+                queryClientSessions.setParameter(\"offline\", offlineStr);\n+                queryClientSessions.setParameter(\"userSessionIds\", userSessionIds);\n+            } else {\n+                String fromUserSessionId = userSessionAdapters.get(0).getId();\n+                String toUserSessionId = userSessionAdapters.get(userSessionAdapters.size() - 1).getId();\n+\n+                queryClientSessions = em.createNamedQuery(\"findClientSessionsOrderedByIdInterval\", PersistentClientSessionEntity.class);\n+                queryClientSessions.setParameter(\"offline\", offlineStr);\n+                queryClientSessions.setParameter(\"fromSessionId\", fromUserSessionId);\n+                queryClientSessions.setParameter(\"toSessionId\", toUserSessionId);\n+            }\n \n             closing(queryClientSessions.getResultStream()).forEach(clientSession -> {\n                 PersistentUserSessionAdapter userSession = sessionsById.get(clientSession.getUserSessionId());"
+        },
+        {
+            "filename": "model/jpa/src/main/java/org/keycloak/models/jpa/session/PersistentClientSessionEntity.java",
+            "diff": "@@ -44,7 +44,8 @@\n         //                 It is removed from here and added manually in JpaUtils to give a native implementation if needed\n         //@NamedQuery(name=\"deleteExpiredClientSessions\", query=\"delete from PersistentClientSessionEntity sess where sess.userSessionId IN (select u.userSessionId from PersistentUserSessionEntity u where u.realmId = :realmId AND u.offline = :offline AND u.lastSessionRefresh < :lastSessionRefresh)\"),\n         @NamedQuery(name=\"findClientSessionsByUserSession\", query=\"select sess from PersistentClientSessionEntity sess where sess.userSessionId=:userSessionId and sess.offline = :offline\"),\n-        @NamedQuery(name=\"findClientSessionsOrderedById\", query=\"select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId >= :fromSessionId and sess.userSessionId <= :toSessionId order by sess.userSessionId\"),\n+        @NamedQuery(name=\"findClientSessionsOrderedByIdInterval\", query=\"select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId >= :fromSessionId and sess.userSessionId <= :toSessionId order by sess.userSessionId\"),\n+        @NamedQuery(name=\"findClientSessionsOrderedByIdExact\", query=\"select sess from PersistentClientSessionEntity sess where sess.offline = :offline and sess.userSessionId IN (:userSessionIds)\"),\n         @NamedQuery(name=\"findClientSessionsCountByClient\", query=\"select count(sess) from PersistentClientSessionEntity sess where sess.offline = :offline and sess.clientId = :clientId\"),\n         @NamedQuery(name=\"findClientSessionsCountByExternalClient\", query=\"select count(sess) from PersistentClientSessionEntity sess where sess.offline = :offline and sess.clientStorageProvider = :clientStorageProvider and sess.externalClientId = :externalClientId\")\n })"
+        }
+    ],
+    "commitTime": "2022-11-15 12:05:45"
+}

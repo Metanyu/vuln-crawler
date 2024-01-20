@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-30 16:56:38",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-NETMINGSOFT-6140759",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50578"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-31 11:57:10",
+    "remediation": "There is no fixed version for net.mingsoft:ms-mcms . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to SQL Injection via the categoryType parameter at /content/list.do . An attacker can manipulate the backend database by injecting malicious SQL commands. "
+    },
+    "source_code": []
+}

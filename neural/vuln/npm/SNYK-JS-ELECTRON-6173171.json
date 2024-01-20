@@ -1,0 +1,62 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:L",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "npm",
+            "url": "/vuln/npm"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "electron"
+        }
+    ],
+    "credit": [
+        "Toan (suto) Pham"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.6,
+    "description": "## Overview [electron](https://www.npmjs.com/package/electron) is a framework which lets you write cross-platform desktop applications using JavaScript, HTML and CSS. Affected versions of this package are vulnerable to Out-of-bounds Write allowing a remote attacker to potentially exploit heap corruption via a crafted HTML page.\r \r **Note:**\r The Stable channel has been updated to 120.0.6099.234 for Mac devices. ## Remediation Upgrade `electron` to version 26.6.6, 27.2.3, 28.1.4 or higher. ## References - [Chrome Releases](https://chromereleases.googleblog.com/2024/01/stable-channel-update-for-desktop_16.html) - [GitHub Commit](https://github.com/electron/electron/commit/b3ca1a1f96bae5352f420ef1f77cc9d7fd5957c6) - [GitHub PR](https://github.com/electron/electron/pull/41013#issuecomment-1894846720) - [GitHub PR](https://github.com/electron/electron/pull/41015) ",
+    "disclosureTime": "2024-01-17T02:43:16Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-ELECTRON-6173171",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0517"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "packageName": "electron",
+    "proprietary": false,
+    "publicationTime": "2024-01-18T07:59:47.301108Z",
+    "remediation": "Upgrade electron to version 26.6.6, 27.2.3, 28.1.4 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "<26.6.6",
+            ">=27.0.0 <27.2.3",
+            ">=28.0.0 <28.1.4"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "electron is a framework which lets you write cross-platform desktop applications using JavaScript, HTML and CSS. Affected versions of this package are vulnerable to Out-of-bounds Write allowing a remote attacker to potentially exploit heap corruption via a crafted HTML page. Note: The Stable channel has been updated to 120.0.6099.234 for Mac devices. ",
+        "References": [
+            "https://chromereleases.googleblog.com/2024/01/stable-channel-update-for-desktop_16.html",
+            "https://github.com/electron/electron/commit/b3ca1a1f96bae5352f420ef1f77cc9d7fd5957c6",
+            "https://github.com/electron/electron/pull/41013#issuecomment-1894846720",
+            "https://github.com/electron/electron/pull/41015"
+        ]
+    },
+    "vulnerableVersions": "<26.6.6 , >=27.0.0\u202f<27.2.3 , >=28.0.0\u202f<28.1.4"
+}

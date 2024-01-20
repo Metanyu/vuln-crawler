@@ -1,0 +1,80 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "SEU-SSL"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-12 14:54:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19262",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-ESPEAKNGESPEAKNG-6125977",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49991"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 15:40:40",
+    "remediation": "There is no fixed version for espeak-ng/espeak-ng . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow via the CountVowelPosition function at synthdata.c . An attacker can cause a crash or potentially execute arbitrary code by supplying crafted input to trigger the underflow. "
+    },
+    "source_code": []
+}

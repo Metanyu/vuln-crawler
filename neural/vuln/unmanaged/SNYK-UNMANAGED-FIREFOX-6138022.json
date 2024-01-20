@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Roy Gunsen"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.2,
+    "disclosureTime": "2023-12-20 15:46:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-FIREFOX-6138022",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6871"
+        ],
+        "CWE": [
+            "CWE-451"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:06:37",
+    "remediation": "Upgrade Firefox to version 121 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "User Interface (UI) Misrepresentation of Critical Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to User Interface (UI) Misrepresentation of Critical Information due to a warning not being displayed when a user attempted to navigate to a new protocol handler. An attacker can trick a user into navigating to a URL that may lead to phishing or other social engineering attacks by convincing them to accept a maliciously crafted protocol handler without adequate warning. "
+    },
+    "source_code": []
+}

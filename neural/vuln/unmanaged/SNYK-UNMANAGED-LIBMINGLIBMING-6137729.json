@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "pip-izony"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-20 15:47:34",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23702",
+        "probability": "0.00060"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-LIBMINGLIBMING-6137729",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50628"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-21 16:10:30",
+    "remediation": "There is no fixed version for libming/libming . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via the parser.c component, due to missing verification that the input file is valid SWF format. An attacker can execute arbitrary code and obtain sensitive information by exploiting this vulnerability. ",
+        "PoC": "./autogen.sh ./configure --disable-shared --disable-freetype cd util ./swftophp <PoC file> "
+    },
+    "source_code": []
+}

@@ -1,0 +1,89 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-03 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.25712",
+        "probability": "0.00063"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-PERL5-6137724",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47100"
+        ],
+        "CWE": [
+            "CWE-755"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-21 16:09:43",
+    "remediation": "Upgrade perl5 to version 5.34.2, 5.36.2, 5.38.1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Check for Unusual or Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Check for Unusual or Exceptional Conditions via the S_parse_uniprop_string function in regcomp.c . An attacker can write to unallocated space, potentially leading to arbitrary code execution or causing a denial of service, by providing a specially crafted property name within a \\p{...} regular expression construct. "
+    },
+    "source_code": [
+        {
+            "filename": "regcomp.c",
+            "diff": "@@ -23879,7 +23879,7 @@ S_parse_uniprop_string(pTHX_\n      * compile perl to know about them) */\n     bool is_nv_type = FALSE;\n \n-    unsigned int i, j = 0;\n+    unsigned int i = 0, i_zero = 0, j = 0;\n     int equals_pos = -1;    /* Where the '=' is found, or negative if none */\n     int slash_pos  = -1;    /* Where the '/' is found, or negative if none */\n     int table_index = 0;    /* The entry number for this property in the table\n@@ -24013,9 +24013,13 @@ S_parse_uniprop_string(pTHX_\n      * all of them are considered to be for that package.  For the purposes of\n      * parsing the rest of the property, strip it off */\n     if (non_pkg_begin == STRLENs(\"utf8::\") && memBEGINPs(name, name_len, \"utf8::\")) {\n-        lookup_name +=  STRLENs(\"utf8::\");\n-        j -=  STRLENs(\"utf8::\");\n-        equals_pos -=  STRLENs(\"utf8::\");\n+        lookup_name += STRLENs(\"utf8::\");\n+        j           -= STRLENs(\"utf8::\");\n+        equals_pos  -= STRLENs(\"utf8::\");\n+        i_zero       = STRLENs(\"utf8::\");   /* When resetting 'i' to reparse\n+                                               from the beginning, it has to be\n+                                               set past what we're stripping\n+                                               off */\n         stripped_utf8_pkg = TRUE;\n     }\n \n@@ -24420,7 +24424,8 @@ S_parse_uniprop_string(pTHX_\n \n             /* We set the inputs back to 0 and the code below will reparse,\n              * using strict */\n-            i = j = 0;\n+            i = i_zero;\n+            j = 0;\n         }\n     }\n \n@@ -24441,7 +24446,7 @@ S_parse_uniprop_string(pTHX_\n          * separates two digits */\n         if (cur == '_') {\n             if (    stricter\n-                && (     i == 0 || (int) i == equals_pos || i == name_len- 1\n+                && (   i == i_zero || (int) i == equals_pos || i == name_len- 1\n                     || ! isDIGIT_A(name[i-1]) || ! isDIGIT_A(name[i+1])))\n             {\n                 lookup_name[j++] = '_';"
+        },
+        {
+            "filename": "t/re/pat_advanced.t",
+            "diff": "@@ -2688,6 +2688,14 @@ EOF_DEBUG_OUT\n                       {}, \"Related to Github Issue #19350, forward \\\\g{x} pattern segv under use re Debug => 'PARSE'\");\n     }\n \n+    {   # perl-security#140, read/write past buffer end\n+        fresh_perl_like('qr/\\p{utf8::perl x}/',\n+                        qr/Illegal user-defined property name \"utf8::perl x\" in regex/,\n+                        {}, \"perl-security#140\");\n+        fresh_perl_is('qr/\\p{utf8::_perl_surrogate}/', \"\",\n+                        {}, \"perl-security#140\");\n+    }\n+\n \n     # !!! NOTE that tests that aren't at all likely to crash perl should go\n     # a ways above, above these last ones.  There's a comment there that, like"
+        }
+    ],
+    "commitTime": "2023-10-19 22:04:58"
+}

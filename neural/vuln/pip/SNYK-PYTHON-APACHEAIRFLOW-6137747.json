@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "balis0ng"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-21 12:30:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12303",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHEAIRFLOW-6137747",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48291"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 19:39:16",
+    "remediation": "Upgrade apache-airflow to version 2.8.0b1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "apache-airflow is a platform to programmatically author, schedule, and monitor workflows. Affected versions of this package are vulnerable to Improper Access Control allowing an authenticated user with limited access to some DAG s, to craft a request that could give the user write access to various DAG resources that the user had no access to. NOTE: This was thought to be fixed in version 2.7.2, with the publication of CVE-2023-42792 , but it was missed. "
+    },
+    "source_code": [
+        {
+            "filename": "airflow/www/auth.py",
+            "diff": "@@ -16,6 +16,7 @@\n # under the License.\n from __future__ import annotations\n \n+import logging\n from functools import wraps\n from typing import Callable, Sequence, TypeVar, cast\n \n@@ -27,6 +28,8 @@\n \n T = TypeVar(\"T\", bound=Callable)\n \n+log = logging.getLogger(__name__)\n+\n \n def get_access_denied_message():\n     return conf.get(\"webserver\", \"access_denied_message\")\n@@ -42,13 +45,33 @@ def decorated(*args, **kwargs):\n \n             appbuilder = current_app.appbuilder\n \n-            dag_id = (\n-                kwargs.get(\"dag_id\")\n-                or request.args.get(\"dag_id\")\n-                or request.form.get(\"dag_id\")\n-                or (request.is_json and request.json.get(\"dag_id\"))\n-                or None\n-            )\n+            dag_id_kwargs = kwargs.get(\"dag_id\")\n+            dag_id_args = request.args.get(\"dag_id\")\n+            dag_id_form = request.form.get(\"dag_id\")\n+            dag_id_json = request.json.get(\"dag_id\") if request.is_json else None\n+            all_dag_ids = [dag_id_kwargs, dag_id_args, dag_id_form, dag_id_json]\n+            unique_dag_ids = set(dag_id for dag_id in all_dag_ids if dag_id is not None)\n+\n+            if len(unique_dag_ids) > 1:\n+                log.warning(\n+                    f\"There are different dag_ids passed in the request: {unique_dag_ids}. Returning 403.\"\n+                )\n+                log.warning(\n+                    f\"kwargs: {dag_id_kwargs}, args: {dag_id_args}, \"\n+                    f\"form: {dag_id_form}, json: {dag_id_json}\"\n+                )\n+                return (\n+                    render_template(\n+                        \"airflow/no_roles_permissions.html\",\n+                        hostname=get_hostname()\n+                        if conf.getboolean(\"webserver\", \"EXPOSE_HOSTNAME\")\n+                        else \"redact\",\n+                        logout_url=get_auth_manager().get_url_logout(),\n+                    ),\n+                    403,\n+                )\n+            dag_id = unique_dag_ids.pop() if unique_dag_ids else None\n+\n             if appbuilder.sm.check_authorization(permissions, dag_id):\n                 return func(*args, **kwargs)\n             elif get_auth_manager().is_logged_in() and not g.user.perms:"
+        },
+        {
+            "filename": "tests/www/test_auth.py",
+            "diff": "@@ -0,0 +1,93 @@\n+# Licensed to the Apache Software Foundation (ASF) under one\n+# or more contributor license agreements.  See the NOTICE file\n+# distributed with this work for additional information\n+# regarding copyright ownership.  The ASF licenses this file\n+# to you under the Apache License, Version 2.0 (the\n+# \"License\"); you may not use this file except in compliance\n+# with the License.  You may obtain a copy of the License at\n+#\n+#   http://www.apache.org/licenses/LICENSE-2.0\n+#\n+# Unless required by applicable law or agreed to in writing,\n+# software distributed under the License is distributed on an\n+# \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+# KIND, either express or implied.  See the License for the\n+# specific language governing permissions and limitations\n+# under the License.\n+\n+from __future__ import annotations\n+\n+from unittest.mock import patch\n+\n+import pytest\n+\n+from airflow.security import permissions\n+from airflow.settings import json\n+from tests.test_utils.api_connexion_utils import create_user_scope\n+from tests.www.test_security import SomeBaseView, SomeModelView\n+\n+\n+@pytest.fixture(scope=\"module\")\n+def app_builder(app):\n+    app_builder = app.appbuilder\n+    app_builder.add_view(SomeBaseView, \"SomeBaseView\", category=\"BaseViews\")\n+    app_builder.add_view(SomeModelView, \"SomeModelView\", category=\"ModelViews\")\n+    return app.appbuilder\n+\n+\n+@pytest.mark.parametrize(\n+    \"dag_id_args, dag_id_kwargs, dag_id_form, dag_id_json, fail\",\n+    [\n+        (\"a\", None, None, None, False),\n+        (None, \"b\", None, None, False),\n+        (None, None, \"c\", None, False),\n+        (None, None, None, \"d\", False),\n+        (\"a\", \"a\", None, None, False),\n+        (\"a\", \"a\", \"a\", None, False),\n+        (\"a\", \"a\", \"a\", \"a\", False),\n+        (None, \"a\", \"a\", \"a\", False),\n+        (None, None, \"a\", \"a\", False),\n+        (\"a\", None, None, \"a\", False),\n+        (\"a\", None, \"a\", None, False),\n+        (\"a\", None, \"c\", None, True),\n+        (None, \"b\", \"c\", None, True),\n+        (None, None, \"c\", \"d\", True),\n+        (\"a\", \"b\", \"c\", \"d\", True),\n+    ],\n+)\n+def test_dag_id_consistency(\n+    app,\n+    dag_id_args: str | None,\n+    dag_id_kwargs: str | None,\n+    dag_id_form: str | None,\n+    dag_id_json: str | None,\n+    fail: bool,\n+):\n+    with app.test_request_context() as mock_context:\n+        from airflow.www.auth import has_access\n+\n+        mock_context.request.args = {\"dag_id\": dag_id_args} if dag_id_args else {}\n+        kwargs = {\"dag_id\": dag_id_kwargs} if dag_id_kwargs else {}\n+        mock_context.request.form = {\"dag_id\": dag_id_form} if dag_id_form else {}\n+        if dag_id_json:\n+            mock_context.request._cached_data = json.dumps({\"dag_id\": dag_id_json})\n+            mock_context.request._parsed_content_type = [\"application/json\"]\n+\n+        with create_user_scope(\n+            app,\n+            username=\"test-user\",\n+            role_name=\"limited-role\",\n+            permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG)],\n+        ) as user:\n+            with patch(\"airflow.www.security_manager.g\") as mock_g:\n+                mock_g.user = user\n+\n+                @has_access(permissions=[(permissions.ACTION_CAN_READ, permissions.RESOURCE_DAG)])\n+                def test_func(**kwargs):\n+                    return True\n+\n+                result = test_func(**kwargs)\n+                if fail:\n+                    assert result[1] == 403\n+                else:\n+                    assert result is True"
+        }
+    ],
+    "commitTime": "2023-09-14 11:03:55"
+}

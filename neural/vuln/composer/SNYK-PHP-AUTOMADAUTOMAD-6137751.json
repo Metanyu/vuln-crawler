@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-21 17:48:15",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.24575",
+        "probability": "0.00062"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-AUTOMADAUTOMAD-6137751",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7037"
+        ],
+        "CWE": [
+            "CWE-918"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-21 20:20:00",
+    "remediation": "There is no fixed version for automad/automad . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Server-Side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Server-Side Request Forgery (SSRF) via the import() function of FileController.php . An attacker can manipulate the importUrl argument to make unauthorized requests to internal services or expose sensitive data. "
+    },
+    "source_code": []
+}

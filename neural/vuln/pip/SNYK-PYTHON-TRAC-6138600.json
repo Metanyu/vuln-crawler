@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.3,
+    "disclosureTime": "2023-10-01 06:44:14",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.81601",
+        "probability": "0.00969"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-TRAC-6138600",
+    "identifiers": {
+        "CVE": [
+            "CVE-2005-3980"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-22 14:52:17",
+    "remediation": "Upgrade Trac to version 0.11 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "Trac is an Integrated SCM, wiki, issue tracker and project environment Affected versions of this package are vulnerable to SQL Injection via the ticket query module due to improper input sanitization, allowing attackers to execute arbitrary SQL commands via the group parameter. "
+    },
+    "source_code": [
+        {
+            "filename": "ChangeLog",
+            "diff": "@@ -1,3 +1,11 @@\n+Trac 0.9.1  (Dec 1, 2005)\n+http://svn.edgewall.com/repos/trac/tags/trac-0.9.1\n+\n+ * Fixed SQL injection vulnerability in ticket query module.\n+ * Fixed bugs: #1633, #2167, #2283, #2284, #2285, #2291, #2292, #2300,\n+   #2318, #2329, #2366, #2369, #2373, #2383, #2416, #2457\n+\n+\n Trac 0.9  (Oct 31, 2005)\n http://svn.edgewall.com/repos/trac/tags/trac-0.9\n "
+        },
+        {
+            "filename": "RELEASE",
+            "diff": "@@ -1,8 +1,8 @@\n-Trac 0.9 Release Notes\n+Trac 0.9.1 Release Notes\n ============================\n-Oct 31, 2005\n+Dec 1, 2005\n \n-We're proud to present our latest release - Trac 0.9.\n+We're proud to present our latest release - Trac 0.9.1.\n \n Trac is an enhanced wiki and issue tracking system, integrated with\n Subversion, for software development projects. Trac uses a minimalistic\n@@ -37,13 +37,9 @@ For questions, comments and user discussions, please use the Trac mailing list\n \n What's New\n ----------\n-A brief summary of major changes for version 0.9:\n+A brief summary of major changes for version 0.9.1:\n \n- * License changed from GPL to modified BSD.\n- * Improved modularity and extendibility (plugin support).\n- * Improved ticket query interface.\n- * Postgresql database support.\n- * FastCGI frontend support.\n+ * Fix for an SQL injection vulnerability in the ticket query module.\n \n For a more complete list of improvements, see the ChangeLog at:\n "
+        },
+        {
+            "filename": "trac/ticket/query.py",
+            "diff": "@@ -48,10 +48,13 @@ def __init__(self, env, constraints=None, order=None, desc=0, group=None,\n         self.cols = [] # lazily initialized\n \n         if self.order != 'id' \\\n-                and not self.order in [f['name'] for f in self.fields]:\n+                and self.order not in [f['name'] for f in self.fields]:\n             # order by priority by default\n             self.order = 'priority'\n \n+        if self.group not in [f['name'] for f in self.fields]:\n+            self.group = None\n+\n     def from_string(cls, env, string, **kw):\n         filters = string.split('&')\n         constraints = {}"
+        },
+        {
+            "filename": "wiki-default/TracQuery",
+            "diff": "@@ -25,21 +25,21 @@ While Trac does not yet allow saving a named query and somehow making it availab\n \r\n You may want to save some queries so that you can come back to them later.  You can do this by making a link to the query from any Wiki page.\r\n {{{\r\n-[query:status!=closed&version=0.8 Active tickets against 0.8]\r\n+[query:status=new|assigned|reopened&version=0.8 Active tickets against 0.8]\r\n }}}\r\n \r\n Which is displayed as:\r\n-  [query:status!=closed&version=0.8 Active tickets against 0.8]\r\n+  [query:status=new|assigned|reopened&version=0.8 Active tickets against 0.8]\r\n \r\n This uses a very simple query language to specify the criteria (see [wiki:TracQuery#QueryLanguage Query Language]).\r\n \r\n Alternatively, you can copy the query string of a query and paste that into the Wiki link, including the leading `?` character:\r\n {{{\r\n-[query:?status=assigned&group=owner Assigned tickets by owner]\r\n+[query:?status=new&status=assigned&status=reopened&group=owner Assigned tickets by owner]\r\n }}}\r\n \r\n Whis is displayed as:\r\n-  [query:?status=assigned&group=owner Assigned tickets by owner]\r\n+  [query:?status=new&status=assigned&status=reopened&group=owner Assigned tickets by owner]\r\n \r\n The advantage of this approach is that you can also specify the grouping and ordering, which is not possible using the first syntax.\r\n \r"
+        }
+    ],
+    "commitTime": "2005-12-01 20:39:37"
+}

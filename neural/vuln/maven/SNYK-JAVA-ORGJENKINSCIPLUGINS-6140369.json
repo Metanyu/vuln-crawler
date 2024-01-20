@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "q5438722"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.0",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.1,
+    "disclosureTime": "2022-05-13 01:48:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19445",
+        "probability": "0.00054"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGJENKINSCIPLUGINS-6140369",
+    "identifiers": {
+        "CVE": [
+            "CVE-2018-1000057"
+        ],
+        "CWE": [
+            "CWE-522"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-28 20:06:47",
+    "remediation": "Upgrade org.jenkins-ci.plugins:credentials-binding to version 1.15 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Insufficiently Protected Credentials",
+    "vulnDescription": {
+        "Overview": "org.jenkins-ci.plugins:credentials-binding is a plugin that allows credentials to be bound to environment variables for use from miscellaneous build steps. Affected versions of this package are vulnerable to Insufficiently Protected Credentials due to improper handling of escape sequences in environment variables. An attacker can infer the actual secret values by observing the transformed values in the build log. This is only exploitable if the attacker has access to the build logs. "
+    },
+    "source_code": [
+        {
+            "filename": "pom.xml",
+            "diff": "@@ -96,6 +96,12 @@\n       <version>2.5</version>\n       <scope>test</scope>\n     </dependency>\n+    <dependency>\n+      <groupId>org.jenkins-ci.plugins</groupId>\n+      <artifactId>durable-task</artifactId>\n+      <version>1.13</version>\n+      <scope>test</scope>\n+    </dependency>\n     <dependency>\n       <groupId>org.jenkins-ci.plugins.workflow</groupId>\n       <artifactId>workflow-basic-steps</artifactId>"
+        },
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/credentialsbinding/impl/SecretBuildWrapper.java",
+            "diff": "@@ -97,7 +97,9 @@ public OutputStream decorateLogger(AbstractBuild build, OutputStream logger) thr\n         return new Environment() {\n             @Override public void buildEnvVars(Map<String,String> env) {\n                 for (MultiBinding.MultiEnvironment e : m) {\n-                    env.putAll(e.getValues());\n+                    for (Map.Entry<String,String> pair : e.getValues().entrySet()) {\n+                        env.put(pair.getKey(), pair.getValue()./* SECURITY-698 */replace(\"$\", \"$$$$\"));\n+                    }\n                 }\n             }\n             @Override public boolean tearDown(AbstractBuild build, BuildListener listener) throws IOException, InterruptedException {"
+        },
+        {
+            "filename": "src/test/java/org/jenkinsci/plugins/credentialsbinding/impl/BindingStepTest.java",
+            "diff": "@@ -126,7 +126,7 @@ public static class Execution extends AbstractSynchronousStepExecution<Void> {\n     @Test public void basics() throws Exception {\n         final String credentialsId = \"creds\";\n         final String username = \"bob\";\n-        final String password = \"s3cr3t\";\n+        final String password = \"s$$cr3t\";\n         story.addStep(new Statement() {\n             @Override public void evaluate() throws Throwable {\n                 UsernamePasswordCredentialsImpl c = new UsernamePasswordCredentialsImpl(CredentialsScope.GLOBAL, credentialsId, \"sample\", username, password);\n@@ -137,7 +137,7 @@ public static class Execution extends AbstractSynchronousStepExecution<Void> {\n                         + \"  withCredentials([usernamePassword(usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD', credentialsId: '\" + credentialsId + \"')]) {\\n\"\n                         + \"    semaphore 'basics'\\n\"\n                         + \"    if (isUnix()) {\\n\"\n-                        + \"      sh 'echo curl -u $USERNAME:$PASSWORD server > script'\\n\"\n+                        + \"      sh 'echo curl -u \\\"$USERNAME:$PASSWORD\\\" server > script'\\n\"\n                         + \"    } else {\\n\"\n                         + \"      bat 'echo curl -u %USERNAME%:%PASSWORD% server > script'\\n\"\n                         + \"    }\\n\""
+        },
+        {
+            "filename": "src/test/java/org/jenkinsci/plugins/credentialsbinding/impl/SecretBuildWrapperTest.java",
+            "diff": "@@ -55,13 +55,13 @@ public class SecretBuildWrapperTest {\n     @Issue(\"JENKINS-24805\")\n     @Test public void maskingFreeStyleSecrets() throws Exception {\n         String firstCredentialsId = \"creds_1\";\n-        String firstPassword = \"p4ss\";\n+        String firstPassword = \"p4$$\";\n         StringCredentialsImpl firstCreds = new StringCredentialsImpl(CredentialsScope.GLOBAL, firstCredentialsId, \"sample1\", Secret.fromString(firstPassword));\n \n         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), firstCreds);\n \n         String secondCredentialsId = \"creds_2\";\n-        String secondPassword = \"p4ss\" + \"someMoreStuff\";\n+        String secondPassword = \"p4$$\" + \"someMoreStuff\";\n         StringCredentialsImpl secondCreds = new StringCredentialsImpl(CredentialsScope.GLOBAL, secondCredentialsId, \"sample2\", Secret.fromString(secondPassword));\n \n         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), secondCreds);\n@@ -72,16 +72,16 @@ public class SecretBuildWrapperTest {\n         FreeStyleProject f = r.createFreeStyleProject();\n \n         f.setConcurrentBuild(true);\n-        f.getBuildersList().add(Functions.isWindows() ? new BatchFile(\"echo %PASS_1%\") : new Shell(\"echo $PASS_1\"));\n-        f.getBuildersList().add(Functions.isWindows() ? new BatchFile(\"echo %PASS_2%\") : new Shell(\"echo $PASS_2\"));\n+        f.getBuildersList().add(Functions.isWindows() ? new BatchFile(\"echo %PASS_1%\") : new Shell(\"echo \\\"$PASS_1\\\"\"));\n+        f.getBuildersList().add(Functions.isWindows() ? new BatchFile(\"echo %PASS_2%\") : new Shell(\"echo \\\"$PASS_2\\\"\"));\n         f.getBuildWrappersList().add(wrapper);\n \n         r.configRoundtrip((Item)f);\n \n         FreeStyleBuild b = r.buildAndAssertSuccess(f);\n         r.assertLogNotContains(firstPassword, b);\n         r.assertLogNotContains(secondPassword, b);\n-        r.assertLogContains(\"echo ****\", b);\n+        r.assertLogContains(\"****\", b);\n     }\n \n     @Issue(\"JENKINS-24805\")"
+        }
+    ],
+    "commitTime": "2018-01-30 13:48:59"
+}

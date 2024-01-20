@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.7,
+    "disclosureTime": "2023-12-15 15:30:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12480",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHESTREAMPARK-6129521",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49898"
+        ],
+        "CWE": [
+            "CWE-77"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-17 13:47:40",
+    "remediation": "Upgrade org.apache.streampark:streampark to version 2.1.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Special Elements used in a Command ('Command Injection')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Special Elements used in a Command ('Command Injection') due to insufficient validation of user-supplied input in the Maven compilation parameters. An attacker can execute arbitrary commands on the system by injecting malicious input into the build process. This is only exploitable if the attacker has logged in to the system with system-level permissions. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,106 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Andrew J. Adiletta,Yark\u0131n Dor\u00f6z,Berk Sunar,M. Caner Tol"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-22 16:49:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12556",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-SUDO-6139195",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-42465"
+        ],
+        "CWE": [
+            "CWE-264"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-24 09:24:33",
+    "remediation": "Upgrade sudo to version 1.9.15 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Privilege Escalation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Privilege Escalation due to the application logic that relies on not equaling an error value rather than equaling a success value, and the susceptibility of these values to single bit flips. A co-located attacker can escalate privileges by inducing bit flips through ROWHAMMER attacks on stack variables and register values. "
+    },
+    "source_code": [
+        {
+            "filename": "plugins/sudoers/auth/passwd.c",
+            "diff": "@@ -68,7 +68,7 @@ sudo_passwd_verify(const struct sudoers_context *ctx, struct passwd *pw,\n     char des_pass[9], *epass;\n     char *pw_epasswd = auth->data;\n     size_t pw_len;\n-    int matched = 0;\n+    int ret;\n     debug_decl(sudo_passwd_verify, SUDOERS_DEBUG_AUTH);\n \n     /* An empty plain-text password must match an empty encrypted password. */\n@@ -80,7 +80,7 @@ sudo_passwd_verify(const struct sudoers_context *ctx, struct passwd *pw,\n      */\n     pw_len = strlen(pw_epasswd);\n     if (pw_len == DESLEN || HAS_AGEINFO(pw_epasswd, pw_len)) {\n-\tstrlcpy(des_pass, pass, sizeof(des_pass));\n+\t(void)strlcpy(des_pass, pass, sizeof(des_pass));\n \tpass = des_pass;\n     }\n \n@@ -90,30 +90,37 @@ sudo_passwd_verify(const struct sudoers_context *ctx, struct passwd *pw,\n      * only compare the first DESLEN characters in that case.\n      */\n     epass = (char *) crypt(pass, pw_epasswd);\n+    ret = AUTH_FAILURE;\n     if (epass != NULL) {\n-\tif (HAS_AGEINFO(pw_epasswd, pw_len) && strlen(epass) == DESLEN)\n-\t    matched = !strncmp(pw_epasswd, epass, DESLEN);\n-\telse\n-\t    matched = !strcmp(pw_epasswd, epass);\n+\tif (HAS_AGEINFO(pw_epasswd, pw_len) && strlen(epass) == DESLEN) {\n+\t    if (strncmp(pw_epasswd, epass, DESLEN) == 0)\n+\t\tret = AUTH_SUCCESS;\n+\t} else {\n+\t    if (strcmp(pw_epasswd, epass) == 0)\n+\t\tret = AUTH_SUCCESS;\n+\t}\n     }\n \n     explicit_bzero(des_pass, sizeof(des_pass));\n \n-    debug_return_int(matched ? AUTH_SUCCESS : AUTH_FAILURE);\n+    debug_return_int(ret);\n }\n #else\n int\n sudo_passwd_verify(const struct sudoers_context *ctx, struct passwd *pw,\n     const char *pass, sudo_auth *auth, struct sudo_conv_callback *callback)\n {\n     char *pw_passwd = auth->data;\n-    int matched;\n+    int ret;\n     debug_decl(sudo_passwd_verify, SUDOERS_DEBUG_AUTH);\n \n     /* Simple string compare for systems without crypt(). */\n-    matched = !strcmp(pass, pw_passwd);\n+    if (strcmp(pass, pw_passwd) == 0)\n+\tret = AUTH_SUCCESS;\n+    else\n+\tret = AUTH_FAILURE;\n \n-    debug_return_int(matched ? AUTH_SUCCESS : AUTH_FAILURE);\n+    debug_return_int(ret);\n }\n #endif\n "
+        },
+        {
+            "filename": "plugins/sudoers/auth/sudo_auth.c",
+            "diff": "@@ -116,10 +116,16 @@ sudo_auth_init(const struct sudoers_context *ctx, struct passwd *pw,\n \tif (auth->init && !IS_DISABLED(auth)) {\n \t    /* Disable if it failed to init unless there was a fatal error. */\n \t    status = (auth->init)(ctx, pw, auth);\n-\t    if (status == AUTH_FAILURE)\n+\t    switch (status) {\n+\t    case AUTH_SUCCESS:\n+\t\tbreak;\n+\t    case AUTH_FAILURE:\n \t\tSET(auth->flags, FLAG_DISABLED);\n-\t    else if (status == AUTH_ERROR)\n-\t\tbreak;\t\t/* assume error msg already printed */\n+\t\tbreak;\n+\t    default:\n+\t\t/* Assume error msg already printed. */\n+\t\tdebug_return_int(-1);\n+\t    }\n \t}\n     }\n \n@@ -166,7 +172,7 @@ sudo_auth_init(const struct sudoers_context *ctx, struct passwd *pw,\n \t}\n     }\n \n-    debug_return_int(status == AUTH_ERROR ? -1 : 0);\n+    debug_return_int(0);\n }\n \n /*\n@@ -209,7 +215,7 @@ sudo_auth_cleanup(const struct sudoers_context *ctx, struct passwd *pw,\n     for (auth = auth_switch; auth->name; auth++) {\n \tif (auth->cleanup && !IS_DISABLED(auth)) {\n \t    int status = (auth->cleanup)(ctx, pw, auth, force);\n-\t    if (status == AUTH_ERROR) {\n+\t    if (status != AUTH_SUCCESS) {\n \t\t/* Assume error msg already printed. */\n \t\tdebug_return_int(-1);\n \t    }\n@@ -306,7 +312,7 @@ verify_user(const struct sudoers_context *ctx, struct passwd *pw, char *prompt,\n \t\t    SET(auth->flags, FLAG_DISABLED);\n \t\telse if (status == AUTH_NONINTERACTIVE)\n \t\t    goto done;\n-\t\telse if (status == AUTH_ERROR || user_interrupted())\n+\t\telse if (status != AUTH_SUCCESS || user_interrupted())\n \t\t    goto done;\t\t/* assume error msg already printed */\n \t    }\n \t}\n@@ -365,7 +371,6 @@ verify_user(const struct sudoers_context *ctx, struct passwd *pw, char *prompt,\n \tcase AUTH_NONINTERACTIVE:\n \t    SET(validated, FLAG_NO_USER_INPUT);\n \t    FALLTHROUGH;\n-\tcase AUTH_ERROR:\n \tdefault:\n \t    log_auth_failure(ctx, validated, 0);\n \t    ret = -1;\n@@ -377,25 +382,33 @@ verify_user(const struct sudoers_context *ctx, struct passwd *pw, char *prompt,\n \n /*\n  * Call authentication method begin session hooks.\n- * Returns 1 on success and -1 on error.\n+ * Returns true on success, false on failure and -1 on error.\n  */\n int\n sudo_auth_begin_session(const struct sudoers_context *ctx, struct passwd *pw,\n     char **user_env[])\n {\n     sudo_auth *auth;\n+    int ret = true;\n     debug_decl(sudo_auth_begin_session, SUDOERS_DEBUG_AUTH);\n \n     for (auth = auth_switch; auth->name; auth++) {\n \tif (auth->begin_session && !IS_DISABLED(auth)) {\n \t    int status = (auth->begin_session)(ctx, pw, user_env, auth);\n-\t    if (status != AUTH_SUCCESS) {\n+\t    switch (status) {\n+\t    case AUTH_SUCCESS:\n+\t\tbreak;\n+\t    case AUTH_FAILURE:\n+\t\tret = false;\n+\t\tbreak;\n+\t    default:\n \t\t/* Assume error msg already printed. */\n-\t\tdebug_return_int(-1);\n+\t\tret = -1;\n+\t\tbreak;\n \t    }\n \t}\n     }\n-    debug_return_int(1);\n+    debug_return_int(ret);\n }\n \n bool\n@@ -416,25 +429,33 @@ sudo_auth_needs_end_session(void)\n \n /*\n  * Call authentication method end session hooks.\n- * Returns 1 on success and -1 on error.\n+ * Returns true on success, false on failure and -1 on error.\n  */\n int\n sudo_auth_end_session(void)\n {\n     sudo_auth *auth;\n+    int ret = true;\n     int status;\n     debug_decl(sudo_auth_end_session, SUDOERS_DEBUG_AUTH);\n \n     for (auth = auth_switch; auth->name; auth++) {\n \tif (auth->end_session && !IS_DISABLED(auth)) {\n \t    status = (auth->end_session)(auth);\n-\t    if (status == AUTH_ERROR) {\n+\t    switch (status) {\n+\t    case AUTH_SUCCESS:\n+\t\tbreak;\n+\t    case AUTH_FAILURE:\n+\t\tret = false;\n+\t\tbreak;\n+\t    default:\n \t\t/* Assume error msg already printed. */\n-\t\tdebug_return_int(-1);\n+\t\tret = -1;\n+\t\tbreak;\n \t    }\n \t}\n     }\n-    debug_return_int(1);\n+    debug_return_int(ret);\n }\n \n /*"
+        },
+        {
+            "filename": "plugins/sudoers/auth/sudo_auth.h",
+            "diff": "@@ -19,12 +19,12 @@\n #ifndef SUDO_AUTH_H\n #define SUDO_AUTH_H\n \n-/* Auth function return values.  */\n-#define AUTH_SUCCESS\t\t0\n-#define AUTH_FAILURE\t\t1\n-#define AUTH_INTR\t\t2\n-#define AUTH_ERROR\t\t3\n-#define AUTH_NONINTERACTIVE\t4\n+/* Auth function return values (rowhammer resistent).  */\n+#define AUTH_SUCCESS\t\t0x52a2925\t/* 0101001010100010100100100101 */\n+#define AUTH_FAILURE\t\t0xad5d6da\t/* 1010110101011101011011011010 */\n+#define AUTH_INTR\t\t0x69d61fc8\t/* 1101001110101100001111111001000 */\n+#define AUTH_ERROR\t\t0x1629e037\t/* 0010110001010011110000000110111 */\n+#define AUTH_NONINTERACTIVE\t0x1fc8d3ac\t/* 11111110010001101001110101100 */\n \n typedef struct sudo_auth {\n     unsigned int flags;\t\t/* various flags, see below */"
+        },
+        {
+            "filename": "plugins/sudoers/lookup.c",
+            "diff": "@@ -100,7 +100,7 @@ sudoers_lookup_pseudo(struct sudo_nss_list *snl, struct sudoers_context *ctx,\n \t    int user_match = userlist_matches(nss->parse_tree, ctx->user.pw,\n \t\t&us->users);\n \t    if (user_match != ALLOW) {\n-\t\tif (callback != NULL && user_match != UNSPEC) {\n+\t\tif (callback != NULL && user_match == DENY) {\n \t\t    callback(nss->parse_tree, us, user_match, NULL, UNSPEC,\n \t\t\tNULL, UNSPEC, UNSPEC, UNSPEC, cb_data);\n \t\t}\n@@ -189,7 +189,7 @@ sudoers_lookup_pseudo(struct sudo_nss_list *snl, struct sudoers_context *ctx,\n \t\t\t    host_match, cs, date_match, runas_match,\n \t\t\t    cmnd_match, cb_data);\n \t\t    }\n-\t\t    if (cmnd_match != UNSPEC) {\n+\t\t    if (SPECIFIED(cmnd_match)) {\n \t\t\t/*\n \t\t\t * We take the last match but must process\n \t\t\t * the entire policy for pwcheck == all.\n@@ -245,7 +245,7 @@ sudoers_lookup_check(struct sudo_nss *nss, struct sudoers_context *ctx,\n     TAILQ_FOREACH_REVERSE(us, &nss->parse_tree->userspecs, userspec_list, entries) {\n \tint user_match = userlist_matches(nss->parse_tree, ctx->user.pw, &us->users);\n \tif (user_match != ALLOW) {\n-\t    if (callback != NULL && user_match != UNSPEC) {\n+\t    if (callback != NULL && user_match == DENY) {\n \t\tcallback(nss->parse_tree, us, user_match, NULL, UNSPEC, NULL,\n \t\t    UNSPEC, UNSPEC, UNSPEC, cb_data);\n \t    }\n@@ -290,7 +290,7 @@ sudoers_lookup_check(struct sudo_nss *nss, struct sudoers_context *ctx,\n \t\t\tcs, date_match, runas_match, cmnd_match, cb_data);\n \t\t}\n \n-\t\tif (cmnd_match != UNSPEC) {\n+\t\tif (SPECIFIED(cmnd_match)) {\n \t\t    /*\n \t\t     * If user is running command as themselves,\n \t\t     * set ctx->runas.pw = ctx->user.pw.\n@@ -542,15 +542,15 @@ sudoers_lookup(struct sudo_nss_list *snl, struct sudoers_context *ctx,\n \n \tm = sudoers_lookup_check(nss, ctx, &validated, &info, now, callback,\n \t    cb_data, &cs, &defs);\n-\tif (m != UNSPEC) {\n+\tif (SPECIFIED(m)) {\n \t    match = m;\n \t    parse_tree = nss->parse_tree;\n \t}\n \n \tif (!sudo_nss_can_continue(nss, m))\n \t    break;\n     }\n-    if (match != UNSPEC) {\n+    if (SPECIFIED(match)) {\n \tif (info.cmnd_path != NULL) {\n \t    /* Update cmnd, cmnd_stat, cmnd_status from matching entry. */\n \t    free(ctx->user.cmnd);"
+        },
+        {
+            "filename": "plugins/sudoers/match.c",
+            "diff": "@@ -91,7 +91,7 @@ user_matches(const struct sudoers_parse_tree *parse_tree,\n \t    if ((a = alias_get(parse_tree, m->name, USERALIAS)) != NULL) {\n \t\t/* XXX */\n \t\tconst int rc = userlist_matches(parse_tree, pw, &a->members);\n-\t\tif (rc != UNSPEC) {\n+\t\tif (SPECIFIED(rc)) {\n \t\t    if (m->negated) {\n \t\t\tmatched = rc == ALLOW ? DENY : ALLOW;\n \t\t    } else {\n@@ -123,7 +123,8 @@ userlist_matches(const struct sudoers_parse_tree *parse_tree,\n     debug_decl(userlist_matches, SUDOERS_DEBUG_MATCH);\n \n     TAILQ_FOREACH_REVERSE(m, list, member_list, entries) {\n-\tif ((matched = user_matches(parse_tree, pw, m)) != UNSPEC)\n+\tmatched = user_matches(parse_tree, pw, m);\n+\tif (SPECIFIED(matched))\n \t    break;\n     }\n     debug_return_int(matched);\n@@ -184,7 +185,7 @@ runas_userlist_matches(const struct sudoers_parse_tree *parse_tree,\n \t\tif (a != NULL) {\n \t\t    const int rc = runas_userlist_matches(parse_tree,\n \t\t\t&a->members, matching_user);\n-\t\t    if (rc != UNSPEC) {\n+\t\t    if (SPECIFIED(rc)) {\n \t\t\tif (m->negated) {\n \t\t\t    user_matched = rc == ALLOW ? DENY : ALLOW;\n \t\t\t} else {\n@@ -211,7 +212,7 @@ runas_userlist_matches(const struct sudoers_parse_tree *parse_tree,\n \t\t    user_matched = m->negated ? DENY : ALLOW;\n \t\tbreak;\n \t}\n-\tif (user_matched != UNSPEC) {\n+\tif (SPECIFIED(user_matched)) {\n \t    if (matching_user != NULL && m->type != ALIAS)\n \t\t*matching_user = m;\n \t    break;\n@@ -246,7 +247,7 @@ runas_grouplist_matches(const struct sudoers_parse_tree *parse_tree,\n \t\t    if (a != NULL) {\n \t\t\tconst int rc = runas_grouplist_matches(parse_tree,\n \t\t\t    &a->members, matching_group);\n-\t\t\tif (rc != UNSPEC) {\n+\t\t\tif (SPECIFIED(rc)) {\n \t\t\t    if (m->negated) {\n \t\t\t\tgroup_matched = rc == ALLOW ? DENY : ALLOW;\n \t\t\t    } else {\n@@ -262,14 +263,14 @@ runas_grouplist_matches(const struct sudoers_parse_tree *parse_tree,\n \t\t\tgroup_matched = m->negated ? DENY : ALLOW;\n \t\t    break;\n \t    }\n-\t    if (group_matched != UNSPEC) {\n+\t    if (SPECIFIED(group_matched)) {\n \t\tif (matching_group != NULL && m->type != ALIAS)\n \t\t    *matching_group = m;\n \t\tbreak;\n \t    }\n \t}\n     }\n-    if (group_matched == UNSPEC) {\n+    if (!SPECIFIED(group_matched)) {\n \tstruct gid_list *runas_groups;\n \t/*\n \t * The runas group was not explicitly allowed by sudoers.\n@@ -349,7 +350,7 @@ hostlist_matches_int(const struct sudoers_parse_tree *parse_tree,\n \n     TAILQ_FOREACH_REVERSE(m, list, member_list, entries) {\n \tmatched = host_matches(parse_tree, pw, lhost, shost, m);\n-\tif (matched != UNSPEC)\n+\tif (SPECIFIED(matched))\n \t    break;\n     }\n     debug_return_int(matched);\n@@ -402,7 +403,7 @@ host_matches(const struct sudoers_parse_tree *parse_tree,\n \t\t/* XXX */\n \t\tconst int rc = hostlist_matches_int(parse_tree, pw, lhost,\n \t\t    shost, &a->members);\n-\t\tif (rc != UNSPEC) {\n+\t\tif (SPECIFIED(rc)) {\n \t\t    if (m->negated) {\n \t\t\tmatched = rc == ALLOW ? DENY : ALLOW;\n \t\t    } else {\n@@ -440,7 +441,7 @@ cmndlist_matches(const struct sudoers_parse_tree *parse_tree,\n \n     TAILQ_FOREACH_REVERSE(m, list, member_list, entries) {\n \tmatched = cmnd_matches(parse_tree, m, runchroot, info);\n-\tif (matched != UNSPEC)\n+\tif (SPECIFIED(matched))\n \t    break;\n     }\n     debug_return_int(matched);\n@@ -471,7 +472,7 @@ cmnd_matches(const struct sudoers_parse_tree *parse_tree,\n \t    a = alias_get(parse_tree, m->name, CMNDALIAS);\n \t    if (a != NULL) {\n \t\trc = cmndlist_matches(parse_tree, &a->members, runchroot, info);\n-\t\tif (rc != UNSPEC) {\n+\t\tif (SPECIFIED(rc)) {\n \t\t    if (m->negated) {\n \t\t\tmatched = rc == ALLOW ? DENY : ALLOW;\n \t\t    } else {\n@@ -511,7 +512,7 @@ cmnd_matches_all(const struct sudoers_parse_tree *parse_tree,\n \t    if (a != NULL) {\n \t\tTAILQ_FOREACH_REVERSE(m, &a->members, member_list, entries) {\n \t\t    matched = cmnd_matches_all(parse_tree, m, runchroot, info);\n-\t\t    if (matched != UNSPEC) {\n+\t\t    if (SPECIFIED(matched)) {\n \t\t\tif (negated)\n \t\t\t    matched = matched == ALLOW ? DENY : ALLOW;\n \t\t\tbreak;"
+        },
+        {
+            "filename": "plugins/sudoers/parse.h",
+            "diff": "@@ -36,15 +36,28 @@\n # define SUDOERS_NAME_MATCH\n #endif\n \n+/* Allowed by policy (rowhammer resistent). */\n+#undef ALLOW\n+#define ALLOW\t 0x52a2925\t/* 0101001010100010100100100101 */\n+\n+/* Denied by policy (rowhammer resistent). */\n+#undef DENY\n+#define DENY\t 0xad5d6da\t/* 1010110101011101011011011010 */\n+\n+/* Neither allowed, nor denied. */\n #undef UNSPEC\n #define UNSPEC\t-1\n-#undef DENY\n-#define DENY\t 0\n-#undef ALLOW\n-#define ALLOW\t 1\n+\n+/* Tag implied by root access (SETENV only). */\n #undef IMPLIED\n #define IMPLIED\t 2\n \n+/*\n+ * We must explicitly check against ALLOW and DENY instead testing\n+ * that the value is not UNSPEC to avoid potential ROWHAMMER issues.\n+ */\n+#define SPECIFIED(_v)\t((_v) == ALLOW || (_v) == DENY)\n+\n /*\n  * Initialize all tags to UNSPEC.\n  */\n@@ -94,7 +107,7 @@\n  * Returns true if the specified tag is not UNSPEC or IMPLIED, else false.\n  */\n #define TAG_SET(tt) \\\n-    ((tt) != UNSPEC && (tt) != IMPLIED)\n+    ((tt) == true || (tt) == false)\n \n /*\n  * Returns true if any tags set in nt differ between ot and nt, else false."
+        }
+    ],
+    "commitTime": "2023-09-09 20:07:04"
+}

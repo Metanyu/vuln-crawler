@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.4,
+    "disclosureTime": "2023-12-12 00:58:29",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMTREEVERSELAKEFSCMDLAKEFSCMD-6119888",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-312"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 14:41:43",
+    "remediation": "Upgrade github.com/treeverse/lakefs/cmd/lakefs/cmd to version 0.101.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cleartext Storage of Sensitive Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cleartext Storage of Sensitive Information due to improper handling of log messages. An attacker can gain access to sensitive information by exploiting the logging of credentials in plain text. "
+    },
+    "source_code": [
+        {
+            "filename": "cmd/lakefs/cmd/run.go",
+            "diff": "@@ -130,7 +130,7 @@ var runCmd = &cobra.Command{\n \t\t\t}\n \t\t\tauthService, err = auth.NewAPIAuthService(\n \t\t\t\tcfg.Auth.API.Endpoint,\n-\t\t\t\tcfg.Auth.API.Token,\n+\t\t\t\tcfg.Auth.API.Token.SecureValue(),\n \t\t\t\tcrypt.NewSecretStore(cfg.AuthEncryptionSecret()),\n \t\t\t\tauthparams.ServiceCache(cfg.Auth.Cache), nil, apiEmailer)\n \t\t\tif err != nil {"
+        },
+        {
+            "filename": "pkg/config/config.go",
+            "diff": "@@ -147,7 +147,7 @@ type Config struct {\n \t\t} `mapstructure:\"local\"`\n \n \t\tPostgres *struct {\n-\t\t\tConnectionString      string        `mapstructure:\"connection_string\"`\n+\t\t\tConnectionString      SecureString  `mapstructure:\"connection_string\"`\n \t\t\tMaxOpenConnections    int32         `mapstructure:\"max_open_connections\"`\n \t\t\tMaxIdleConnections    int32         `mapstructure:\"max_idle_connections\"`\n \t\t\tConnectionMaxLifetime time.Duration `mapstructure:\"connection_max_lifetime\"`\n@@ -173,10 +173,10 @@ type Config struct {\n \t\t\t// in case there are no credentials configured in the system\n \t\t\t// This is a client requirement as described in section 4 in\n \t\t\t// https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/DynamoDBLocal.DownloadingAndRunning.html\n-\t\t\tAwsRegion          string `mapstructure:\"aws_region\"`\n-\t\t\tAwsProfile         string `mapstructure:\"aws_profile\"`\n-\t\t\tAwsAccessKeyID     string `mapstructure:\"aws_access_key_id\"`\n-\t\t\tAwsSecretAccessKey string `mapstructure:\"aws_secret_access_key\"`\n+\t\t\tAwsRegion          string       `mapstructure:\"aws_region\"`\n+\t\t\tAwsProfile         string       `mapstructure:\"aws_profile\"`\n+\t\t\tAwsAccessKeyID     SecureString `mapstructure:\"aws_access_key_id\"`\n+\t\t\tAwsSecretAccessKey SecureString `mapstructure:\"aws_secret_access_key\"`\n \n \t\t\t// HealthCheckInterval - Interval to run health check for the DynamoDB instance\n \t\t\t// Won't run when is equal or less than 0.\n@@ -195,9 +195,9 @@ type Config struct {\n \t\t\tSecretKey SecureString `mapstructure:\"secret_key\" validate:\"required\"`\n \t\t} `mapstructure:\"encrypt\"`\n \t\tAPI struct {\n-\t\t\tEndpoint        string `mapstructure:\"endpoint\"`\n-\t\t\tToken           string `mapstructure:\"token\"`\n-\t\t\tSupportsInvites bool   `mapstructure:\"supports_invites\"`\n+\t\t\tEndpoint        string       `mapstructure:\"endpoint\"`\n+\t\t\tToken           SecureString `mapstructure:\"token\"`\n+\t\t\tSupportsInvites bool         `mapstructure:\"supports_invites\"`\n \t\t} `mapstructure:\"api\"`\n \t\tRemoteAuthenticator struct {\n \t\t\t// Enabled if set true will enable remote authentication\n@@ -453,7 +453,7 @@ func (c *Config) DatabaseParams() (kvparams.Config, error) {\n \n \tif c.Database.Postgres != nil {\n \t\tp.Postgres = &kvparams.Postgres{\n-\t\t\tConnectionString:      c.Database.Postgres.ConnectionString,\n+\t\t\tConnectionString:      c.Database.Postgres.ConnectionString.SecureValue(),\n \t\t\tMaxIdleConnections:    c.Database.Postgres.MaxIdleConnections,\n \t\t\tMaxOpenConnections:    c.Database.Postgres.MaxOpenConnections,\n \t\t\tConnectionMaxLifetime: c.Database.Postgres.ConnectionMaxLifetime,\n@@ -467,8 +467,8 @@ func (c *Config) DatabaseParams() (kvparams.Config, error) {\n \t\t\tEndpoint:            c.Database.DynamoDB.Endpoint,\n \t\t\tAwsRegion:           c.Database.DynamoDB.AwsRegion,\n \t\t\tAwsProfile:          c.Database.DynamoDB.AwsProfile,\n-\t\t\tAwsAccessKeyID:      c.Database.DynamoDB.AwsAccessKeyID,\n-\t\t\tAwsSecretAccessKey:  c.Database.DynamoDB.AwsSecretAccessKey,\n+\t\t\tAwsAccessKeyID:      c.Database.DynamoDB.AwsAccessKeyID.SecureValue(),\n+\t\t\tAwsSecretAccessKey:  c.Database.DynamoDB.AwsSecretAccessKey.SecureValue(),\n \t\t\tHealthCheckInterval: c.Database.DynamoDB.HealthCheckInterval,\n \t\t}\n \t}"
+        }
+    ],
+    "commitTime": "2023-05-16 16:05:03"
+}

@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "leeya_bug"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.6,
+    "disclosureTime": "2024-01-03 09:44:56",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PADDLEPADDLE-6142730",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52314"
+        ],
+        "CWE": [
+            "CWE-78"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-03 17:04:54",
+    "remediation": "Upgrade paddlepaddle to version 2.6.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "OS Command Injection",
+    "vulnDescription": {
+        "Overview": "paddlepaddle is a Parallel Distributed Deep Learning Affected versions of this package are vulnerable to OS Command Injection via the convert_shape_compare function. An attacker can execute arbitrary commands on the operating system by supplying malicious input. ",
+        "PoC": "import paddle paddle.jit.dy2static.convert_operators.convert_shape_compare('prefix','+ str(__import__(\"os\").system(\"cat /etc/passwd\")) +','1') "
+    },
+    "source_code": [
+        {
+            "filename": "python/paddle/jit/dy2static/__init__.py",
+            "diff": "@@ -26,7 +26,6 @@\n     convert_logical_or as Or,\n     convert_pop as Pop,\n     convert_shape as Shape,\n-    convert_shape_compare,\n     convert_var_dtype as AsDtype,\n     convert_while_loop as While,\n     indexable as Indexable,"
+        },
+        {
+            "filename": "python/paddle/jit/dy2static/convert_operators.py",
+            "diff": "@@ -693,77 +693,6 @@ def has_negative(list_shape):\n         return x.shape\n \n \n-def convert_shape_compare(left, *args):\n-    \"\"\"\n-    A function handles comparison difference between Paddle and Python.\n-    For example, if x and y are Tensors, x.shape == y.shape will return single\n-    boolean Value (True/False). However, paddle.shape(x) == paddle.shape(y) is\n-    an element-wise comparison. The difference can cause dy2stat error. So we\n-    create this function to handle the difference.\n-\n-    Args:\n-        left: variable\n-        *args: compare_op(str), variable, compare_op(str), variable, where\n-            compare_op means \"<\", \">\", \"==\", \"!=\", etc.\n-    Returns:\n-        If the variables to compare are NOT Paddle Variables, we will return as\n-        Python like \"a op1 b and b op2 c and ... \".\n-        If the variables to compare are Paddle Variables, we will do elementwise\n-        comparsion first and then reduce to a boolean whose numel is 1.\n-\n-    \"\"\"\n-    args_len = len(args)\n-    assert (\n-        args_len >= 2\n-    ), \"convert_shape_compare needs at least one right compare variable\"\n-    assert (\n-        args_len % 2 == 0\n-    ), \"Illegal input for convert_shape_compare, *args should be op(str), var, op(str), var ...\"\n-    num_cmp = args_len // 2\n-    if isinstance(left, (Variable, Value)):\n-\n-        def reduce_compare(x, op_str, y):\n-            element_wise_result = eval(\"x \" + op_str + \" y\")\n-            if op_str == \"!=\":\n-                return paddle.any(element_wise_result)\n-            elif (\n-                op_str == \"is\"\n-                or op_str == \"is not\"\n-                or op_str == \"in\"\n-                or op_str == \"not in\"\n-            ):\n-                return element_wise_result\n-            else:\n-                return paddle.all(element_wise_result)\n-\n-        final_result = reduce_compare(left, args[0], args[1])\n-        for i in range(1, num_cmp):\n-            cmp_left = args[i * 2 - 1]\n-            cmp_op = args[i * 2]\n-            cmp_right = args[i * 2 + 1]\n-            cur_result = reduce_compare(cmp_left, cmp_op, cmp_right)\n-            final_result = convert_logical_and(\n-                lambda: final_result, lambda: cur_result\n-            )\n-        return final_result\n-    else:\n-        cmp_left = left\n-        final_result = None\n-        for i in range(num_cmp):\n-            cmp_op = args[i * 2]\n-            cmp_right = args[i * 2 + 1]\n-            cur_result = eval(\"cmp_left \" + cmp_op + \" cmp_right\")\n-            if final_result is None:\n-                final_result = cur_result\n-            else:\n-                final_result = final_result and cur_result\n-\n-            if final_result is False:\n-                return False\n-            cmp_left = cmp_right\n-        return final_result\n-\n-\n def cast_bool_if_necessary(var):\n     assert isinstance(var, (Variable, Value))\n     if convert_dtype(var.dtype) not in ['bool']:"
+        },
+        {
+            "filename": "test/dygraph_to_static/test_convert_operators.py",
+            "diff": "@@ -71,128 +71,6 @@ def callable_list(x, y):\n         self.assertEqual(paddle.jit.to_static(callable_list)(1, 2), 3)\n \n \n-class TestConvertShapeCompare(Dy2StTestBase):\n-    @test_legacy_and_pt_and_pir\n-    def test_non_variable(self):\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(1, \"<\", 2), True\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(1, \"<\", 2, \"<=\", 3), True\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(1, \">\", 2, \"<=\", 3),\n-            False,\n-        )\n-\n-        def error_func():\n-            \"\"\"\n-            Function used to test that comparison doesn't run after first False\n-            \"\"\"\n-            raise ValueError(\"Used for test\")\n-\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                1, \">\", 2, \"<=\", lambda: error_func()\n-            ),\n-            False,\n-        )\n-\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                1, \"<\", 2, \"in\", [1, 2, 3]\n-            ),\n-            True,\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                1, \"<\", 2, \"not in\", [1, 2, 3]\n-            ),\n-            False,\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(1, \"<\", 2, \"is\", 3),\n-            False,\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                1, \"<\", 2, \"is not\", [1, 2, 3]\n-            ),\n-            True,\n-        )\n-\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                [1, 2], \"==\", [1, 2], \"!=\", [1, 2, 3]\n-            ),\n-            True,\n-        )\n-        self.assertEqual(\n-            paddle.jit.dy2static.convert_shape_compare(\n-                [1, 2], \"!=\", [1, 2, 3], \"==\", [1, 2]\n-            ),\n-            False,\n-        )\n-\n-    def test_variable(self):\n-        paddle.enable_static()\n-        main_program = paddle.static.Program()\n-        startup_program = paddle.static.Program()\n-        with paddle.static.program_guard(main_program, startup_program):\n-            x = paddle.static.data(name='x', shape=[3, 2], dtype='float32')\n-            y = paddle.static.data(name='y', shape=[3, 2], dtype='float32')\n-            self.assertEqual(\n-                paddle.jit.dy2static.convert_shape_compare(\n-                    x, \"is\", x, \"is not\", y\n-                ),\n-                True,\n-            )\n-            self.assertEqual(\n-                paddle.jit.dy2static.convert_shape_compare(\n-                    x, \"is not\", x, \"is not\", y\n-                ),\n-                False,\n-            )\n-            self.assertEqual(\n-                paddle.jit.dy2static.convert_shape_compare(x, \"is\", x, \"is\", y),\n-                False,\n-            )\n-\n-            eq_out = paddle.jit.dy2static.convert_shape_compare(x, \"==\", y)\n-            not_eq_out = paddle.jit.dy2static.convert_shape_compare(x, \"!=\", y)\n-            long_eq_out = paddle.jit.dy2static.convert_shape_compare(\n-                x, \"==\", x, \"!=\", y\n-            )\n-\n-            place = (\n-                paddle.CUDAPlace(0)\n-                if paddle.is_compiled_with_cuda()\n-                else paddle.CPUPlace()\n-            )\n-            exe = paddle.static.Executor(place)\n-            x_y_eq_out = exe.run(\n-                feed={\n-                    \"x\": np.ones([3, 2]).astype(np.float32),\n-                    \"y\": np.ones([3, 2]).astype(np.float32),\n-                },\n-                fetch_list=[eq_out, not_eq_out, long_eq_out],\n-            )\n-            np.testing.assert_array_equal(\n-                np.array(x_y_eq_out), np.array([True, False, False])\n-            )\n-\n-            set_a_zero = np.ones([3, 2]).astype(np.float32)\n-            set_a_zero[0][0] = 0.0\n-            x_y_not_eq_out = exe.run(\n-                feed={\"x\": np.ones([3, 2]).astype(np.float32), \"y\": set_a_zero},\n-                fetch_list=[eq_out, not_eq_out, long_eq_out],\n-            )\n-            np.testing.assert_array_equal(\n-                np.array(x_y_not_eq_out), np.array([False, True, True])\n-            )\n-        paddle.disable_static()\n-\n-\n class ShapeLayer(paddle.nn.Layer):\n     def __init__(self):\n         super().__init__()"
+        }
+    ],
+    "commitTime": "2023-12-18 04:58:31"
+}

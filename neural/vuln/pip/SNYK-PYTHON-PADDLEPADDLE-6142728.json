@@ -1,0 +1,67 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.6,
+    "disclosureTime": "2024-01-03 09:45:11",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PADDLEPADDLE-6142728",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52311"
+        ],
+        "CWE": [
+            "CWE-78"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-03 16:55:49",
+    "remediation": "Upgrade paddlepaddle to version 2.6.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "OS Command Injection",
+    "vulnDescription": {
+        "Overview": "paddlepaddle is a Parallel Distributed Deep Learning Affected versions of this package are vulnerable to OS Command Injection via the _wget_download function. An attacker can execute arbitrary commands on the operating system by injecting malicious input into the function. ",
+        "PoC": "from paddle import utils utils.download._wget_download(\"aa; touch codexecution\", \"bb\") "
+    },
+    "source_code": [
+        {
+            "filename": "python/paddle/utils/download.py",
+            "diff": "@@ -21,6 +21,7 @@\n import tarfile\n import time\n import zipfile\n+from urllib.parse import urlparse\n \n import httpx\n \n@@ -196,22 +197,31 @@ def _get_download(url, fullname):\n         return False\n \n \n-def _wget_download(url, fullname):\n-    # using wget to download url\n-    tmp_fullname = fullname + \"_tmp\"\n-    # \u2013user-agent\n-    command = f'wget -O {tmp_fullname} -t {DOWNLOAD_RETRY_LIMIT} {url}'\n-    subprc = subprocess.Popen(\n-        command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE\n-    )\n-    _ = subprc.communicate()\n-\n-    if subprc.returncode != 0:\n-        raise RuntimeError(\n-            f'{command} failed. Please make sure `wget` is installed or {url} exists'\n+def _wget_download(url: str, fullname: str):\n+    try:\n+        assert urlparse(url).scheme in (\n+            'http',\n+            'https',\n+        ), 'Only support https and http url'\n+        # using wget to download url\n+        tmp_fullname = fullname + \"_tmp\"\n+        # \u2013user-agent\n+        command = f'wget -O {tmp_fullname} -t {DOWNLOAD_RETRY_LIMIT} {url}'\n+        subprc = subprocess.Popen(\n+            command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE\n         )\n+        _ = subprc.communicate()\n+\n+        if subprc.returncode != 0:\n+            raise RuntimeError(\n+                f'{command} failed. Please make sure `wget` is installed or {url} exists'\n+            )\n+\n+        shutil.move(tmp_fullname, fullname)\n \n-    shutil.move(tmp_fullname, fullname)\n+    except Exception as e:  # requests.exceptions.ConnectionError\n+        logger.info(f\"Downloading {url} failed with exception {str(e)}\")\n+        return False\n \n     return fullname\n "
+        }
+    ],
+    "commitTime": "2023-12-15 05:29:18"
+}

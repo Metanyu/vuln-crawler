@@ -1,0 +1,65 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "tianocore/edk2"
+        }
+    ],
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 8.3,
+            "cvssV3Vector": "CVSS:3.1/AV:A/AC:L/PR:N/UI:N/S:U/C:H/I:L/A:H",
+            "modificationTime": "2024-01-17T13:48:31.738463Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.3,
+    "description": "## Overview Affected versions of this package are vulnerable to Buffer Overflow via the processing of DNS Servers options in DHCPv6 Advertise messages. An attacker can cause a buffer overflow and potentially execute arbitrary code or disrupt service by sending a crafted DHCPv6 Advertise message. ## Remediation There is no fixed version for `tianocore/edk2`. ## References - [Additional Information](https://blog.quarkslab.com/pixiefail-nine-vulnerabilities-in-tianocores-edk-ii-ipv6-network-stack.html) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2258697) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TIANOCOREEDK2-6170054",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-45234"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "tianocore/edk2",
+    "publicationTime": "2024-01-17T21:27:36.360727Z",
+    "remediation": "There is no fixed version for tianocore/edk2 . ",
+    "semver": {
+        "vulnerable": [
+            "[0]"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via the processing of DNS Servers options in DHCPv6 Advertise messages. An attacker can cause a buffer overflow and potentially execute arbitrary code or disrupt service by sending a crafted DHCPv6 Advertise message. ",
+        "References": [
+            "https://blog.quarkslab.com/pixiefail-nine-vulnerabilities-in-tianocores-edk-ii-ipv6-network-stack.html",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2258697"
+        ]
+    },
+    "vulnerableVersions": "[0]"
+}

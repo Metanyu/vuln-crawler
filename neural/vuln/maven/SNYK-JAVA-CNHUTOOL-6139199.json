@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "S2eTo"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 8.1,
+    "disclosureTime": "2023-01-31 18:30:23",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.48898",
+        "probability": "0.00136"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-CNHUTOOL-6139199",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-24162"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-24 10:38:49",
+    "remediation": "Upgrade cn.hutool:hutool-core to version 5.8.12 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Arbitrary Code Execution",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Arbitrary Code Execution via the XMLDecoder.readObject function when using XmlUtil.readObjectFromXml to interpret untrusted XML strings. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG.md",
+            "diff": "@@ -3,10 +3,9 @@\n \n -------------------------------------------------------------------------------------------------------------\n \n-# 5.8.12.M1 (2023-01-19)\n+# 5.8.12.M1 (2023-02-09)\n \n ### \ud83d\udc23\u65b0\u7279\u6027\n-* \u3010core  \u3011      XmlUtil.readObjectFromXml\u589e\u52a0\u6ce8\u5165\u6f0f\u6d1e\u7684\u8b66\u544a\u6ce8\u91ca\uff0c\u5e76\u6807\u8bc6\u4e3a\u5e9f\u5f03\uff08issue#2857@Github\uff09\n * \u3010http  \u3011      HttpGlobalConfig.allowPatch()\u8c03\u7528\u65f6\u5ffd\u7565\u9519\u8bef\uff08issue#2832@Github\uff09\n * \u3010core  \u3011      \u91cd\u6784\u6839\u636efile magic number\u5224\u65ad\u6587\u4ef6\u7c7b\u578b\uff08pr#2834@Github\uff09\n * \u3010core  \u3011      \u589e\u52a0WGS84 \u5750\u6807\u4e0e\u58a8\u5361\u6258\u6295\u5f71\u4e92\u8f6c\uff08pr#2811@Github\uff09\n@@ -22,6 +21,7 @@\n * \u3010core  \u3011      \u4fee\u590dFileUtil\u7684rename\u5728newName\u4e0e\u539f\u6587\u4ef6\u5939\u540d\u79f0\u4e00\u6837\u65f6\uff0c\u6587\u4ef6\u5939\u4f1a\u88ab\u5220\u9664\u95ee\u9898\uff08issue#2845@Github\uff09\n * \u3010core  \u3011      \u4fee\u590dIoUtil.readBytes\u4f7f\u7528SocketInputStream\u8bfb\u53d6\u4e0d\u5b8c\u6574\u95ee\u9898\uff08issue#I6AT49@Gitee\uff09\n * \u3010core  \u3011      \u4fee\u590dClassScanner\u81ea\u5b9a\u4e49classload\u65e0\u6548\u95ee\u9898\uff08issue#I68TV2@Gitee\uff09\n+* \u3010core  \u3011      \u3010\u91cd\u8981\u3011\u5220\u9664XmlUtil.readObjectFromXml\u65b9\u6cd5\uff0c\u907f\u514d\u6f0f\u6d1e\uff08issue#2857@Github\uff09\n \n -------------------------------------------------------------------------------------------------------------\n "
+        },
+        {
+            "filename": "hutool-core/src/main/java/cn/hutool/core/util/XmlUtil.java",
+            "diff": "@@ -39,7 +39,6 @@\n import javax.xml.xpath.XPathConstants;\n import javax.xml.xpath.XPathExpressionException;\n import javax.xml.xpath.XPathFactory;\n-import java.beans.XMLDecoder;\n import java.beans.XMLEncoder;\n import java.io.BufferedInputStream;\n import java.io.BufferedWriter;\n@@ -330,62 +329,6 @@ public static Document parseXml(String xmlStr) {\n \t\treturn readXML(StrUtil.getReader(xmlStr));\n \t}\n \n-\t/**\n-\t * \u4eceXML\u4e2d\u8bfb\u53d6\u5bf9\u8c61 Reads serialized object from the XML file.<br>\n-\t * \u6ce8\u610f\uff0c\u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff01<br>\n-\t * \u89c1\uff1ahttps://gitee.com/dromara/hutool/issues/I6AEX2\n-\t *\n-\t * @param <T>    \u5bf9\u8c61\u7c7b\u578b\n-\t * @param source XML\u6587\u4ef6\n-\t * @return \u5bf9\u8c61\n-\t * @deprecated \u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff0c\u5e9f\u5f03\n-\t */\n-\t@Deprecated\n-\tpublic static <T> T readObjectFromXml(File source) {\n-\t\treturn readObjectFromXml(new InputSource(FileUtil.getInputStream(source)));\n-\t}\n-\n-\t/**\n-\t * \u4eceXML\u4e2d\u8bfb\u53d6\u5bf9\u8c61 Reads serialized object from the XML file.<br>\n-\t * \u6ce8\u610f\uff0c\u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff01<br>\n-\t * \u89c1\uff1ahttps://gitee.com/dromara/hutool/issues/I6AEX2\n-\t *\n-\t * @param <T>    \u5bf9\u8c61\u7c7b\u578b\n-\t * @param xmlStr XML\u5185\u5bb9\n-\t * @return \u5bf9\u8c61\n-\t * @since 3.2.0\n-\t * @deprecated \u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff0c\u5e9f\u5f03\n-\t */\n-\t@Deprecated\n-\tpublic static <T> T readObjectFromXml(String xmlStr) {\n-\t\treturn readObjectFromXml(new InputSource(StrUtil.getReader(xmlStr)));\n-\t}\n-\n-\t/**\n-\t * \u4eceXML\u4e2d\u8bfb\u53d6\u5bf9\u8c61 Reads serialized object from the XML file.<br>\n-\t * \u6ce8\u610f\uff0c\u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff01<br>\n-\t * \u89c1\uff1ahttps://gitee.com/dromara/hutool/issues/I6AEX2\n-\t *\n-\t * @param <T>    \u5bf9\u8c61\u7c7b\u578b\n-\t * @param source {@link InputSource}\n-\t * @return \u5bf9\u8c61\n-\t * @since 3.2.0\n-\t * @deprecated \u4f7f\u7528\u6b64\u65b9\u6cd5\u89e3\u6790\u4e0d\u53d7\u4fe1\u4efb XML \u5b57\u7b26\u4e32\u65f6\uff0c\u53ef\u80fd\u5bb9\u6613\u53d7\u5230\u8fdc\u7a0b\u4ee3\u7801\u6267\u884c\u653b\u51fb\uff0c\u5e9f\u5f03\n-\t */\n-\t@Deprecated\n-\t@SuppressWarnings(\"unchecked\")\n-\tpublic static <T> T readObjectFromXml(InputSource source) {\n-\t\tObject result;\n-\t\tXMLDecoder xmldec = null;\n-\t\ttry {\n-\t\t\txmldec = new XMLDecoder(source);\n-\t\t\tresult = xmldec.readObject();\n-\t\t} finally {\n-\t\t\tIoUtil.close(xmldec);\n-\t\t}\n-\t\treturn (T) result;\n-\t}\n-\n \t// -------------------------------------------------------------------------------------- Write\n \n \t/**"
+        }
+    ],
+    "commitTime": "2023-02-09 10:31:54"
+}

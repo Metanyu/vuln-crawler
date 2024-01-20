@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Eluen Siebene"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-30 18:30:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06920",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEDOLPHINSCHEDULER-6143549",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49299"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-04 14:46:43",
+    "remediation": "Upgrade org.apache.dolphinscheduler:dolphinscheduler-master to version 3.1.9 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation. An authenticated user can cause arbitrary, unsandboxed javascript to be executed on the server. "
+    },
+    "source_code": [
+        {
+            "filename": "dolphinscheduler-master/src/main/java/org/apache/dolphinscheduler/server/master/runner/task/switchtask/SwitchLogicTask.java",
+            "diff": "@@ -26,7 +26,6 @@\n import org.apache.dolphinscheduler.plugin.task.api.model.Property;\n import org.apache.dolphinscheduler.plugin.task.api.model.SwitchResultVo;\n import org.apache.dolphinscheduler.plugin.task.api.parameters.SwitchParameters;\n-import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;\n import org.apache.dolphinscheduler.server.master.cache.ProcessInstanceExecCacheManager;\n import org.apache.dolphinscheduler.server.master.exception.LogicTaskInitializeException;\n import org.apache.dolphinscheduler.server.master.exception.MasterTaskExecuteException;\n@@ -39,8 +38,6 @@\n \n import java.util.List;\n import java.util.Map;\n-import java.util.regex.Matcher;\n-import java.util.regex.Pattern;\n import java.util.stream.Collectors;\n \n import lombok.extern.slf4j.Slf4j;\n@@ -50,8 +47,6 @@ public class SwitchLogicTask extends BaseSyncLogicTask<SwitchParameters> {\n \n     public static final String TASK_TYPE = \"SWITCH\";\n \n-    private static final String rgex = \"['\\\"]*\\\\$\\\\{(.*?)\\\\}['\\\"]*\";\n-\n     private final ProcessInstance processInstance;\n     private final TaskInstance taskInstance;\n \n@@ -94,13 +89,24 @@ private DependResult calculateConditionResult() {\n         // todo: refactor these calculate code\n         int finalConditionLocation = switchResultVos.size() - 1;\n         int i = 0;\n+\n+        Map<String, Property> globalParams = JSONUtils\n+                .toList(processInstance.getGlobalParams(), Property.class)\n+                .stream()\n+                .collect(Collectors.toMap(Property::getProp, Property -> Property));\n+        Map<String, Property> varParams = JSONUtils\n+                .toList(taskInstance.getVarPool(), Property.class)\n+                .stream()\n+                .collect(Collectors.toMap(Property::getProp, Property -> Property));\n+\n         for (SwitchResultVo info : switchResultVos) {\n             log.info(\"Begin to execute {} condition: {} \", (i + 1), info.getCondition());\n             if (StringUtils.isEmpty(info.getCondition())) {\n                 finalConditionLocation = i;\n                 break;\n             }\n-            String content = setTaskParams(info.getCondition().replaceAll(\"'\", \"\\\"\"), rgex);\n+            String content =\n+                    SwitchTaskUtils.generateContentWithTaskParams(info.getCondition(), globalParams, varParams);\n             log.info(\"Format condition sentence::{} successfully\", content);\n             Boolean result;\n             try {\n@@ -131,39 +137,6 @@ private DependResult calculateConditionResult() {\n         return conditionResult;\n     }\n \n-    public String setTaskParams(String content, String rgex) {\n-        Pattern pattern = Pattern.compile(rgex);\n-        Matcher m = pattern.matcher(content);\n-        Map<String, Property> globalParams = JSONUtils\n-                .toList(processInstance.getGlobalParams(), Property.class)\n-                .stream()\n-                .collect(Collectors.toMap(Property::getProp, Property -> Property));\n-        Map<String, Property> varParams = JSONUtils\n-                .toList(taskInstance.getVarPool(), Property.class)\n-                .stream()\n-                .collect(Collectors.toMap(Property::getProp, Property -> Property));\n-        if (varParams.size() > 0) {\n-            varParams.putAll(globalParams);\n-            globalParams = varParams;\n-        }\n-        while (m.find()) {\n-            String paramName = m.group(1);\n-            Property property = globalParams.get(paramName);\n-            if (property == null) {\n-                return \"\";\n-            }\n-            String value;\n-            if (ParameterUtils.isNumber(property) || ParameterUtils.isBoolean(property)) {\n-                value = \"\" + ParameterUtils.getParameterValue(property);\n-            } else {\n-                value = \"\\\"\" + ParameterUtils.getParameterValue(property) + \"\\\"\";\n-            }\n-            log.info(\"paramName:{}\uff0cparamValue:{}\", paramName, value);\n-            content = content.replace(\"${\" + paramName + \"}\", value);\n-        }\n-        return content;\n-    }\n-\n     private boolean isValidSwitchResult(SwitchResultVo switchResult) {\n         if (CollectionUtils.isEmpty(switchResult.getNextNode())) {\n             return false;"
+        },
+        {
+            "filename": "dolphinscheduler-master/src/main/java/org/apache/dolphinscheduler/server/master/utils/SwitchTaskUtils.java",
+            "diff": "@@ -17,14 +17,29 @@\n \n package org.apache.dolphinscheduler.server.master.utils;\n \n+import org.apache.dolphinscheduler.plugin.task.api.model.Property;\n+import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;\n+\n+import org.apache.commons.collections4.MapUtils;\n+\n+import java.util.Map;\n+import java.util.regex.Matcher;\n+import java.util.regex.Pattern;\n+\n import javax.script.ScriptEngine;\n import javax.script.ScriptEngineManager;\n import javax.script.ScriptException;\n \n+import lombok.extern.slf4j.Slf4j;\n+\n+import com.google.common.collect.Maps;\n+\n+@Slf4j\n public class SwitchTaskUtils {\n \n     private static final ScriptEngineManager manager;\n     private static final ScriptEngine engine;\n+    private static final String rgex = \"['\\\"]*\\\\$\\\\{(.*?)\\\\}['\\\"]*\";\n \n     static {\n         manager = new ScriptEngineManager();\n@@ -36,4 +51,43 @@ public static boolean evaluate(String expression) throws ScriptException {\n         return Boolean.TRUE.equals(result);\n     }\n \n+    public static String generateContentWithTaskParams(String condition, Map<String, Property> globalParams,\n+                                                       Map<String, Property> varParams) {\n+        String content = condition.replaceAll(\"'\", \"\\\"\");\n+        if (MapUtils.isEmpty(globalParams) && MapUtils.isEmpty(varParams)) {\n+            throw new IllegalArgumentException(\"globalParams and varParams are both empty, please check it.\");\n+        }\n+        Map<String, Property> params = Maps.newHashMap();\n+        if (MapUtils.isNotEmpty(globalParams)) {\n+            params.putAll(globalParams);\n+        }\n+        if (MapUtils.isNotEmpty(varParams)) {\n+            params.putAll(varParams);\n+        }\n+        String originContent = content;\n+        Pattern pattern = Pattern.compile(rgex);\n+        Matcher m = pattern.matcher(content);\n+        while (m.find()) {\n+            String paramName = m.group(1);\n+            Property property = params.get(paramName);\n+            if (property == null) {\n+                continue;\n+            }\n+            String value;\n+            if (ParameterUtils.isNumber(property) || ParameterUtils.isBoolean(property)) {\n+                value = \"\" + ParameterUtils.getParameterValue(property);\n+            } else {\n+                value = \"\\\"\" + ParameterUtils.getParameterValue(property) + \"\\\"\";\n+            }\n+            log.info(\"paramName:{}\uff0cparamValue:{}\", paramName, value);\n+            content = content.replace(\"${\" + paramName + \"}\", value);\n+        }\n+\n+        // if not replace any params, throw exception to avoid illegal condition\n+        if (originContent.equals(content)) {\n+            throw new IllegalArgumentException(\"condition is not valid, please check it. condition: \" + condition);\n+        }\n+        return content;\n+    }\n+\n }"
+        },
+        {
+            "filename": "dolphinscheduler-master/src/test/java/org/apache/dolphinscheduler/server/master/utils/SwitchTaskUtilsTest.java",
+            "diff": "@@ -0,0 +1,56 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one or more\n+ * contributor license agreements.  See the NOTICE file distributed with\n+ * this work for additional information regarding copyright ownership.\n+ * The ASF licenses this file to You under the Apache License, Version 2.0\n+ * (the \"License\"); you may not use this file except in compliance with\n+ * the License.  You may obtain a copy of the License at\n+ *\n+ *    http://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing, software\n+ * distributed under the License is distributed on an \"AS IS\" BASIS,\n+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n+ * See the License for the specific language governing permissions and\n+ * limitations under the License.\n+ */\n+\n+package org.apache.dolphinscheduler.server.master.utils;\n+\n+import org.apache.dolphinscheduler.plugin.task.api.enums.DataType;\n+import org.apache.dolphinscheduler.plugin.task.api.enums.Direct;\n+import org.apache.dolphinscheduler.plugin.task.api.model.Property;\n+\n+import java.util.HashMap;\n+import java.util.Map;\n+\n+import org.junit.jupiter.api.Assertions;\n+import org.junit.jupiter.api.Test;\n+\n+public class SwitchTaskUtilsTest {\n+\n+    @Test\n+    public void testGenerateContentWithTaskParams() {\n+        String content = \"${test}==1\";\n+        Map<String, Property> globalParams = new HashMap<>();\n+        Map<String, Property> varParams = new HashMap<>();\n+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> {\n+            SwitchTaskUtils.generateContentWithTaskParams(content, globalParams, varParams);\n+        });\n+\n+        globalParams.put(\"test\", new Property(\"test\", Direct.IN, DataType.INTEGER, \"1\"));\n+        String result = SwitchTaskUtils.generateContentWithTaskParams(content, globalParams, varParams);\n+        Assertions.assertEquals(\"1==1\", result);\n+    }\n+\n+    @Test\n+    public void testIllegalCondition() {\n+        String content = \"java.lang.Runtime.getRuntime().exec(\\\"bash /tmp/shell\\\")\";\n+        Map<String, Property> globalParams = new HashMap<>();\n+        Map<String, Property> varParams = new HashMap<>();\n+        globalParams.put(\"test\", new Property(\"test\", Direct.IN, DataType.INTEGER, \"1\"));\n+        Assertions.assertThrowsExactly(IllegalArgumentException.class, () -> {\n+            SwitchTaskUtils.generateContentWithTaskParams(content, globalParams, varParams);\n+        });\n+    }\n+}"
+        }
+    ],
+    "commitTime": "2023-11-27 06:03:37"
+}

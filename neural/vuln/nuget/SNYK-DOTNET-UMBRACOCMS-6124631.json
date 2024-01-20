@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-12 20:52:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-UMBRACOCMS-6124631",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49274"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-13 15:36:07",
+    "remediation": "Upgrade Umbraco.Cms to version 8.18.10, 10.8.1, 12.3.4 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to improper configuration of the SMTP settings combined with enabled password reset functionality. An attacker can enumerate user accounts by observing the behavior of the password reset feature. "
+    },
+    "source_code": [
+        {
+            "filename": "src/Umbraco.Web.UI.Client/src/common/resources/auth.resource.js",
+            "diff": "@@ -4,7 +4,7 @@\n  * @description\n  * This Resource perfomrs actions to common authentication tasks for the Umbraco backoffice user\n  *\n- * @requires $q \n+ * @requires $q\n  * @requires $http\n  * @requires umbRequestHelper\n  * @requires angularHelper\n@@ -28,7 +28,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      *    });\n      * </pre>\n      * @returns {Promise} resourcePromise object\n-     * \n+     *\n      */\n     get2FAProviders: function () {\n \n@@ -118,7 +118,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      *    .then(function(data) {\n      *        //Do stuff for login...\n      *    });\n-     * </pre> \n+     * </pre>\n      * @param {string} login Username of backoffice user\n      * @param {string} password Password of backoffice user\n      * @returns {Promise} resourcePromise object\n@@ -147,9 +147,9 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      * There are not parameters for this since when the user has clicked on their invite email they will be partially\n      * logged in (but they will not be approved) so we need to use this method to verify the non approved logged in user's details.\n      * Using the getCurrentUser will not work since that only works for approved users\n-     * @returns {} \n+     * @returns {}\n      */\n-    getCurrentInvitedUser: function () {      \n+    getCurrentInvitedUser: function () {\n       return umbRequestHelper.resourcePromise(\n         $http.get(\n           umbRequestHelper.getApiUrl(\n@@ -173,7 +173,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      *    .then(function(data) {\n      *        //Do stuff for password reset request...\n      *    });\n-     * </pre> \n+     * </pre>\n      * @param {string} email Email address of backoffice user\n      * @returns {Promise} resourcePromise object\n      *\n@@ -203,7 +203,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n             \"PostRequestPasswordReset\"), {\n             email: email\n           }),\n-        'Request password reset failed for email ' + email);\n+          'An email with password reset instructions will be sent to the specified address if it matched our records');\n     },\n \n     /**\n@@ -220,7 +220,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      *    .then(function(data) {\n      *        //Allow reset of password\n      *    });\n-     * </pre> \n+     * </pre>\n      * @param {integer} userId User Id\n      * @param {string} resetCode Password reset code\n      * @returns {Promise} resourcePromise object\n@@ -251,14 +251,14 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n           }),\n         'Password reset code validation failed for userId ' + userId + ', code' + resetCode);\n     },\n-    \n+\n     /**\n      * @ngdoc method\n      * @name umbraco.resources.currentUserResource#getMembershipProviderConfig\n      * @methodOf umbraco.resources.currentUserResource\n      *\n      * @description\n-     * Gets the configuration of the user membership provider which is used to configure the change password form         \n+     * Gets the configuration of the user membership provider which is used to configure the change password form\n      */\n     getMembershipProviderConfig: function () {\n       return umbRequestHelper.resourcePromise(\n@@ -283,7 +283,7 @@ function authResource($q, $http, umbRequestHelper, angularHelper) {\n      *    .then(function(data) {\n      *        //Password set\n      *    });\n-     * </pre> \n+     * </pre>\n      * @param {integer} userId User Id\n      * @param {string} password New password\n      * @param {string} confirmPassword Confirmation of new password"
+        },
+        {
+            "filename": "src/Umbraco.Web.UI.Client/src/views/components/application/umb-login.html",
+            "diff": "@@ -195,7 +195,7 @@ <h1>{{greeting}}</h1>\n                         </div>\n \n                         <div ng-messages=\"vm.requestPasswordResetForm.$error\" class=\"control-group\" ng-show=\"vm.requestPasswordResetForm.$invalid\">\n-                            <p ng-message=\"auth\" class=\"text-error\" role=\"alert\" tabindex=\"0\">{{vm.errorMsg}}</p>\n+                            <p ng-message=\"auth\" class=\"text-info\" role=\"alert\" tabindex=\"0\">{{vm.errorMsg}}</p>\n                         </div>\n \n                         <div class=\"control-group\" ng-show=\"vm.showEmailResetConfirmation\">"
+        },
+        {
+            "filename": "src/Umbraco.Web/Editors/AuthenticationController.cs",
+            "diff": "@@ -335,7 +335,12 @@ public async Task<HttpResponseMessage> PostRequestPasswordReset(RequestPasswordR\n             {\n                 throw new HttpResponseException(HttpStatusCode.BadRequest);\n             }\n+\n             var identityUser = await SignInManager.UserManager.FindByEmailAsync(model.Email);\n+\n+            Random random = new Random();\n+            await Task.Delay(random.Next(400, 2500)); // To randomize response time preventing user enumeration\n+\n             if (identityUser != null)\n             {\n                 var user = Services.UserService.GetByEmail(model.Email);\n@@ -349,11 +354,20 @@ public async Task<HttpResponseMessage> PostRequestPasswordReset(RequestPasswordR\n                         UserExtensions.GetUserCulture(identityUser.Culture, Services.TextService, GlobalSettings),\n                         new[] { identityUser.UserName, callbackUrl });\n \n-                    await UserManager.SendEmailAsync(identityUser.Id,\n-                        Services.TextService.Localize(\"login\", \"resetPasswordEmailCopySubject\",\n-                            // Ensure the culture of the found user is used for the email!\n-                            UserExtensions.GetUserCulture(identityUser.Culture, Services.TextService, GlobalSettings)),\n-                        message);\n+                    try\n+                    {\n+                        await UserManager.SendEmailAsync(identityUser.Id,\n+                            Services.TextService.Localize(\"login\", \"resetPasswordEmailCopySubject\",\n+                                // Ensure the culture of the found user is used for the email!\n+                                UserExtensions.GetUserCulture(identityUser.Culture, Services.TextService,\n+                                    GlobalSettings)),\n+                            message);\n+                    }\n+                    catch (Exception ex)\n+                    {\n+                        Logger.Error<AuthenticationController>(ex, \"Error sending email, please check your SMTP configuration: {ErrorMessage}\", ex.Message);\n+                        return Request.CreateResponse(HttpStatusCode.OK);\n+                    }\n \n                     UserManager.RaiseForgotPasswordRequestedEvent(user.Id);\n                 }"
+        }
+    ],
+    "commitTime": "2023-12-11 12:59:35"
+}

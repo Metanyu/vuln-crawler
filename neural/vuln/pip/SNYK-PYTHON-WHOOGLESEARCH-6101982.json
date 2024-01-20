@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-01 06:43:46",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-WHOOGLESEARCH-6101982",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-200"
+        ],
+        "PVE": [
+            "PVE-2023-62133"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 16:13:14",
+    "remediation": "Upgrade whoogle-search to version 0.8.4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "whoogle-search is a Self-hosted, ad-free, privacy-respecting metasearch engine Affected versions of this package are vulnerable to Information Exposure where an element or window endpoint could retrieve file contents from a service hosted on another port. "
+    },
+    "source_code": [
+        {
+            "filename": "app/routes.py",
+            "diff": "@@ -4,8 +4,10 @@\n import json\n import os\n import pickle\n+import re\n import urllib.parse as urlparse\n import uuid\n+import validators\n from datetime import datetime, timedelta\n from functools import wraps\n \n@@ -420,13 +422,18 @@ def config():\n     config_disabled = (\n             app.config['CONFIG_DISABLE'] or\n             not valid_user_session(session))\n+\n+    name = ''\n+    if 'name' in request.args:\n+        name = os.path.normpath(request.args.get('name'))\n+        if not re.match(r'^[A-Za-z0-9_.+-]+$', name):\n+            return make_response('Invalid config name', 400)\n+\n     if request.method == 'GET':\n         return json.dumps(g.user_config.__dict__)\n     elif request.method == 'PUT' and not config_disabled:\n-        if 'name' in request.args:\n-            config_pkl = os.path.join(\n-                app.config['CONFIG_PATH'],\n-                request.args.get('name'))\n+        if name:\n+            config_pkl = os.path.join(app.config['CONFIG_PATH'], name)\n             session['config'] = (pickle.load(open(config_pkl, 'rb'))\n                                  if os.path.exists(config_pkl)\n                                  else session['config'])\n@@ -444,7 +451,7 @@ def config():\n                 config_data,\n                 open(os.path.join(\n                     app.config['CONFIG_PATH'],\n-                    request.args.get('name')), 'wb'))\n+                    name), 'wb'))\n \n         session['config'] = config_data\n         return redirect(config_data['url'])\n@@ -463,6 +470,8 @@ def imgres():\n @session_required\n @auth_required\n def element():\n+    empty_gif = base64.b64decode(\n+        'R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')\n     element_url = src_url = request.args.get('url')\n     if element_url.startswith('gAAAAA'):\n         try:\n@@ -475,6 +484,11 @@ def element():\n \n     src_type = request.args.get('type')\n \n+    # Ensure requested element is from a valid domain\n+    domain = urlparse.urlparse(src_url).netloc\n+    if not validators.domain(domain):\n+        return send_file(io.BytesIO(empty_gif), mimetype='image/gif')\n+\n     try:\n         file_data = g.user_request.send(base_url=src_url).content\n         tmp_mem = io.BytesIO()\n@@ -485,8 +499,6 @@ def element():\n     except exceptions.RequestException:\n         pass\n \n-    empty_gif = base64.b64decode(\n-        'R0lGODlhAQABAIAAAP///////yH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==')\n     return send_file(io.BytesIO(empty_gif), mimetype='image/gif')\n \n \n@@ -504,6 +516,13 @@ def window():\n         root_url=request.url_root,\n         config=g.user_config)\n     target = urlparse.urlparse(target_url)\n+\n+    # Ensure requested URL has a valid domain\n+    if not validators.domain(target.netloc):\n+        return render_template(\n+            'error.html',\n+            error_message='Invalid location'), 400\n+\n     host_url = f'{target.scheme}://{target.netloc}'\n \n     get_body = g.user_request.send(base_url=target_url).text"
+        }
+    ],
+    "commitTime": "2023-09-13 21:50:04"
+}

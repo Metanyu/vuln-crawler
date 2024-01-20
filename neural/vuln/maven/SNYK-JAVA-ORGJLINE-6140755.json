@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-29 15:45:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06918",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGJLINE-6140755",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50572"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-31 08:27:38",
+    "remediation": "Upgrade org.jline:jline-console to version 3.25.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) via the GroovyEngine.execute() function. An attacker can out-of-memory (OOM) error by passing in a long string. "
+    },
+    "source_code": [
+        {
+            "filename": "console/src/main/java/org/jline/console/impl/DefaultPrinter.java",
+            "diff": "@@ -1,5 +1,5 @@\n /*\n- * Copyright (c) 2002-2022, the original author(s).\n+ * Copyright (c) 2002-2023, the original author(s).\n  *\n  * This software is distributable under the BSD license. See the terms of the\n  * BSD license in the documentation provided with this software.\n@@ -337,14 +337,15 @@ private void internalPrintln(Map<String, Object> options, Object object) {\n         String style = (String) options.getOrDefault(Printer.STYLE, \"\");\n         options.put(Printer.STYLE, valueHighlighter(style));\n         int width = (int) options.get(Printer.WIDTH);\n+        int maxrows = (int) options.get(Printer.MAXROWS);\n         if (!style.isEmpty() && object instanceof String) {\n-            highlightAndPrint(width, (SyntaxHighlighter) options.get(Printer.STYLE), (String) object, true);\n+            highlightAndPrint(width, (SyntaxHighlighter) options.get(Printer.STYLE), (String) object, true, maxrows);\n         } else if (style.equalsIgnoreCase(\"JSON\")) {\n             if (engine == null) {\n                 throw new IllegalArgumentException(\"JSON style not supported!\");\n             }\n             String json = engine.toJson(object);\n-            highlightAndPrint(width, (SyntaxHighlighter) options.get(Printer.STYLE), json, true);\n+            highlightAndPrint(width, (SyntaxHighlighter) options.get(Printer.STYLE), json, true, maxrows);\n         } else if (options.containsKey(Printer.SKIP_DEFAULT_OPTIONS)) {\n             highlightAndPrint(options, object);\n         } else if (object instanceof Exception) {\n@@ -354,7 +355,7 @@ private void internalPrintln(Map<String, Object> options, Object object) {\n         } else if (object instanceof String || object instanceof Number) {\n             String str = object.toString();\n             SyntaxHighlighter highlighter = (SyntaxHighlighter) options.getOrDefault(Printer.VALUE_STYLE, null);\n-            highlightAndPrint(width, highlighter, str, doValueHighlight(options, str));\n+            highlightAndPrint(width, highlighter, str, doValueHighlight(options, str), maxrows);\n         } else {\n             highlightAndPrint(options, object);\n         }\n@@ -464,14 +465,20 @@ private boolean doValueHighlight(Map<String, Object> options, String value) {\n         }\n     }\n \n-    private void highlightAndPrint(int width, SyntaxHighlighter highlighter, String object, boolean doValueHighlight) {\n-        for (String s : object.split(\"\\\\r?\\\\n\")) {\n+    private void highlightAndPrint(\n+            int width, SyntaxHighlighter highlighter, String object, boolean doValueHighlight, int maxrows) {\n+        String[] rows = object.split(\"\\\\r?\\\\n\", maxrows);\n+        int lastRowIdx = rows.length == maxrows ? rows.length - 1 : rows.length;\n+        for (int i = 0; i < lastRowIdx; i++) {\n             AttributedStringBuilder asb = new AttributedStringBuilder();\n-            List<AttributedString> sas = asb.append(s).columnSplitLength(width);\n+            List<AttributedString> sas = asb.append(rows[i]).columnSplitLength(width);\n             for (AttributedString as : sas) {\n                 highlight(width, highlighter, as.toString(), doValueHighlight).println(terminal());\n             }\n         }\n+        if (rows.length == maxrows) {\n+            throw new TruncatedOutputException(\"Truncated output: \" + maxrows);\n+        }\n     }\n \n     private Map<String, Object> keysToString(Map<Object, Object> map) {\n@@ -749,6 +756,7 @@ private boolean isNumber(String str) {\n     @SuppressWarnings(\"unchecked\")\n     private void highlightAndPrint(Map<String, Object> options, Object obj) {\n         int width = (int) options.get(Printer.WIDTH);\n+        int maxrows = (int) options.get(Printer.MAXROWS);\n         totLines = 0;\n         String message = null;\n         RuntimeException runtimeException = null;\n@@ -758,10 +766,9 @@ private void highlightAndPrint(Map<String, Object> options, Object obj) {\n             highlightMap(options, keysToString((Map<Object, Object>) obj), width);\n         } else if (collectionObject(obj)) {\n             List<Object> collection = objectToList(obj);\n-            if (collection.size() > (int) options.get(Printer.MAXROWS)) {\n-                message = \"Truncated output: \" + options.get(Printer.MAXROWS) + \"/\" + collection.size();\n-                collection =\n-                        collection.subList(collection.size() - (int) options.get(Printer.MAXROWS), collection.size());\n+            if (collection.size() > maxrows) {\n+                message = \"Truncated output: \" + maxrows + \"/\" + collection.size();\n+                collection = collection.subList(collection.size() - maxrows, collection.size());\n             }\n             if (!collection.isEmpty()) {\n                 if (collection.size() == 1 && !options.containsKey(Printer.ONE_ROW_TABLE)) {\n@@ -771,7 +778,8 @@ private void highlightAndPrint(Map<String, Object> options, Object obj) {\n                     } else if (canConvert(elem) && !options.containsKey(Printer.TO_STRING)) {\n                         highlightMap(options, objectToMap(options, elem), width);\n                     } else if (elem instanceof String && options.get(Printer.STYLE) != null) {\n-                        highlightAndPrint(width, (SyntaxHighlighter) options.get(Printer.STYLE), (String) elem, true);\n+                        highlightAndPrint(\n+                                width, (SyntaxHighlighter) options.get(Printer.STYLE), (String) elem, true, maxrows);\n                     } else {\n                         highlightValue(options, null, objectToString(options, obj))\n                                 .println(terminal());"
+        }
+    ],
+    "commitTime": "2023-12-15 14:29:05"
+}

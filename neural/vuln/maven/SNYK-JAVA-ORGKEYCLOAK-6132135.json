@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Pontus Hanssen"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.6,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.6,
+    "disclosureTime": "2023-12-19 00:30:21",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23973",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGKEYCLOAK-6132135",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6927"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-20 09:14:47",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Open Redirect",
+    "vulnDescription": {
+        "Overview": "org.keycloak:keycloak-services is an open source identity and access management solution for modern applications and services. Affected versions of this package are vulnerable to Open Redirect due to improper validation of redirect URIs using the form_post.jwt response mode. An attacker can redirect a user to a malicious site and potentially steal authorization codes or tokens by exploiting the use of a wildcard in the JARM response. "
+    },
+    "source_code": []
+}

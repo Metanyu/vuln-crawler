@@ -1,0 +1,59 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Hubert Kario"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-13 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-M2CRYPTO-6130086",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50781"
+        ],
+        "CWE": [
+            "CWE-208"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-18 14:22:02",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Timing Attack",
+    "vulnDescription": {
+        "Overview": "M2Crypto is a M2Crypto: A Python crypto and SSL toolkit Affected versions of this package are vulnerable to Timing Attack due to improper timing controls in the RSA decryption API. An attacker can potentially retrieve sensitive information by observing the time taken to perform cryptographic operations. Note: This vulnerability exists due to an incomplete fix for CVE-2020-25657 . "
+    },
+    "source_code": []
+}

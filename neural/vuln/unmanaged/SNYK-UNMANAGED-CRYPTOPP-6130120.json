@@ -1,0 +1,89 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Bing Shi"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-18 01:50:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.13965",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CRYPTOPP-6130120",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50980"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 14:30:49",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion'). An attacker can cause the application to crash by providing malformed DER public-key data for an F(2^m) curve, where the polynomial's degree terms are not in strictly decreasing order. "
+    },
+    "source_code": [
+        {
+            "filename": "gf2n.cpp",
+            "diff": "@@ -135,6 +135,9 @@ PolynomialMod2 PolynomialMod2::Monomial(size_t i)\n \r\n PolynomialMod2 PolynomialMod2::Trinomial(size_t t0, size_t t1, size_t t2)\r\n {\r\n+\tCRYPTOPP_ASSERT(t0 > t1);\r\n+\tCRYPTOPP_ASSERT(t1 > t2);\r\n+\r\n \tPolynomialMod2 r((word)0, t0+1);\r\n \tr.SetBit(t0);\r\n \tr.SetBit(t1);\r\n@@ -144,6 +147,11 @@ PolynomialMod2 PolynomialMod2::Trinomial(size_t t0, size_t t1, size_t t2)\n \r\n PolynomialMod2 PolynomialMod2::Pentanomial(size_t t0, size_t t1, size_t t2, size_t t3, size_t t4)\r\n {\r\n+\tCRYPTOPP_ASSERT(t0 > t1);\r\n+\tCRYPTOPP_ASSERT(t1 > t2);\r\n+\tCRYPTOPP_ASSERT(t2 > t3);\r\n+\tCRYPTOPP_ASSERT(t3 > t4);\r\n+\r\n \tPolynomialMod2 r((word)0, t0+1);\r\n \tr.SetBit(t0);\r\n \tr.SetBit(t1);\r"
+        },
+        {
+            "filename": "gf2n.h",
+            "diff": "@@ -69,9 +69,11 @@ class CRYPTOPP_DLL PolynomialMod2\n \t\tstatic PolynomialMod2 CRYPTOPP_API Monomial(size_t i);\r\n \t\t/// \\brief Provides x^t0 + x^t1 + x^t2\r\n \t\t/// \\return x^t0 + x^t1 + x^t2\r\n+\t\t/// \\pre The coefficients should be provided in descending order. That is, <pre>t0 > t1 > t2<pre>.\r\n \t\tstatic PolynomialMod2 CRYPTOPP_API Trinomial(size_t t0, size_t t1, size_t t2);\r\n \t\t/// \\brief Provides x^t0 + x^t1 + x^t2 + x^t3 + x^t4\r\n \t\t/// \\return x^t0 + x^t1 + x^t2 + x^t3 + x^t4\r\n+\t\t/// \\pre The coefficients should be provided in descending order. That is, <pre>t0 > t1 > t2 > t3 > t4<pre>.\r\n \t\tstatic PolynomialMod2 CRYPTOPP_API Pentanomial(size_t t0, size_t t1, size_t t2, size_t t3, size_t t4);\r\n \t\t/// \\brief Provides x^(n-1) + ... + x + 1\r\n \t\t/// \\return x^(n-1) + ... + x + 1\r"
+        }
+    ],
+    "commitTime": "2023-11-20 01:32:16"
+}

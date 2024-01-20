@@ -1,0 +1,52 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-31 07:50:05",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-BYTECODEALLIANCEWASMMICRORUNTIME-6141113",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52284"
+        ],
+        "CWE": [
+            "CWE-191"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-31 19:36:49",
+    "remediation": "Upgrade bytecodealliance/wasm-micro-runtime to version 1.3.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Integer Underflow (Wrap or Wraparound)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Integer Underflow (Wrap or Wraparound) due to improper handling of push_pop_frame_ref_offset during the execution of a valid WebAssembly module. An attacker can trigger a double free, leading to a denial of service. "
+    },
+    "source_code": [
+        {
+            "filename": "core/iwasm/interpreter/wasm_loader.c",
+            "diff": "@@ -5476,6 +5476,7 @@ wasm_loader_pop_frame_ref(WASMLoaderContext *ctx, uint8 type, char *error_buf,\n     return true;\n }\n \n+#if WASM_ENABLE_FAST_INTERP == 0\n static bool\n wasm_loader_push_pop_frame_ref(WASMLoaderContext *ctx, uint8 pop_cnt,\n                                uint8 type_push, uint8 type_pop, char *error_buf,\n@@ -5490,6 +5491,7 @@ wasm_loader_push_pop_frame_ref(WASMLoaderContext *ctx, uint8 pop_cnt,\n         return false;\n     return true;\n }\n+#endif\n \n static bool\n wasm_loader_push_frame_csp(WASMLoaderContext *ctx, uint8 label_type,\n@@ -6166,27 +6168,6 @@ wasm_loader_pop_frame_offset(WASMLoaderContext *ctx, uint8 type,\n     return true;\n }\n \n-static bool\n-wasm_loader_push_pop_frame_offset(WASMLoaderContext *ctx, uint8 pop_cnt,\n-                                  uint8 type_push, uint8 type_pop,\n-                                  bool disable_emit, int16 operand_offset,\n-                                  char *error_buf, uint32 error_buf_size)\n-{\n-    uint8 i;\n-\n-    for (i = 0; i < pop_cnt; i++) {\n-        if (!wasm_loader_pop_frame_offset(ctx, type_pop, error_buf,\n-                                          error_buf_size))\n-            return false;\n-    }\n-    if (!wasm_loader_push_frame_offset(ctx, type_push, disable_emit,\n-                                       operand_offset, error_buf,\n-                                       error_buf_size))\n-        return false;\n-\n-    return true;\n-}\n-\n static bool\n wasm_loader_push_frame_ref_offset(WASMLoaderContext *ctx, uint8 type,\n                                   bool disable_emit, int16 operand_offset,\n@@ -6220,12 +6201,24 @@ wasm_loader_push_pop_frame_ref_offset(WASMLoaderContext *ctx, uint8 pop_cnt,\n                                       bool disable_emit, int16 operand_offset,\n                                       char *error_buf, uint32 error_buf_size)\n {\n-    if (!wasm_loader_push_pop_frame_offset(ctx, pop_cnt, type_push, type_pop,\n-                                           disable_emit, operand_offset,\n-                                           error_buf, error_buf_size))\n+    uint8 i;\n+\n+    for (i = 0; i < pop_cnt; i++) {\n+        if (!wasm_loader_pop_frame_offset(ctx, type_pop, error_buf,\n+                                          error_buf_size))\n+            return false;\n+\n+        if (!wasm_loader_pop_frame_ref(ctx, type_pop, error_buf,\n+                                       error_buf_size))\n+            return false;\n+    }\n+\n+    if (!wasm_loader_push_frame_offset(ctx, type_push, disable_emit,\n+                                       operand_offset, error_buf,\n+                                       error_buf_size))\n         return false;\n-    if (!wasm_loader_push_pop_frame_ref(ctx, pop_cnt, type_push, type_pop,\n-                                        error_buf, error_buf_size))\n+\n+    if (!wasm_loader_push_frame_ref(ctx, type_push, error_buf, error_buf_size))\n         return false;\n \n     return true;"
+        },
+        {
+            "filename": "core/iwasm/interpreter/wasm_mini_loader.c",
+            "diff": "@@ -3937,6 +3937,7 @@ wasm_loader_pop_frame_ref(WASMLoaderContext *ctx, uint8 type, char *error_buf,\n     return true;\n }\n \n+#if WASM_ENABLE_FAST_INTERP == 0\n static bool\n wasm_loader_push_pop_frame_ref(WASMLoaderContext *ctx, uint8 pop_cnt,\n                                uint8 type_push, uint8 type_pop, char *error_buf,\n@@ -3951,6 +3952,7 @@ wasm_loader_push_pop_frame_ref(WASMLoaderContext *ctx, uint8 pop_cnt,\n         return false;\n     return true;\n }\n+#endif\n \n static bool\n wasm_loader_push_frame_csp(WASMLoaderContext *ctx, uint8 label_type,\n@@ -4608,25 +4610,6 @@ wasm_loader_pop_frame_offset(WASMLoaderContext *ctx, uint8 type,\n     return true;\n }\n \n-static bool\n-wasm_loader_push_pop_frame_offset(WASMLoaderContext *ctx, uint8 pop_cnt,\n-                                  uint8 type_push, uint8 type_pop,\n-                                  bool disable_emit, int16 operand_offset,\n-                                  char *error_buf, uint32 error_buf_size)\n-{\n-    for (int i = 0; i < pop_cnt; i++) {\n-        if (!wasm_loader_pop_frame_offset(ctx, type_pop, error_buf,\n-                                          error_buf_size))\n-            return false;\n-    }\n-    if (!wasm_loader_push_frame_offset(ctx, type_push, disable_emit,\n-                                       operand_offset, error_buf,\n-                                       error_buf_size))\n-        return false;\n-\n-    return true;\n-}\n-\n static bool\n wasm_loader_push_frame_ref_offset(WASMLoaderContext *ctx, uint8 type,\n                                   bool disable_emit, int16 operand_offset,\n@@ -4660,12 +4643,24 @@ wasm_loader_push_pop_frame_ref_offset(WASMLoaderContext *ctx, uint8 pop_cnt,\n                                       bool disable_emit, int16 operand_offset,\n                                       char *error_buf, uint32 error_buf_size)\n {\n-    if (!wasm_loader_push_pop_frame_offset(ctx, pop_cnt, type_push, type_pop,\n-                                           disable_emit, operand_offset,\n-                                           error_buf, error_buf_size))\n+    uint8 i;\n+\n+    for (i = 0; i < pop_cnt; i++) {\n+        if (!wasm_loader_pop_frame_offset(ctx, type_pop, error_buf,\n+                                          error_buf_size))\n+            return false;\n+\n+        if (!wasm_loader_pop_frame_ref(ctx, type_pop, error_buf,\n+                                       error_buf_size))\n+            return false;\n+    }\n+\n+    if (!wasm_loader_push_frame_offset(ctx, type_push, disable_emit,\n+                                       operand_offset, error_buf,\n+                                       error_buf_size))\n         return false;\n-    if (!wasm_loader_push_pop_frame_ref(ctx, pop_cnt, type_push, type_pop,\n-                                        error_buf, error_buf_size))\n+\n+    if (!wasm_loader_push_frame_ref(ctx, type_push, error_buf, error_buf_size))\n         return false;\n \n     return true;"
+        }
+    ],
+    "commitTime": "2023-09-26 02:17:54"
+}

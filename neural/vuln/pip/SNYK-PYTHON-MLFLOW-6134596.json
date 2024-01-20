@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Laid Malik"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.6,
+    "disclosureTime": "2023-12-20 15:47:33",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.34999",
+        "probability": "0.00084"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6134596",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6977"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 08:37:36",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Arbitrary File Read",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Arbitrary File Read due to a bypass of the fix for CVE-2023-2780 . This allows attackers to trick the is_local_uri() function into downloading arbitrary files unrelated to MLflow from the host server, including any files stored in remote locations to which the host server has access. "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/utils/uri.py",
+            "diff": "@@ -41,15 +41,18 @@ def is_local_uri(uri, is_tracking_or_registry_uri=True):\n         return False\n \n     parsed_uri = urllib.parse.urlparse(uri)\n+    scheme = parsed_uri.scheme\n+    if scheme == \"\":\n+        return True\n+\n     if parsed_uri.hostname and not (\n         parsed_uri.hostname == \".\"\n         or parsed_uri.hostname.startswith(\"localhost\")\n         or parsed_uri.hostname.startswith(\"127.0.0.1\")\n     ):\n         return False\n \n-    scheme = parsed_uri.scheme\n-    if scheme == \"\" or scheme == \"file\":\n+    if scheme == \"file\":\n         return True\n \n     if is_windows() and len(scheme) == 1 and scheme.lower() == pathlib.Path(uri).drive.lower()[0]:"
+        },
+        {
+            "filename": "tests/utils/test_uri.py",
+            "diff": "@@ -99,6 +99,8 @@ def test_is_local_uri():\n     assert is_local_uri(\"file://localhost:5000/mlruns\")\n     assert is_local_uri(\"file://127.0.0.1/mlruns\")\n     assert is_local_uri(\"file://127.0.0.1:5000/mlruns\")\n+    assert is_local_uri(\"//proc/self/root\")\n+    assert is_local_uri(\"/proc/self/root\")\n \n     assert not is_local_uri(\"file://myhostname/path/to/file\")\n     assert not is_local_uri(\"https://whatever\")"
+        }
+    ],
+    "commitTime": "2023-12-07 18:28:07"
+}

@@ -1,0 +1,61 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Kim Donggyu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-31 22:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JS-FOLLOWREDIRECTS-6141137",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-26159"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2024-01-01 15:19:32",
+    "remediation": "Upgrade follow-redirects to version 1.15.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation due to the improper handling of URLs by the url.parse() function. When new URL() throws an error, it can be manipulated to misinterpret the hostname. An attacker could exploit this weakness to redirect traffic to a malicious site, potentially leading to information disclosure, phishing attacks, or other security breaches. ",
+        "PoC": "# Case 1 : Bypassing localhost restriction let url = 'http://[localhost]/admin'; try{ new URL(url); // ERROR : Invalid URL }catch{ url.parse(url); // -> http://localhost/admin } # Case 2 : Bypassing domain restriction let url = 'http://attacker.domain*.allowed.domain:a'; try{ new URL(url); // ERROR : Invalid URL }catch{ url.parse(url); // -> http://attacker.domain/*.allowed.domain:a } "
+    },
+    "source_code": []
+}

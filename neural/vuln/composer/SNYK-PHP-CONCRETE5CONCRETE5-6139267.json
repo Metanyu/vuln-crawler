@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Veshraj Ghimire"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.3,
+    "disclosureTime": "2023-12-25 08:53:27",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-CONCRETE5CONCRETE5-6139267",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48652"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-25 09:42:26",
+    "remediation": "Upgrade concrete5/concrete5 to version 9.2.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "concrete5/concrete5 is a concrete5 open source CMS. Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the /ccm/system/dialogs/logs/delete_all/submit endpoint. An attacker can manipulate a user into performing actions without their consent or knowledge by sending a crafted request. "
+    },
+    "source_code": [
+        {
+            "filename": "concrete/controllers/dialog/event/delete.php",
+            "diff": "@@ -38,42 +38,47 @@ public function __construct()\n \n     public function submit()\n     {\n-        $event = $this->eventService->getByID($_REQUEST['eventID'], EventService::EVENT_VERSION_RECENT);\n-        $e = \\Core::make('error');\n-        if (!$event) {\n-            $e->add(t('Invalid event.'));\n-        }\n-        if (!$this->canAccess()) {\n-            $e->add(t('Access Denied.'));\n-        }\n+        if ($this->validateAction()) {\n+            $event = $this->eventService->getByID($_REQUEST['eventID'], EventService::EVENT_VERSION_RECENT);\n+            $e = \\Core::make('error');\n+            if (!$event) {\n+                $e->add(t('Invalid event.'));\n+            }\n+            if (!$this->canAccess()) {\n+                $e->add(t('Access Denied.'));\n+            }\n \n-        $r = new EditResponse($e);\n-        $year = date('Y');\n-        $month = date('m');\n-        $r->setRedirectURL(\n-            \\URL::to(\n-                $this->preferences->getPreferredViewPath(),\n-                'view',\n-                $event->getCalendar()->getID(),\n-                $year,\n-                $month\n-            )\n-        );\n-\n-        if (!$e->has()) {\n-            $u = $this->app->make(User::class);\n-            $pkr = new DeleteCalendarEventRequest();\n-            $pkr->setCalendarEventVersionID($event->getRecentVersion()->getID());\n-            $pkr->setRequesterUserID($u->getUserID());\n-            $response = $pkr->trigger();\n-            if ($response instanceof Response) {\n-                $this->flash('success', t('Event deleted successfully.'));\n-            } else {\n-                $this->flash('success', t('Event deletion pending. This request must be approved before the event is fully removed.'));\n+            $r = new EditResponse($e);\n+            $year = date('Y');\n+            $month = date('m');\n+            $r->setRedirectURL(\n+                \\URL::to(\n+                    $this->preferences->getPreferredViewPath(),\n+                    'view',\n+                    $event->getCalendar()->getID(),\n+                    $year,\n+                    $month\n+                )\n+            );\n+\n+            if (!$e->has()) {\n+                $u = $this->app->make(User::class);\n+                $pkr = new DeleteCalendarEventRequest();\n+                $pkr->setCalendarEventVersionID($event->getRecentVersion()->getID());\n+                $pkr->setRequesterUserID($u->getUserID());\n+                $response = $pkr->trigger();\n+                if ($response instanceof Response) {\n+                    $this->flash('success', t('Event deleted successfully.'));\n+                } else {\n+                    $this->flash(\n+                        'success',\n+                        t('Event deletion pending. This request must be approved before the event is fully removed.')\n+                    );\n+                }\n             }\n-        }\n \n-        $r->outputJSON();\n+            $r->outputJSON();\n+        }\n     }\n \n "
+        },
+        {
+            "filename": "concrete/controllers/dialog/event/delete_occurrence.php",
+            "diff": "@@ -40,46 +40,55 @@ public function __construct()\n \n     public function submit()\n     {\n-        $occurrence = $this->eventOccurrenceService->getByID($this->request->request->get('versionOccurrenceID'));\n-        $e = \\Core::make('error');\n-        if (!$occurrence) {\n-            $e->add(t('Invalid occurrence.'));\n-        }\n-        if (!$this->canAccess()) {\n-            $e->add(t('Access Denied.'));\n-        }\n+        if ($this->validateAction()) {\n+            $occurrence = $this->eventOccurrenceService->getByID($this->request->request->get('versionOccurrenceID'));\n+            $e = \\Core::make('error');\n+            if (!$occurrence) {\n+                $e->add(t('Invalid occurrence.'));\n+            }\n+            if (!$this->canAccess()) {\n+                $e->add(t('Access Denied.'));\n+            }\n \n-        $r = new EditResponse($e);\n-        $year = date('Y', $occurrence->getStart());\n-        $month = date('m', $occurrence->getStart());\n-        $r->setRedirectURL(\n-            \\URL::to(\n-                $this->preferences->getPreferredViewPath(),\n-                'view',\n-                $occurrence->getEvent()->getCalendar()->getID(),\n-                $year,\n-                $month\n-            )\n-        );\n-\n-        if (!$e->has()) {\n-            $u = $this->app->make(User::class);\n-            $eventVersion = $this->eventService->getVersionToModify($occurrence->getEvent(), $u);\n-            $this->eventService->addEventVersion($eventVersion->getEvent(), $eventVersion->getEvent()->getCalendar(), $eventVersion);\n-            $this->eventOccurrenceService->delete($eventVersion, $occurrence->getOccurrence());\n-\n-            $pkr = new ApproveCalendarEventRequest();\n-            $pkr->setCalendarEventVersionID($eventVersion->getID());\n-            $pkr->setRequesterUserID($u->getUserID());\n-            $response = $pkr->trigger();\n-            if ($response instanceof Response) {\n-                $this->flash('success', t('Event occurrence removed.'));\n-            } else {\n-                $this->flash('success', t('Event occurrence removal requested. This must be approved before it is fully removed.'));\n+            $r = new EditResponse($e);\n+            $year = date('Y', $occurrence->getStart());\n+            $month = date('m', $occurrence->getStart());\n+            $r->setRedirectURL(\n+                \\URL::to(\n+                    $this->preferences->getPreferredViewPath(),\n+                    'view',\n+                    $occurrence->getEvent()->getCalendar()->getID(),\n+                    $year,\n+                    $month\n+                )\n+            );\n+\n+            if (!$e->has()) {\n+                $u = $this->app->make(User::class);\n+                $eventVersion = $this->eventService->getVersionToModify($occurrence->getEvent(), $u);\n+                $this->eventService->addEventVersion(\n+                    $eventVersion->getEvent(),\n+                    $eventVersion->getEvent()->getCalendar(),\n+                    $eventVersion\n+                );\n+                $this->eventOccurrenceService->delete($eventVersion, $occurrence->getOccurrence());\n+\n+                $pkr = new ApproveCalendarEventRequest();\n+                $pkr->setCalendarEventVersionID($eventVersion->getID());\n+                $pkr->setRequesterUserID($u->getUserID());\n+                $response = $pkr->trigger();\n+                if ($response instanceof Response) {\n+                    $this->flash('success', t('Event occurrence removed.'));\n+                } else {\n+                    $this->flash(\n+                        'success',\n+                        t('Event occurrence removal requested. This must be approved before it is fully removed.')\n+                    );\n+                }\n             }\n-        }\n \n-        $r->outputJSON();\n+            $r->outputJSON();\n+        }\n     }\n \n "
+        },
+        {
+            "filename": "concrete/controllers/dialog/file/delete.php",
+            "diff": "@@ -31,7 +31,7 @@ public function view($fID)\n \n     public function submit($fID)\n     {\n-        if ($this->canAccess()) {\n+        if ($this->validateAction()) {\n             $file = File::getByID($this->request->attributes->get('fID'));\n             $file->delete();\n "
+        },
+        {
+            "filename": "concrete/controllers/dialog/logs/delete_all.php",
+            "diff": "@@ -31,7 +31,7 @@ public function submit()\n         /** @var EditResponse $editResponse */\n         $editResponse = new EditResponse();\n \n-        if ($this->canAccess()) {\n+        if ($this->validateAction()) {\n             /** @var Connection $db */\n             $db = $this->app->make(Connection::class);\n "
+        },
+        {
+            "filename": "concrete/single_pages/dashboard/reports/logs.php",
+            "diff": "@@ -82,7 +82,10 @@ class=\"btn btn-secondary dropdown-toggle dropdown-toggle-split\"\n \n                 <?php foreach ($item->getColumns() as $column) { ?>\n                     <?php /** @var ItemColumn $column */ ?>\n-                    <td>\n+                    <td <?php if ($column->getColumn() instanceof\n+                        \\Concrete\\Core\\Logging\\Search\\ColumnSet\\Column\\MessageColumn) { ?>\n+                        class=\"text-break\"\n+                        <?php } ?>>\n                         <?php echo $column->getColumnValue(); ?>\n                     </td>\n                 <?php } ?>"
+        }
+    ],
+    "commitTime": "2023-11-09 23:51:01"
+}

@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "li-yu320"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-05 15:30:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.22045",
+        "probability": "0.00058"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-COMJFINAL-6117560",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49373"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-12 10:07:55",
+    "remediation": "There is no fixed version for com.jfinal:jfinal . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "com.jfinal:jfinal is a JFinal is a simple, light, rapid,independent, extensible Java WEB + ORM framework. The feature of JFinal looks like ruby on rails especially ActiveRecord. Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the /admin/slide/delete endpoint. An attacker can perform unauthorized actions on behalf of a legitimate user by tricking the user into clicking a malicious link or visiting a compromised website. "
+    },
+    "source_code": []
+}

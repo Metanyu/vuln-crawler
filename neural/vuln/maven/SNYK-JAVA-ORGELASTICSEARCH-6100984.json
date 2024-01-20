@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6,
+    "disclosureTime": "2023-12-05 18:45:26",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12091",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGELASTICSEARCH-6100984",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46674"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-06 12:48:35",
+    "remediation": "Upgrade org.elasticsearch:elasticsearch-hadoop to version 7.17.11, 8.9.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Deserialization of Untrusted Data",
+    "vulnDescription": {
+        "Details": "Serialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like Remote Method Invocation (RMI) , Java Management Extension (JMX) , Java Messaging System (JMS) , Action Message Format (AMF) , Java Server Faces (JSF) ViewState , etc. Deserialization of untrusted data ( CWE-502 ) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution. ",
+        "Overview": "Affected versions of this package are vulnerable to Deserialization of Untrusted Data via the deserialization of Java objects from Hadoop or Spark configuration properties that could be manipulated by authenticated users. An attacker can achieve unauthorized code execution by providing malicious input to the affected configurations. This is only exploitable if the attacker has the ability to authenticate and modify Hadoop or Spark configuration properties. "
+    },
+    "source_code": []
+}

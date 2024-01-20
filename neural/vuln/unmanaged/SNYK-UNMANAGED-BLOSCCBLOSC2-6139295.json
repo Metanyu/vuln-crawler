@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-25 07:46:13",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-BLOSCCBLOSC2-6139295",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-37185"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 21:30:21",
+    "remediation": "Upgrade blosc/c-blosc2 to version 2.9.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference in the zfp_prec_decompress() function in zfp/blosc2-zfp.c . An attacker can cause a crash by passing in a malicious file. "
+    },
+    "source_code": [
+        {
+            "filename": "plugins/codecs/zfp/blosc2-zfp.c",
+            "diff": "@@ -26,6 +26,7 @@ int zfp_acc_compress(const uint8_t *input, int32_t input_len, uint8_t *output,\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(cparams);\n+  ZFP_ERROR_NULL(cparams->schunk);\n \n   double tol = (int8_t) meta;\n   int8_t ndim;\n@@ -146,6 +147,7 @@ int zfp_acc_decompress(const uint8_t *input, int32_t input_len, uint8_t *output,\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(dparams);\n+  ZFP_ERROR_NULL(dparams->schunk);\n   BLOSC_UNUSED_PARAM(chunk);\n \n   blosc2_schunk *sc = dparams->schunk;\n@@ -241,6 +243,7 @@ int zfp_prec_compress(const uint8_t *input, int32_t input_len, uint8_t *output,\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(cparams);\n+  ZFP_ERROR_NULL(cparams->schunk);\n \n   int8_t ndim;\n   int64_t *shape = malloc(8 * sizeof(int64_t));\n@@ -385,6 +388,7 @@ int zfp_prec_decompress(const uint8_t *input, int32_t input_len, uint8_t *output\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(dparams);\n+  ZFP_ERROR_NULL(dparams->schunk);\n   BLOSC_UNUSED_PARAM(chunk);\n \n   blosc2_schunk *sc = dparams->schunk;\n@@ -504,6 +508,7 @@ int zfp_rate_compress(const uint8_t *input, int32_t input_len, uint8_t *output,\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(cparams);\n+  ZFP_ERROR_NULL(cparams->schunk);\n \n   double ratio = (double) meta / 100.0;\n   int8_t ndim;\n@@ -635,6 +640,7 @@ int zfp_rate_decompress(const uint8_t *input, int32_t input_len, uint8_t *output\n   ZFP_ERROR_NULL(input);\n   ZFP_ERROR_NULL(output);\n   ZFP_ERROR_NULL(dparams);\n+  ZFP_ERROR_NULL(dparams->schunk);\n   BLOSC_UNUSED_PARAM(chunk);\n \n   blosc2_schunk *sc = dparams->schunk;"
+        }
+    ],
+    "commitTime": "2023-06-21 09:16:28"
+}

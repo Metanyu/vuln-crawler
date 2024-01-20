@@ -1,0 +1,48 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "AdamKorcz"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.8,
+    "disclosureTime": "2024-01-03 16:13:52",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCUBEFSCUBEFSMASTER-6143563",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46739"
+        ],
+        "CWE": [
+            "CWE-208"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 15:33:55",
+    "remediation": "Upgrade github.com/cubefs/cubefs/master to version 3.3.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Timing Attack",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Timing Attack due to the usage of raw string comparison for password verification in the UserService of the master component. This could allow an untrusted attacker to steal user passwords. "
+    },
+    "source_code": [
+        {
+            "filename": "master/gapi_user.go",
+            "diff": "@@ -2,6 +2,8 @@ package master\n \n import (\n \t\"context\"\n+\t\"crypto/sha256\"\n+\t\"encoding/hex\"\n \t\"fmt\"\n \t\"github.com/cubefs/cubefs/proto\"\n \t\"github.com/cubefs/cubefs/util/log\"\n@@ -347,8 +349,13 @@ func (s *UserService) validatePassword(ctx context.Context, args struct {\n \tif err != nil {\n \t\treturn nil, err\n \t}\n+\thashedPassword := sha256.Sum256([]byte(args.Password))\n+\thashedPasswordStr := hex.EncodeToString(hashedPassword[:])\n \n-\tif ak.Password != args.Password {\n+\thashedPassword_ := sha256.Sum256([]byte(ak.Password))\n+\thashedPasswordStr_ := hex.EncodeToString(hashedPassword_[:])\n+\n+\tif hashedPasswordStr != hashedPasswordStr_ {\n \t\tlog.LogWarnf(\"user:[%s] login pass word has err\", args.UserID)\n \t\treturn nil, fmt.Errorf(\"user or password has err\")\n \t}"
+        }
+    ],
+    "commitTime": "2023-11-17 03:29:15"
+}

@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-25 09:45:51",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.19098",
+        "probability": "0.00053"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-OPENNDSOPENNDS-6139285",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-38321"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 14:16:32",
+    "remediation": "Upgrade openNDS/openNDS to version 10.1.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference via a GET request to /opennds_auth/ that omits a required custom query string parameter and client-token, which can cause a crash. "
+    },
+    "source_code": [
+        {
+            "filename": "src/http_microhttpd.c",
+            "diff": "@@ -145,6 +145,10 @@ static int do_binauth(\n \tuser_agent = safe_calloc(USER_AGENT);\n \tMHD_get_connection_values(connection, MHD_HEADER_KIND, get_user_agent_callback, &user_agent);\n \n+\tif (user_agent == NULL) {\n+\t\treturn send_error(connection, 403);\n+\t}\n+\n \tdebug(LOG_DEBUG, \"BinAuth: User Agent is [ %s ]\", user_agent);\n \n \t// Get custom data string as passed in the query string\n@@ -984,6 +988,10 @@ static int show_preauthpage(struct MHD_Connection *connection, const char *query\n \n \t\tMHD_get_connection_values(connection, MHD_HEADER_KIND, get_user_agent_callback, &user_agent);\n \n+\t\tif (user_agent == NULL) {\n+\t\t\treturn send_error(connection, 403);\n+\t\t}\n+\n \t\tuh_urlencode(enc_user_agent, ENC_USER_AGENT, user_agent, strlen(user_agent));\n \t\tdebug(LOG_DEBUG, \"PreAuth: Encoded User Agent is [ %s ]\", enc_user_agent);\n "
+        }
+    ],
+    "commitTime": "2023-07-29 10:50:27"
+}

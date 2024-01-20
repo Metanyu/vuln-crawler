@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2012-02-24 13:55:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.82705",
+        "probability": "0.01090"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-FORKCMSFORKCMS-6137741",
+    "identifiers": {
+        "CVE": [
+            "CVE-2012-1207"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-21 16:03:21",
+    "remediation": "Upgrade forkcms/forkcms to version 3.2.5 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Directory Traversal",
+    "vulnDescription": {
+        "Overview": "forkcms/forkcms is an easy to use open source CMS using Symfony Components Affected versions of this package are vulnerable to Directory Traversal. Directory traversal vulnerability in frontend/core/engine/javascript.php in Fork CMS 3.2.4 and possibly other versions before 3.2.5 allows remote attackers to read arbitrary files via a .. (dot dot) in the module parameter to frontend/js.php. "
+    },
+    "source_code": [
+        {
+            "filename": "frontend/core/engine/javascript.php",
+            "diff": "@@ -194,6 +194,17 @@ private function setLanguage($value)\n \t */\n \tprivate function setModule($value)\n \t{\n+\t\t$modules = (array) FrontendModel::getModules();\n+\t\t\n+\t\tif(!in_array((string) $value, $modules))\n+\t\t{\n+\t\t\t// when debug is on throw an exception\n+\t\t\tif(SPOON_DEBUG) throw new FrontendException('Invalid file.');\n+\n+\t\t\t// when debug is of show a descent message\n+\t\t\telse exit(SPOON_DEBUG_MESSAGE);\n+\t\t}\n+\t\t\n \t\t$this->module = (string) $value;\n \t}\n }"
+        }
+    ],
+    "commitTime": "2012-02-13 15:13:35"
+}

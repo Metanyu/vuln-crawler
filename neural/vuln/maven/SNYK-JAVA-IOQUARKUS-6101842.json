@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-11-15 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.15252",
+        "probability": "0.00049"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-IOQUARKUS-6101842",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6393"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-06 14:57:56",
+    "remediation": "Upgrade io.quarkus:quarkus-cache to version 2.13.9, 3.2.9, 3.5.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to improper reuse of context associated with @CacheResult on a Uni . An attacker can potentially access sensitive information by exploiting the unintended reuse of context data. "
+    },
+    "source_code": [
+        {
+            "filename": "extensions/cache/runtime/src/main/java/io/quarkus/cache/runtime/CacheResultInterceptor.java",
+            "diff": "@@ -1,6 +1,7 @@\n package io.quarkus.cache.runtime;\n \n import java.time.Duration;\n+import java.util.concurrent.Executor;\n import java.util.function.Function;\n import java.util.function.Supplier;\n \n@@ -16,6 +17,10 @@\n import io.smallrye.mutiny.Multi;\n import io.smallrye.mutiny.TimeoutException;\n import io.smallrye.mutiny.Uni;\n+import io.vertx.core.Context;\n+import io.vertx.core.Handler;\n+import io.vertx.core.Vertx;\n+import io.vertx.core.impl.ContextInternal;\n \n @CacheResult(cacheName = \"\") // The `cacheName` attribute is @Nonbinding.\n @Interceptor\n@@ -53,6 +58,7 @@ public Object intercept(InvocationContext invocationContext) throws Throwable {\n         try {\n             ReturnType returnType = determineReturnType(invocationContext.getMethod().getReturnType());\n             if (returnType != ReturnType.NonAsync) {\n+                Context context = Vertx.currentContext();\n                 Uni<Object> cacheValue = cache.getAsync(key, new Function<Object, Uni<Object>>() {\n                     @SuppressWarnings(\"unchecked\")\n                     @Override\n@@ -65,11 +71,54 @@ public Uni<Object> apply(Object key) {\n                             throw new CacheException(e);\n                         }\n                     }\n+                }).emitOn(new Executor() {\n+                    // We need make sure we go back to the original context when the cache value is computed.\n+                    // Otherwise, we would always emit on the context having computed the value, which could\n+                    // break the duplicated context isolation.\n+                    @Override\n+                    public void execute(Runnable command) {\n+                        Context ctx = Vertx.currentContext();\n+                        if (context == null) {\n+                            // We didn't capture a context\n+                            if (ctx == null) {\n+                                // We are not on a context => we can execute immediately.\n+                                command.run();\n+                            } else {\n+                                // We are on a context.\n+                                // We cannot continue on the current context as we may share a duplicated context.\n+                                // We need a new one. Note that duplicate() does not duplicate the duplicated context,\n+                                // but the root context.\n+                                ((ContextInternal) ctx).duplicate()\n+                                        .runOnContext(new Handler<Void>() {\n+                                            @Override\n+                                            public void handle(Void ignored) {\n+                                                command.run();\n+                                            }\n+                                        });\n+                            }\n+                        } else {\n+                            // We captured a context.\n+                            if (ctx == context) {\n+                                // We are on the same context => we can execute immediately\n+                                command.run();\n+                            } else {\n+                                // 1) We are not on a context (ctx == null) => we need to switch to the captured context.\n+                                // 2) We are on a different context (ctx != null) => we need to switch to the captured context.\n+                                context.runOnContext(new Handler<Void>() {\n+                                    @Override\n+                                    public void handle(Void ignored) {\n+                                        command.run();\n+                                    }\n+                                });\n+                            }\n+                        }\n+                    }\n                 });\n \n                 if (binding.lockTimeout() <= 0) {\n                     return createAsyncResult(cacheValue, returnType);\n                 }\n+                // IMPORTANT: The item/failure are emitted on the captured context.\n                 cacheValue = cacheValue.ifNoItem().after(Duration.ofMillis(binding.lockTimeout()))\n                         .recoverWithUni(new Supplier<Uni<?>>() {\n                             @Override"
+        }
+    ],
+    "commitTime": "2023-11-15 13:45:17"
+}

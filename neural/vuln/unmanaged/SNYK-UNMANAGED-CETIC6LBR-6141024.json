@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-31 08:45:24",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-CETIC6LBR-6141024",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-46901"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-31 14:20:17",
+    "remediation": "There is no fixed version for cetic/6lbr . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow via the httpd.c component. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2024-01-01 06:37:52",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.28691",
+        "probability": "0.00069"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-PYO-6141129",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-41498"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 12:46:07",
+    "remediation": "Upgrade pyo to version 1.0.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "pyo is a Python module to build digital signal processing program. Affected versions of this package are vulnerable to Buffer Overflow within the Server_jack_init function. This flaw could enable attackers to carry out denial-of-service attacks by establishing an overly lengthy server name. "
+    },
+    "source_code": [
+        {
+            "filename": "src/engine/ad_jack.c",
+            "diff": "@@ -493,7 +493,6 @@ int\n Server_jack_init(Server *self)\n {\n     int i = 0;\n-    char client_name[32];\n     char name[16];\n     const char *server_name = \"server\";\n     jack_options_t options = JackNullOption;\n@@ -508,7 +507,6 @@ Server_jack_init(Server *self)\n     PyoJackBackendData *be_data = (PyoJackBackendData *) PyMem_RawMalloc(sizeof(PyoJackBackendData));\n     self->audio_be_data = (void *) be_data;\n     be_data->activated = 0;\n-    strncpy(client_name, self->serverName, 31);\n \n     Py_BEGIN_ALLOW_THREADS\n     be_data->midi_event_count = 0;\n@@ -523,7 +521,7 @@ Server_jack_init(Server *self)\n     }\n \n     be_data->jack_out_ports = (jack_port_t **) PyMem_RawCalloc(self->nchnls + self->output_offset, sizeof(jack_port_t *));\n-    be_data->jack_client = jack_client_open(client_name, options, &status, server_name);\n+    be_data->jack_client = jack_client_open(self->serverName, options, &status, server_name);\n \n     if (self->withJackMidi)\n     {"
+        }
+    ],
+    "commitTime": "2021-06-03 02:15:15"
+}

@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-19 07:18:10",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-JS-BVCOMMONS-6131185",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "js",
+    "malicious": true,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-19 11:49:07",
+    "remediation": "Avoid using all malicious instances of the bv-commons package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "bv-commons is a malicious package. This package contains malicious code, and its content was removed from the official package manager. While this package might be attempting to impersonate a valid organization, there is no connection between that organization and this package authorship. "
+    },
+    "source_code": []
+}

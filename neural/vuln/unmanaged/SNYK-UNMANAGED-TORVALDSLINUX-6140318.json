@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-06 06:30:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6140318",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6531"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-28 11:50:47",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc5 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) due to a race condition in the unix garbage collector's handling of socket buffer (SKB) deletion. An attacker with local access can cause a denial of service or potentially execute arbitrary code by triggering a use-after-free error. "
+    },
+    "source_code": [
+        {
+            "filename": "io_uring/rsrc.h",
+            "diff": "@@ -77,17 +77,10 @@ int io_sqe_files_register(struct io_ring_ctx *ctx, void __user *arg,\n \n int __io_scm_file_account(struct io_ring_ctx *ctx, struct file *file);\n \n-#if defined(CONFIG_UNIX)\n-static inline bool io_file_need_scm(struct file *filp)\n-{\n-\treturn !!unix_get_socket(filp);\n-}\n-#else\n static inline bool io_file_need_scm(struct file *filp)\n {\n \treturn false;\n }\n-#endif\n \n static inline int io_scm_file_account(struct io_ring_ctx *ctx,\n \t\t\t\t      struct file *file)"
+        },
+        {
+            "filename": "net/core/scm.c",
+            "diff": "@@ -26,6 +26,7 @@\n #include <linux/nsproxy.h>\n #include <linux/slab.h>\n #include <linux/errqueue.h>\n+#include <linux/io_uring.h>\n \n #include <linux/uaccess.h>\n \n@@ -103,6 +104,11 @@ static int scm_fp_copy(struct cmsghdr *cmsg, struct scm_fp_list **fplp)\n \n \t\tif (fd < 0 || !(file = fget_raw(fd)))\n \t\t\treturn -EBADF;\n+\t\t/* don't allow io_uring files */\n+\t\tif (io_uring_get_socket(file)) {\n+\t\t\tfput(file);\n+\t\t\treturn -EINVAL;\n+\t\t}\n \t\t*fpp++ = file;\n \t\tfpl->count++;\n \t}"
+        }
+    ],
+    "commitTime": "2023-12-07 17:35:19"
+}

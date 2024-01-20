@@ -1,0 +1,65 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "torvalds/linux"
+        }
+    ],
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-17T13:49:35.066005Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "description": "## Overview Affected versions of this package are vulnerable to Out-of-bounds Write via the `nft_byteorder_eval` function. An attacker can achieve arbitrary code execution by exploiting incorrect pointer arithmetic to manipulate memory. ## Remediation Upgrade `torvalds/linux` to version 6.7-rc2 or higher. ## References - [GitHub Commit](https://github.com/torvalds/linux/commit/c301f0981fdd3fd1ffac6836b423c4d7a8e0eb63) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2258635) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6170040",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0607"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "torvalds/linux",
+    "publicationTime": "2024-01-17T21:24:37.421790Z",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc2 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,6.7-rc2)"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the nft_byteorder_eval function. An attacker can achieve arbitrary code execution by exploiting incorrect pointer arithmetic to manipulate memory. ",
+        "References": [
+            "https://github.com/torvalds/linux/commit/c301f0981fdd3fd1ffac6836b423c4d7a8e0eb63",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2258635"
+        ]
+    },
+    "vulnerableVersions": "[,6.7-rc2)"
+}

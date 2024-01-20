@@ -1,0 +1,82 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "r01k"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-15 03:47:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-HOMEASSISTANT-6128857",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50715"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-15 13:40:26",
+    "remediation": "Upgrade homeassistant to version 2023.12.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to an issue with the login page, which discloses all active user accounts to any unauthenticated browsing request originating on the Local Area Network. This could potentially allow an unauthorized actor to gain knowledge of all user accounts on the system. Notes: This applies to the local subnet where Home Assistant resides and to any private subnet that can reach it. "
+    },
+    "source_code": [
+        {
+            "filename": "homeassistant/components/auth/login_flow.py",
+            "diff": "@@ -91,7 +91,6 @@\n from homeassistant.components.http.view import HomeAssistantView\n from homeassistant.core import HomeAssistant\n from homeassistant.helpers.network import is_cloud_connection\n-from homeassistant.util.network import is_local\n \n from . import indieauth\n \n@@ -165,8 +164,6 @@ async def get(self, request: web.Request) -> web.Response:\n \n         providers = []\n         for provider in hass.auth.auth_providers:\n-            additional_data = {}\n-\n             if provider.type == \"trusted_networks\":\n                 if cloud_connection:\n                     # Skip quickly as trusted networks are not available on cloud\n@@ -179,30 +176,12 @@ async def get(self, request: web.Request) -> web.Response:\n                 except InvalidAuthError:\n                     # Not a trusted network, so we don't expose that trusted_network authenticator is setup\n                     continue\n-            elif (\n-                provider.type == \"homeassistant\"\n-                and not cloud_connection\n-                and is_local(remote_address)\n-                and \"person\" in hass.config.components\n-            ):\n-                # We are local, return user id and username\n-                users = await provider.store.async_get_users()\n-                additional_data[\"users\"] = {\n-                    user.id: credentials.data[\"username\"]\n-                    for user in users\n-                    for credentials in user.credentials\n-                    if (\n-                        credentials.auth_provider_type == provider.type\n-                        and credentials.auth_provider_id == provider.id\n-                    )\n-                }\n \n             providers.append(\n                 {\n                     \"name\": provider.name,\n                     \"id\": provider.id,\n                     \"type\": provider.type,\n-                    **additional_data,\n                 }\n             )\n "
+        },
+        {
+            "filename": "homeassistant/components/person/__init__.py",
+            "diff": "@@ -2,7 +2,6 @@\n from __future__ import annotations\n \n from http import HTTPStatus\n-from ipaddress import ip_address\n import logging\n from typing import Any\n \n@@ -51,12 +50,10 @@\n )\n from homeassistant.helpers.entity_component import EntityComponent\n from homeassistant.helpers.event import async_track_state_change_event\n-from homeassistant.helpers.network import is_cloud_connection\n from homeassistant.helpers.restore_state import RestoreEntity\n from homeassistant.helpers.storage import Store\n from homeassistant.helpers.typing import ConfigType\n from homeassistant.loader import bind_hass\n-from homeassistant.util.network import is_local\n \n _LOGGER = logging.getLogger(__name__)\n \n@@ -588,33 +585,8 @@ class ListPersonsView(HomeAssistantView):\n \n     async def get(self, request: web.Request) -> web.Response:\n         \"\"\"Return a list of persons if request comes from a local IP.\"\"\"\n-        try:\n-            remote_address = ip_address(request.remote)  # type: ignore[arg-type]\n-        except ValueError:\n-            return self.json_message(\n-                message=\"Invalid remote IP\",\n-                status_code=HTTPStatus.BAD_REQUEST,\n-                message_code=\"invalid_remote_ip\",\n-            )\n-\n-        hass: HomeAssistant = request.app[\"hass\"]\n-        if is_cloud_connection(hass) or not is_local(remote_address):\n-            return self.json_message(\n-                message=\"Not local\",\n-                status_code=HTTPStatus.BAD_REQUEST,\n-                message_code=\"not_local\",\n-            )\n-\n-        yaml, storage, _ = hass.data[DOMAIN]\n-        persons = [*yaml.async_items(), *storage.async_items()]\n-\n-        return self.json(\n-            {\n-                person[ATTR_USER_ID]: {\n-                    ATTR_NAME: person[ATTR_NAME],\n-                    CONF_PICTURE: person.get(CONF_PICTURE),\n-                }\n-                for person in persons\n-                if person.get(ATTR_USER_ID)\n-            }\n+        return self.json_message(\n+            message=\"Not local\",\n+            status_code=HTTPStatus.BAD_REQUEST,\n+            message_code=\"not_local\",\n         )"
+        },
+        {
+            "filename": "tests/components/auth/test_login_flow.py",
+            "diff": "@@ -1,12 +1,10 @@\n \"\"\"Tests for the login flow.\"\"\"\n-from collections.abc import Callable\n from http import HTTPStatus\n from typing import Any\n from unittest.mock import patch\n \n import pytest\n \n-from homeassistant.auth.models import User\n from homeassistant.core import HomeAssistant\n from homeassistant.setup import async_setup_component\n \n@@ -67,22 +65,16 @@ async def _test_fetch_auth_providers_home_assistant(\n     hass: HomeAssistant,\n     aiohttp_client: ClientSessionGenerator,\n     ip: str,\n-    additional_expected_fn: Callable[[User], dict[str, Any]],\n ) -> None:\n     \"\"\"Test fetching auth providers for homeassistant auth provider.\"\"\"\n     client = await async_setup_auth(\n         hass, aiohttp_client, [{\"type\": \"homeassistant\"}], custom_ip=ip\n     )\n \n-    provider = hass.auth.auth_providers[0]\n-    credentials = await provider.async_get_or_create_credentials({\"username\": \"hello\"})\n-    user = await hass.auth.async_get_or_create_user(credentials)\n-\n     expected = {\n         \"name\": \"Home Assistant Local\",\n         \"type\": \"homeassistant\",\n         \"id\": None,\n-        **additional_expected_fn(user),\n     }\n \n     resp = await client.get(\"/auth/providers\")\n@@ -105,9 +97,7 @@ async def test_fetch_auth_providers_home_assistant_person_not_loaded(\n     ip: str,\n ) -> None:\n     \"\"\"Test fetching auth providers for homeassistant auth provider, where person integration is not loaded.\"\"\"\n-    await _test_fetch_auth_providers_home_assistant(\n-        hass, aiohttp_client, ip, lambda _: {}\n-    )\n+    await _test_fetch_auth_providers_home_assistant(hass, aiohttp_client, ip)\n \n \n @pytest.mark.parametrize(\n@@ -134,7 +124,6 @@ async def test_fetch_auth_providers_home_assistant_person_loaded(\n         hass,\n         aiohttp_client,\n         ip,\n-        lambda user: {\"users\": {user.id: user.name}} if is_local else {},\n     )\n \n "
+        },
+        {
+            "filename": "tests/components/person/test_init.py",
+            "diff": "@@ -1,5 +1,4 @@\n \"\"\"The tests for the person component.\"\"\"\n-from collections.abc import Callable\n from http import HTTPStatus\n from typing import Any\n from unittest.mock import patch\n@@ -31,7 +30,6 @@\n from .conftest import DEVICE_TRACKER, DEVICE_TRACKER_2\n \n from tests.common import MockUser, mock_component, mock_restore_cache\n-from tests.test_util import mock_real_ip\n from tests.typing import ClientSessionGenerator, WebSocketGenerator\n \n \n@@ -852,42 +850,10 @@ async def test_entities_in_person(hass: HomeAssistant) -> None:\n     ]\n \n \n-@pytest.mark.parametrize(\n-    (\"ip\", \"status_code\", \"expected_fn\"),\n-    [\n-        (\n-            \"192.168.0.10\",\n-            HTTPStatus.OK,\n-            lambda user: {\n-                user[\"user_id\"]: {\"name\": user[\"name\"], \"picture\": user[\"picture\"]}\n-            },\n-        ),\n-        (\n-            \"::ffff:192.168.0.10\",\n-            HTTPStatus.OK,\n-            lambda user: {\n-                user[\"user_id\"]: {\"name\": user[\"name\"], \"picture\": user[\"picture\"]}\n-            },\n-        ),\n-        (\n-            \"1.2.3.4\",\n-            HTTPStatus.BAD_REQUEST,\n-            lambda _: {\"code\": \"not_local\", \"message\": \"Not local\"},\n-        ),\n-        (\n-            \"2001:db8::1\",\n-            HTTPStatus.BAD_REQUEST,\n-            lambda _: {\"code\": \"not_local\", \"message\": \"Not local\"},\n-        ),\n-    ],\n-)\n async def test_list_persons(\n     hass: HomeAssistant,\n     hass_client_no_auth: ClientSessionGenerator,\n     hass_admin_user: MockUser,\n-    ip: str,\n-    status_code: HTTPStatus,\n-    expected_fn: Callable[[dict[str, Any]], dict[str, Any]],\n ) -> None:\n     \"\"\"Test listing persons from a not local ip address.\"\"\"\n \n@@ -902,11 +868,10 @@ async def test_list_persons(\n     assert await async_setup_component(hass, DOMAIN, config)\n \n     await async_setup_component(hass, \"api\", {})\n-    mock_real_ip(hass.http.app)(ip)\n     client = await hass_client_no_auth()\n \n     resp = await client.get(\"/api/person/list\")\n \n-    assert resp.status == status_code\n+    assert resp.status == HTTPStatus.BAD_REQUEST\n     result = await resp.json()\n-    assert result == expected_fn(admin)\n+    assert result == {\"code\": \"not_local\", \"message\": \"Not local\"}"
+        }
+    ],
+    "commitTime": "2023-12-14 19:36:59"
+}

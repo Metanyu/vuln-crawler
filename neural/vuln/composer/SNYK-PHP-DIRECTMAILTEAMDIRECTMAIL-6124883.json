@@ -1,0 +1,56 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Christoph Lehmann"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-13 16:00:23",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-DIRECTMAILTEAMDIRECTMAIL-6124883",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50461"
+        ],
+        "CWE": [
+            "CWE-15"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 10:36:39",
+    "remediation": "Upgrade directmailteam/direct-mail to version 6.0.3, 7.0.3, 9.5.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "External Control of System or Configuration Setting",
+    "vulnDescription": {
+        "Overview": "directmailteam/direct-mail is an advanced Direct Mail/Newsletter mailer system with sophisticated options for personalization of emails including response statistics. Affected versions of this package are vulnerable to External Control of System or Configuration Setting. The \u201cConfiguration\u201d backend module of the extension allows an authenticated user to write arbitrary page TSConfig for folders configured as \u201cDirect Mail\u201d. Note: A valid backend user account having access to the Direct Mail \"Configuration\" backend module is needed in order to exploit this vulnerability. Users of the extension should manually check if a suspicious page TSConfig has been written to all folders configured as \u201cDirect Mail\u201d. Exploiting this vulnerability might lead to Configuration Injection (TYPO3 10.4 and above) and to Arbitrary Code Execution (TYPO3 9.5 and below). "
+    },
+    "source_code": [
+        {
+            "filename": "directmailteam/direct-mail/CVE-2023-50461.yaml",
+            "diff": "@@ -0,0 +1,14 @@\n+title: 'TYPO3-EXT-SA-2023-011: Configuration Injection in extension \"Direct Mail\" (direct_mail)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-011'\n+cve: CVE-2023-50461\n+branches:\n+    main:\n+        time: '2023-12-12 20:59:00'\n+        versions: ['>=8.0.0', '<9.5.2']\n+    7.x:\n+        time: '2023-12-12 20:52:00'\n+        versions: ['>=7.0.0', '<7.0.3']\n+    1.x:\n+        time: '2023-12-12 20:52:00'\n+        versions: ['<6.0.3']\n+reference: 'composer://directmailteam/direct-mail'"
+        },
+        {
+            "filename": "in2code/femanager/CVE-2023-50459.yaml",
+            "diff": "@@ -0,0 +1,8 @@\n+title: 'TYPO3-EXT-SA-2023-010: Broken Access Control in extension \"femanager\" (femanager)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-010'\n+cve: CVE-2023-50459\n+branches:\n+    main:\n+        time: '2023-12-13 11:55:00'\n+        versions: ['>=7.0.0', '<7.2.3']\n+reference: 'composer://in2code/femanager'"
+        },
+        {
+            "filename": "t3s/content-consent/CVE-2023-50462.yaml",
+            "diff": "@@ -0,0 +1,11 @@\n+title: 'TYPO3-EXT-SA-2023-009: Insecure Direct Object Reference in extension \"Content Consent\" (content_consent)'\n+link: 'https://typo3.org/security/advisory/typo3-ext-sa-2023-009'\n+cve: CVE-2023-50462\n+branches:\n+    main:\n+        time: '2023-11-20 14:58:00'\n+        versions: ['>=2.0.0', '<2.0.2']\n+    1.x:\n+        time: '2023-11-26 07:03:00'\n+        versions: ['<1.0.3']\n+reference: 'composer://t3s/content-consent'"
+        }
+    ],
+    "commitTime": "2023-12-13 15:03:28"
+}

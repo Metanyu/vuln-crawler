@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "venkkatesh-sekar"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-08 15:23:22",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14495",
+        "probability": "0.00048"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-CANDID-6115071",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6245"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2023-12-11 17:04:57",
+    "remediation": "Upgrade candid to version 0.9.10 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption while parsing a specially crafted payload with empty data type. An attacker can crash the service by causing the decoding to run indefinitely until the canister traps due to reaching maximum instruction limit per execution round. "
+    },
+    "source_code": [
+        {
+            "filename": "Cargo.lock",
+            "diff": "@@ -257,7 +257,7 @@ checksum = \"14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610\"\n \n [[package]]\n name = \"candid\"\n-version = \"0.9.9\"\n+version = \"0.9.10\"\n dependencies = [\n  \"anyhow\",\n  \"arbitrary\","
+        },
+        {
+            "filename": "rust/candid/Cargo.toml",
+            "diff": "@@ -1,6 +1,6 @@\n [package]\n name = \"candid\"\n-version = \"0.9.9\"\n+version = \"0.9.10\"\n edition = \"2021\"\n authors = [\"DFINITY Team\"]\n description = \"Candid is an interface description language (IDL) for interacting with canisters running on the Internet Computer.\""
+        },
+        {
+            "filename": "rust/candid/src/de.rs",
+            "diff": "@@ -423,7 +423,11 @@ impl<'de> Deserializer<'de> {\n     where\n         V: Visitor<'de>,\n     {\n-        Err(Error::subtype(\"Cannot decode empty type\"))\n+        Err(if *self.wire_type == TypeInner::Empty {\n+            Error::msg(\"Cannot decode empty type\")\n+        } else {\n+            Error::subtype(\"Cannot decode empty type\")\n+        })\n     }\n     fn deserialize_future<'a, V>(&'a mut self, visitor: V) -> Result<V::Value>\n     where"
+        },
+        {
+            "filename": "rust/candid/src/types/value.rs",
+            "diff": "@@ -451,8 +451,7 @@ impl<'de> Visitor<'de> for IDLValueVisitor {\n             5u8 => {\n                 use std::io::Read;\n                 let len = leb128::read::unsigned(&mut bytes).map_err(E::custom)? as usize;\n-                let mut buf = Vec::new();\n-                buf.resize(len, 0);\n+                let mut buf = vec![0; len];\n                 bytes.read_exact(&mut buf).map_err(E::custom)?;\n                 let meth = String::from_utf8(buf).map_err(E::custom)?;\n                 let id = crate::Principal::try_from(bytes).map_err(E::custom)?;"
+        }
+    ],
+    "commitTime": "2023-10-17 18:15:40"
+}

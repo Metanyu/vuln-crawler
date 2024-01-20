@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "fdu-sec"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-07 20:45:24",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-STRUKTURAGLIBDE265-6112470",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49467"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 13:05:00",
+    "remediation": "Upgrade strukturag/libde265 to version 1.0.14 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the derive_combined_bipredictive_merging_candidates function in motion.cc . An attacker can execute arbitrary code or cause a denial of service by supplying crafted input. "
+    },
+    "source_code": [
+        {
+            "filename": "CMakeLists.txt",
+            "diff": "@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 3.3.2)\n \n project (libde265\n     LANGUAGES C CXX\n-    VERSION 1.0.13\n+    VERSION 1.0.14\n )\n \n set(CMAKE_CXX_STANDARD 11)\n@@ -11,7 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)\n set(CMAKE_POSITION_INDEPENDENT_CODE ON)\n \n # The version number.\n-set (NUMERIC_VERSION 0x01001300)\n+set (NUMERIC_VERSION 0x01001400)\n set (PACKAGE_VERSION ${PROJECT_VERSION})\n \n include (${CMAKE_ROOT}/Modules/CheckCCompilerFlag.cmake)"
+        },
+        {
+            "filename": "configure.ac",
+            "diff": "@@ -2,11 +2,11 @@\n # Process this file with autoconf to produce a configure script.\n \n AC_PREREQ([2.68])\n-AC_INIT([libde265], [1.0.13], [dirk.farin@gmail.com])\n+AC_INIT([libde265], [1.0.14], [dirk.farin@gmail.com])\n AC_CONFIG_SRCDIR([libde265/de265.cc])\n AC_CONFIG_HEADERS([config.h])\n \n-NUMERIC_VERSION=0x01001300 # Numeric representation of the version (A.B.C[.D] = 0xAABBCCDD)\n+NUMERIC_VERSION=0x01001400 # Numeric representation of the version (A.B.C[.D] = 0xAABBCCDD)\n AC_SUBST(NUMERIC_VERSION)\n \n # From https://www.gnu.org/software/libtool/manual/html_node/Updating-version-info.html:\n@@ -16,7 +16,7 @@ AC_SUBST(NUMERIC_VERSION)\n # If any interfaces have been removed or changed since the last public release, then set age to 0.\n \n LIBDE265_CURRENT=1\n-LIBDE265_REVISION=6\n+LIBDE265_REVISION=7\n LIBDE265_AGE=1\n \n # ---------------------------------------------------------------------------"
+        },
+        {
+            "filename": "extra/libde265/de265-version.h",
+            "diff": "@@ -22,8 +22,8 @@\n #define LIBDE265_VERSION_H\n \n /* Numeric representation of the version */\n-#define LIBDE265_NUMERIC_VERSION 0x01001300\n+#define LIBDE265_NUMERIC_VERSION 0x01001400\n \n-#define LIBDE265_VERSION \"1.0.13\"\n+#define LIBDE265_VERSION \"1.0.14\"\n \n #endif"
+        }
+    ],
+    "commitTime": "2023-11-21 09:16:36"
+}

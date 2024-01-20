@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9,
+    "disclosureTime": "2023-12-15 21:47:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06936",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SILICONLABSGECKOSDK-6129532",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4020"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-17 14:48:13",
+    "remediation": "There is no fixed version for SiliconLabs/gecko_sdk . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation due to an unvalidated input in the library function responsible for communication between secure and non-secure memory regions. An attacker can compromise the integrity and confidentiality of data by reading or writing to the secure region of memory from the non-secure region. "
+    },
+    "source_code": []
+}

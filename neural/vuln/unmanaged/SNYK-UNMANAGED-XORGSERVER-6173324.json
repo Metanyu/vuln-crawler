@@ -1,0 +1,75 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "xorg-server"
+        }
+    ],
+    "credit": [
+        "Jan-Niklas Sohn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.4,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T11:03:13.823572Z",
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T13:48:41.799020Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "description": "## Overview Affected versions of this package are vulnerable to Improper Restriction of Operations within the Bounds of a Memory Buffer due to improper allocation of space for device buttons in `DeviceFocusEvent` and `ProcXIQueryPointer`. An attacker can achieve arbitrary code execution or cause a denial of service by sending crafted input that maps buttons to a value higher than the allocated space, leading to a heap overflow. ## Remediation Upgrade `xorg-server` to version 21.1.11, 23.2.4 or higher. ## References - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/4e78bc3a6e593f70aa5306b314edbec03d2f9081) - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/b5cb27032d3e486ba84a491e1420e85171c4c0a3) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2257691) - [RedHat CVE Database](https://access.redhat.com/security/cve/CVE-2023-6816) ",
+    "disclosureTime": "2024-01-18T05:50:31.025000Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-XORGSERVER-6173324",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6816"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "xorg-server",
+    "publicationTime": "2024-01-18T13:29:35.121981Z",
+    "remediation": "Upgrade xorg-server to version 21.1.11, 23.2.4 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,21.1.11)",
+            "[22.1.0,23.2.4)"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Restriction of Operations within the Bounds of a Memory Buffer",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Restriction of Operations within the Bounds of a Memory Buffer due to improper allocation of space for device buttons in DeviceFocusEvent and ProcXIQueryPointer . An attacker can achieve arbitrary code execution or cause a denial of service by sending crafted input that maps buttons to a value higher than the allocated space, leading to a heap overflow. ",
+        "References": [
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/4e78bc3a6e593f70aa5306b314edbec03d2f9081",
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/b5cb27032d3e486ba84a491e1420e85171c4c0a3",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2257691",
+            "https://access.redhat.com/security/cve/CVE-2023-6816"
+        ]
+    },
+    "vulnerableVersions": "[,21.1.11) , [22.1.0,23.2.4)"
+}

@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Nandini Sharma"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-12-26 06:30:33",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.11986",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGOPENCRX-6145186",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-27150"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-05 14:56:49",
+    "remediation": "There is no fixed version for org.opencrx:opencrx-core . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "vulnDescription": {
+        "Overview": "org.opencrx:opencrx-core is a Part of openCRX CRM platform. Affected versions of this package are vulnerable to Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') via the Name field after creation of a Tracker in Manage Activity. An attacker can inject and execute arbitrary script code in the context of the user's browser session by submitting a crafted input. "
+    },
+    "source_code": []
+}

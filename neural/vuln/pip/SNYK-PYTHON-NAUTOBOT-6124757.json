@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Kircheneer"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-12 23:43:53",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.08201",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-NAUTOBOT-6124757",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50263"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-13 16:09:11",
+    "remediation": "Upgrade nautobot to version 1.6.7, 2.0.6 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Exposure of Sensitive Information to an Unauthorized Actor",
+    "vulnDescription": {
+        "Overview": "nautobot is a Source of truth and network automation platform. Affected versions of this package are vulnerable to Exposure of Sensitive Information to an Unauthorized Actor via the URLs /files/get/?name=... and /files/download/?name=... , which are intended to provide admin access to uploaded files associated with Job run requests. An attacker can access sensitive files without authentication by knowing the file name/path value. "
+    },
+    "source_code": [
+        {
+            "filename": "changes/4959.security",
+            "diff": "@@ -0,0 +1 @@\n+Enforce authentication and object permissions on DB file storage views (https://github.com/nautobot/nautobot/security/advisories/GHSA-75mc-3pjc-727q)."
+        },
+        {
+            "filename": "nautobot/core/tests/test_views.py",
+            "diff": "@@ -3,17 +3,21 @@\n import urllib.parse\n \n from django.contrib.contenttypes.models import ContentType\n+from django.core.files.uploadedfile import SimpleUploadedFile\n from django.test import RequestFactory, override_settings\n from django.test.utils import override_script_prefix\n from django.urls import get_script_prefix, reverse\n from prometheus_client.parser import text_string_to_metric_families\n \n from nautobot.core.testing import TestCase\n+from nautobot.core.utils.permissions import get_permission_for_model\n from nautobot.core.views.mixins import GetReturnURLMixin\n from nautobot.dcim.models.locations import Location\n from nautobot.extras.choices import CustomFieldTypeChoices\n+from nautobot.extras.models import FileProxy\n from nautobot.extras.models.customfields import CustomField, CustomFieldChoice\n from nautobot.extras.registry import registry\n+from nautobot.users.models import ObjectPermission\n \n \n class GetReturnURLMixinTestCase(TestCase):\n@@ -476,3 +480,59 @@ def test_500_custom_support_message(self, mock_get):\n         self.assertNotContains(response, \"Network to Code\", status_code=500)\n         response_content = response.content.decode(response.charset)\n         self.assertInHTML(\"Hello world!\", response_content)\n+\n+\n+class DBFileStorageViewTestCase(TestCase):\n+    \"\"\"Test authentication/permission enforcement for django_db_file_storage views.\"\"\"\n+\n+    def setUp(self):\n+        super().setUp()\n+        self.test_file_1 = SimpleUploadedFile(name=\"test_file_1.txt\", content=b\"I am content.\\n\")\n+        self.file_proxy_1 = FileProxy.objects.create(name=self.test_file_1.name, file=self.test_file_1)\n+        self.test_file_2 = SimpleUploadedFile(name=\"test_file_2.txt\", content=b\"I am content.\\n\")\n+        self.file_proxy_2 = FileProxy.objects.create(name=self.test_file_2.name, file=self.test_file_2)\n+        self.urls = [\n+            f\"{reverse('db_file_storage.download_file')}?name={self.file_proxy_1.file.name}\",\n+            f\"{reverse('db_file_storage.get_file')}?name={self.file_proxy_1.file.name}\",\n+        ]\n+\n+    def test_get_file_anonymous(self):\n+        self.client.logout()\n+        for url in self.urls:\n+            with self.subTest(url):\n+                response = self.client.get(url)\n+                self.assertHttpStatus(response, 403)\n+\n+    def test_get_file_without_permission(self):\n+        for url in self.urls:\n+            with self.subTest(url):\n+                response = self.client.get(url)\n+                self.assertHttpStatus(response, 403)\n+\n+    def test_get_object_with_permission(self):\n+        self.add_permissions(get_permission_for_model(FileProxy, \"view\"))\n+        for url in self.urls:\n+            with self.subTest(url):\n+                response = self.client.get(url)\n+                self.assertHttpStatus(response, 200)\n+\n+    def test_get_object_with_constrained_permission(self):\n+        obj_perm = ObjectPermission(\n+            name=\"Test permission\",\n+            constraints={\"pk\": self.file_proxy_1.pk},\n+            actions=[\"view\"],\n+        )\n+        obj_perm.save()\n+        obj_perm.users.add(self.user)\n+        obj_perm.object_types.add(ContentType.objects.get_for_model(FileProxy))\n+        for url in self.urls:\n+            with self.subTest(url):\n+                response = self.client.get(url)\n+                self.assertHttpStatus(response, 200)\n+        for url in [\n+            f\"{reverse('db_file_storage.download_file')}?name={self.file_proxy_2.file.name}\",\n+            f\"{reverse('db_file_storage.get_file')}?name={self.file_proxy_2.file.name}\",\n+        ]:\n+            with self.subTest(url):\n+                response = self.client.get(url)\n+                self.assertHttpStatus(response, 404)"
+        },
+        {
+            "filename": "nautobot/core/urls.py",
+            "diff": "@@ -1,9 +1,16 @@\n from django.conf import settings\n-from django.conf.urls import include\n+from django.conf.urls import include, url\n from django.urls import path\n from django.views.static import serve\n \n-from nautobot.core.views import CustomGraphQLView, HomeView, StaticMediaFailureView, SearchView, nautobot_metrics_view\n+from nautobot.core.views import (\n+    CustomGraphQLView,\n+    HomeView,\n+    StaticMediaFailureView,\n+    SearchView,\n+    nautobot_metrics_view,\n+    get_file_with_authorization,\n+)\n from nautobot.extras.plugins.urls import (\n     plugin_admin_patterns,\n     plugin_patterns,\n@@ -45,7 +52,18 @@\n     # django-health-check\n     path(r\"health/\", include(\"health_check.urls\")),\n     # FileProxy attachments download/get URLs used in admin views only\n-    path(\"files/\", include(\"db_file_storage.urls\")),\n+    url(\n+        \"files/download/\",\n+        get_file_with_authorization,\n+        {\"add_attachment_headers\": True},\n+        name=\"db_file_storage.download_file\",\n+    ),\n+    url(\n+        \"files/get/\",\n+        get_file_with_authorization,\n+        {\"add_attachment_headers\": False},\n+        name=\"db_file_storage.get_file\",\n+    ),\n ]\n \n "
+        },
+        {
+            "filename": "nautobot/core/views/__init__.py",
+            "diff": "@@ -3,12 +3,14 @@\n import sys\n import time\n \n+from db_file_storage.views import get_file\n from django.apps import apps\n import prometheus_client\n from django.conf import settings\n+from django.contrib.auth.decorators import permission_required\n from django.contrib.auth.mixins import AccessMixin\n from django.http import HttpResponseServerError, JsonResponse, HttpResponseForbidden, HttpResponse\n-from django.shortcuts import redirect, render\n+from django.shortcuts import get_object_or_404, redirect, render\n from django.template import loader, RequestContext, Template\n from django.template.exceptions import TemplateDoesNotExist\n from django.urls import resolve, reverse\n@@ -27,7 +29,8 @@\n from nautobot.core.releases import get_latest_release\n from nautobot.core.utils.config import get_settings_or_config\n from nautobot.core.utils.lookup import get_route_for_model\n-from nautobot.extras.models import GraphQLQuery\n+from nautobot.core.utils.permissions import get_permission_for_model\n+from nautobot.extras.models import GraphQLQuery, FileProxy\n from nautobot.extras.registry import registry\n from nautobot.extras.forms import GraphQLQueryForm\n \n@@ -294,3 +297,13 @@ def nautobot_metrics_view(request):\n         pass\n     metrics_page = prometheus_client.generate_latest(prometheus_registry)\n     return HttpResponse(metrics_page, content_type=prometheus_client.CONTENT_TYPE_LATEST)\n+\n+\n+@permission_required(get_permission_for_model(FileProxy, \"view\"), raise_exception=True)\n+def get_file_with_authorization(request, *args, **kwargs):\n+    \"\"\"Patch db_file_storage view with authentication.\"\"\"\n+    # Make sure user has permissions\n+    queryset = FileProxy.objects.restrict(request.user, \"view\")\n+    get_object_or_404(queryset, file=request.GET.get(\"name\"))\n+\n+    return get_file(request, *args, **kwargs)"
+        }
+    ],
+    "commitTime": "2023-12-12 20:03:54"
+}

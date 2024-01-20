@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "PHYSICAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 6.4,
+    "disclosureTime": "2023-12-15 00:47:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SILICONLABSGECKOSDK-6129534",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4489"
+        ],
+        "CWE": [
+            "CWE-908"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-17 14:57:52",
+    "remediation": "There is no fixed version for SiliconLabs/gecko_sdk . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Use of Uninitialized Resource",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use of Uninitialized Resource due to the use of an uninitialized PRNG during the generation of the first S0 encryption key. An attacker can predict the network key and gain unauthorized S0 network access by exploiting the predictable nature of the key generation process. "
+    },
+    "source_code": []
+}

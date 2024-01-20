@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Florian Picca"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "HIGH",
+                "availability": "LOW"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-07 06:44:59",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.42864",
+        "probability": "0.00107"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-STRONGSWAN-6102496",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41913"
+        ],
+        "CWE": [
+            "CWE-121"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 09:10:17",
+    "remediation": "Upgrade strongswan to version 5.9.12 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Stack-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Stack-based Buffer Overflow that could allow code execution via a malicious IKE_SA_INIT message that includes a DH public value exceeding the internal buffer size in charon-tkm 's DH proxy. NOTE: This is only exploitable if charon-tkm is in use as an IKE daemon. "
+    },
+    "source_code": [
+        {
+            "filename": "src/charon-tkm/src/tkm/tkm_diffie_hellman.c",
+            "diff": "@@ -70,11 +70,16 @@ METHOD(key_exchange_t, get_shared_secret, bool,\n \treturn TRUE;\n }\n \n-\n METHOD(key_exchange_t, set_public_key, bool,\n \tprivate_tkm_diffie_hellman_t *this, chunk_t value)\n {\n \tdh_pubvalue_type othervalue;\n+\n+\tif (!key_exchange_verify_pubkey(this->group, value) ||\n+\t\tvalue.len > sizeof(othervalue.data))\n+\t{\n+\t\treturn FALSE;\n+\t}\n \tothervalue.size = value.len;\n \tmemcpy(&othervalue.data, value.ptr, value.len);\n "
+        }
+    ],
+    "commitTime": "2023-11-17 16:24:34"
+}

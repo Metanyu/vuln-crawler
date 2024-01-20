@@ -1,0 +1,90 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Steven Seeley"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-07 09:45:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.87319",
+        "probability": "0.01933"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGAPACHESTRUTS-6102825",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50164"
+        ],
+        "CWE": [
+            "CWE-94"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-07 12:27:32",
+    "remediation": "Upgrade org.apache.struts:struts2-core to version 2.5.33, 6.3.0.2 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Remote Code Execution (RCE)",
+    "vulnDescription": {
+        "Overview": "org.apache.struts:struts2-core is a popular open-source framework for developing web applications in the Java programming language. Affected versions of this package are vulnerable to Remote Code Execution (RCE) via manipulation of file upload parameters that enable path traversal. Under certain conditions, uploading of a malicious file is possible, which may then be executed on the server. "
+    },
+    "source_code": [
+        {
+            "filename": "core/src/main/java/org/apache/struts2/dispatcher/HttpParameters.java",
+            "diff": "@@ -25,20 +25,22 @@\n import java.util.Comparator;\n import java.util.HashMap;\n import java.util.HashSet;\n+import java.util.Iterator;\n import java.util.Map;\n import java.util.Set;\n import java.util.TreeMap;\n import java.util.TreeSet;\n \n @SuppressWarnings(\"unchecked\")\n-public class HttpParameters implements Map<String, Parameter>, Cloneable {\n+public class HttpParameters implements Map<String, Parameter> {\n \n     private Map<String, Parameter> parameters;\n \n     private HttpParameters(Map<String, Parameter> parameters) {\n         this.parameters = parameters;\n     }\n \n+    @SuppressWarnings(\"rawtypes\")\n     public static Builder create(Map requestParameterMap) {\n         return new Builder(requestParameterMap);\n     }\n@@ -49,7 +51,15 @@ public static Builder create() {\n \n     public HttpParameters remove(Set<String> paramsToRemove) {\n         for (String paramName : paramsToRemove) {\n-            parameters.remove(paramName);\n+            String paramNameLowerCase = paramName.toLowerCase();\n+            Iterator<Entry<String, Parameter>> iterator = parameters.entrySet().iterator();\n+\n+            while (iterator.hasNext()) {\n+                Map.Entry<String, Parameter> entry = iterator.next();\n+                if (entry.getKey().equalsIgnoreCase(paramNameLowerCase)) {\n+                    iterator.remove();\n+                }\n+            }\n         }\n         return this;\n     }\n@@ -61,7 +71,17 @@ public HttpParameters remove(final String paramToRemove) {\n     }\n \n     public boolean contains(String name) {\n-        return parameters.containsKey(name);\n+        boolean found = false;\n+        String nameLowerCase = name.toLowerCase();\n+\n+        for (String key : parameters.keySet()) {\n+            if (key.equalsIgnoreCase(nameLowerCase)) {\n+                found = true;\n+                break;\n+            }\n+        }\n+\n+        return found;\n     }\n \n     /**\n@@ -78,7 +98,14 @@ public Map<String, String[]> toMap() {\n         return result;\n     }\n \n+    /**\n+     * Appends all the parameters by overriding any existing params in a case-insensitive manner\n+     *\n+     * @param newParams A new params to append\n+     * @return a current instance of {@link HttpParameters}\n+     */\n     public HttpParameters appendAll(Map<String, Parameter> newParams) {\n+        remove(newParams.keySet());\n         parameters.putAll(newParams);\n         return this;\n     }\n@@ -109,11 +136,15 @@ public boolean containsValue(Object value) {\n \n     @Override\n     public Parameter get(Object key) {\n-        if (parameters.containsKey(key)) {\n-            return parameters.get(key);\n-        } else {\n-            return new Parameter.Empty(String.valueOf(key));\n+        if (key != null && contains(String.valueOf(key))) {\n+            String keyString = String.valueOf(key).toLowerCase();\n+            for (Map.Entry<String, Parameter> entry : parameters.entrySet()) {\n+                if (entry.getKey() != null && entry.getKey().equalsIgnoreCase(keyString)) {\n+                    return entry.getValue();\n+                }\n+            }\n         }\n+        return new Parameter.Empty(String.valueOf(key));\n     }\n \n     @Override\n@@ -206,7 +237,7 @@ public HttpParameters build() {\n         * Alternate Builder method which avoids wrapping any parameters that are already\n         * a {@link Parameter} element within another {@link Parameter} wrapper.\n         *\n-        * @return \n+        * @return\n          */\n         public HttpParameters buildNoNestedWrapping() {\n             Map<String, Parameter> parameters = (parent == null)"
+        },
+        {
+            "filename": "core/src/test/java/org/apache/struts2/dispatcher/HttpParametersTest.java",
+            "diff": "@@ -0,0 +1,65 @@\n+/*\n+ * Licensed to the Apache Software Foundation (ASF) under one\n+ * or more contributor license agreements.  See the NOTICE file\n+ * distributed with this work for additional information\n+ * regarding copyright ownership.  The ASF licenses this file\n+ * to you under the Apache License, Version 2.0 (the\n+ * \"License\"); you may not use this file except in compliance\n+ * with the License.  You may obtain a copy of the License at\n+ *\n+ *  http://www.apache.org/licenses/LICENSE-2.0\n+ *\n+ * Unless required by applicable law or agreed to in writing,\n+ * software distributed under the License is distributed on an\n+ * \"AS IS\" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY\n+ * KIND, either express or implied.  See the License for the\n+ * specific language governing permissions and limitations\n+ * under the License.\n+ */\n+package org.apache.struts2.dispatcher;\n+\n+import org.junit.Test;\n+\n+import java.util.HashMap;\n+\n+import static org.junit.Assert.assertEquals;\n+import static org.junit.Assert.assertTrue;\n+\n+public class HttpParametersTest {\n+\n+    @Test\n+    public void shouldGetBeCaseInsensitive() {\n+        // given\n+        HttpParameters params = HttpParameters.create(new HashMap<String, Object>() {{\n+            put(\"param1\", \"value1\");\n+        }}).build();\n+\n+        // then\n+        assertEquals(\"value1\", params.get(\"Param1\").getValue());\n+        assertEquals(\"value1\", params.get(\"paraM1\").getValue());\n+        assertEquals(\"value1\", params.get(\"pAraM1\").getValue());\n+    }\n+\n+    @Test\n+    public void shouldAppendSameParamsIgnoringCase() {\n+        // given\n+        HttpParameters params = HttpParameters.create(new HashMap<String, Object>() {{\n+            put(\"param1\", \"value1\");\n+        }}).build();\n+\n+        // when\n+        assertEquals(\"value1\", params.get(\"param1\").getValue());\n+\n+        params = params.appendAll(HttpParameters.create(new HashMap<String, String>() {{\n+            put(\"Param1\", \"Value1\");\n+        }}).build());\n+\n+        // then\n+        assertTrue(params.contains(\"param1\"));\n+        assertTrue(params.contains(\"Param1\"));\n+\n+        assertEquals(\"Value1\", params.get(\"param1\").getValue());\n+        assertEquals(\"Value1\", params.get(\"Param1\").getValue());\n+    }\n+\n+}\n\\ No newline at end of file"
+        }
+    ],
+    "commitTime": "2023-12-04 05:45:16"
+}

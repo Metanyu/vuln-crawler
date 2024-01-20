@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-10 18:30:18",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.21392",
+        "probability": "0.00057"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMJFINAL-6124882",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50449"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 12:21:34",
+    "remediation": "There is no fixed version for com.jfinal:jfinal . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+    "vulnDescription": {
+        "Overview": "com.jfinal:jfinal is a JFinal is a simple, light, rapid,independent, extensible Java WEB + ORM framework. The feature of JFinal looks like ruby on rails especially ActiveRecord. Affected versions of this package are vulnerable to Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') via the /common/down/file fileKey parameter. An attacker can read files on the server by submitting crafted input containing directory traversal sequences such as ../ . "
+    },
+    "source_code": []
+}

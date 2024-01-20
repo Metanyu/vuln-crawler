@@ -1,0 +1,51 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Ada Logics"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-06 19:19:35",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMKNATIVEEXTENSIONSEVENTINGGITHUBPKGADAPTER-6102828",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-07 12:40:50",
+    "remediation": "Upgrade github.com/knative-extensions/eventing-github/pkg/adapter to version 0.39.1 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) due to improper enforcement of the timeout on individual read operations. An attacker who can coordinate a DDoS operation can cause the server to hang for extended periods, by sending many requests that exploit the lack of ReadHeaderTimeout setting. This could result in a slowloris attack scenario, where the server becomes unavailable to other users. "
+    },
+    "source_code": [
+        {
+            "filename": "pkg/adapter/adapter.go",
+            "diff": "@@ -20,6 +20,7 @@ import (\n \t\"context\"\n \t\"fmt\"\n \t\"net/http\"\n+\t\"time\"\n \n \tcloudevents \"github.com/cloudevents/sdk-go/v2\"\n \t\"go.uber.org/zap\"\n@@ -79,8 +80,10 @@ func (a *gitHubAdapter) Start(ctx context.Context) error {\n \tdone := make(chan bool, 1)\n \n \tserver := &http.Server{\n-\t\tAddr:    \":\" + a.port,\n-\t\tHandler: a.newRouter(),\n+\t\tReadTimeout:       10 * time.Second,\n+\t\tReadHeaderTimeout: 2 * time.Second,\n+\t\tAddr:              \":\" + a.port,\n+\t\tHandler:           a.newRouter(),\n \t}\n \n \tgo common.GracefulShutdown(server, a.logger, ctx.Done(), done)"
+        },
+        {
+            "filename": "pkg/mtadapter/adapter.go",
+            "diff": "@@ -20,6 +20,7 @@ import (\n \t\"context\"\n \t\"fmt\"\n \t\"net/http\"\n+\t\"time\"\n \n \tcloudevents \"github.com/cloudevents/sdk-go/v2\"\n \t\"go.uber.org/zap\"\n@@ -87,8 +88,10 @@ func NewAdapter(ctx context.Context, processed adapter.EnvConfigAccessor, ceClie\n func (a *gitHubAdapter) Start(ctx context.Context) error {\n \t// Start our multi-tenant server receiving GitHub events\n \tserver := &http.Server{\n-\t\tAddr:    fmt.Sprintf(\":%d\", a.port),\n-\t\tHandler: a.router,\n+\t\tReadTimeout:       10 * time.Second,\n+\t\tReadHeaderTimeout: 2 * time.Second,\n+\t\tAddr:              fmt.Sprintf(\":%d\", a.port),\n+\t\tHandler:           a.router,\n \t}\n \n \tdone := make(chan bool, 1)"
+        }
+    ],
+    "commitTime": "2023-11-24 06:50:35"
+}

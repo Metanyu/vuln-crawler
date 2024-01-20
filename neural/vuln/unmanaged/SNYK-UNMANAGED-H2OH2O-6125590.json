@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "@marten-seemann"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-12 20:52:20",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14131",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-H2OH2O-6125590",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50247"
+        ],
+        "CWE": [
+            "CWE-770"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 13:54:00",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Allocation of Resources Without Limits or Throttling",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Allocation of Resources Without Limits or Throttling when is serving HTTP/3 protocol. A remote attacker can exploit this vulnerability to progressively increase the memory retained by the QUIC stack. Note: HTTP/1 and HTTP/2 are not affected by this vulnerability as they do not use QUIC. ",
+        "Workaround": "This vulnerability can be mitigated by disabling HTTP/3 support. For guidance on this, see HTTP/3 configuration directives "
+    },
+    "source_code": [
+        {
+            "filename": "deps/quicly/lib/quicly.c",
+            "diff": "@@ -108,12 +108,6 @@ struct st_quicly_cipher_context_t {\n     ptls_cipher_context_t *header_protection;\n };\n \n-struct st_quicly_pending_path_challenge_t {\n-    struct st_quicly_pending_path_challenge_t *next;\n-    uint8_t is_response;\n-    uint8_t data[QUICLY_PATH_CHALLENGE_DATA_LEN];\n-};\n-\n struct st_quicly_pn_space_t {\n     /**\n      * acks to be sent to remote peer\n@@ -278,8 +272,9 @@ struct st_quicly_conn_t {\n          *\n          */\n         struct {\n-            struct st_quicly_pending_path_challenge_t *head, **tail_ref;\n-        } path_challenge;\n+            uint8_t send_;\n+            uint8_t data[QUICLY_PATH_CHALLENGE_DATA_LEN];\n+        } path_response;\n         /**\n          *\n          */\n@@ -935,25 +930,6 @@ void quicly_stream_sync_recvbuf(quicly_stream_t *stream, size_t shift_amount)\n     }\n }\n \n-static int schedule_path_challenge_frame(quicly_conn_t *conn, int is_response, const uint8_t *data)\n-{\n-    struct st_quicly_pending_path_challenge_t *pending;\n-\n-    if ((pending = malloc(sizeof(struct st_quicly_pending_path_challenge_t))) == NULL)\n-        return PTLS_ERROR_NO_MEMORY;\n-\n-    pending->next = NULL;\n-    pending->is_response = is_response;\n-    memcpy(pending->data, data, QUICLY_PATH_CHALLENGE_DATA_LEN);\n-\n-    *conn->egress.path_challenge.tail_ref = pending;\n-    conn->egress.path_challenge.tail_ref = &pending->next;\n-\n-    conn->egress.pending_flows |= QUICLY_PENDING_FLOW_OTHERS_BIT;\n-\n-    return 0;\n-}\n-\n /**\n  * calculate how many CIDs we provide to the remote peer\n  */\n@@ -1698,11 +1674,6 @@ void quicly_free(quicly_conn_t *conn)\n     quicly_maxsender_dispose(&conn->ingress.max_data.sender);\n     quicly_maxsender_dispose(&conn->ingress.max_streams.uni);\n     quicly_maxsender_dispose(&conn->ingress.max_streams.bidi);\n-    while (conn->egress.path_challenge.head != NULL) {\n-        struct st_quicly_pending_path_challenge_t *pending = conn->egress.path_challenge.head;\n-        conn->egress.path_challenge.head = pending->next;\n-        free(pending);\n-    }\n     quicly_loss_dispose(&conn->egress.loss);\n \n     kh_destroy(quicly_stream_t, conn->streams);\n@@ -2247,7 +2218,6 @@ static quicly_conn_t *create_connection(quicly_context_t *ctx, uint32_t protocol\n     conn->egress.max_udp_payload_size = conn->super.ctx->initial_egress_max_udp_payload_size;\n     init_max_streams(&conn->egress.max_streams.uni);\n     init_max_streams(&conn->egress.max_streams.bidi);\n-    conn->egress.path_challenge.tail_ref = &conn->egress.path_challenge.head;\n     conn->egress.ack_frequency.update_at = INT64_MAX;\n     conn->egress.send_ack_at = INT64_MAX;\n     conn->super.ctx->init_cc->cb(conn->super.ctx->init_cc, &conn->egress.cc, initcwnd, conn->stash.now);\n@@ -4486,6 +4456,25 @@ static int send_retire_connection_id(quicly_conn_t *conn, quicly_send_context_t\n     return 0;\n }\n \n+static int send_path_challenge(quicly_conn_t *conn, quicly_send_context_t *s, int is_response, const uint8_t *data)\n+{\n+    int ret;\n+\n+    if ((ret = do_allocate_frame(conn, s, QUICLY_PATH_CHALLENGE_FRAME_CAPACITY, ALLOCATE_FRAME_TYPE_ACK_ELICITING_NO_CC)) != 0)\n+        return ret;\n+\n+    s->dst = quicly_encode_path_challenge_frame(s->dst, is_response, data);\n+    s->target.full_size = 1; /* ensure that the path can transfer full-size packets */\n+\n+    if (!is_response) {\n+        ++conn->super.stats.num_frames_sent.path_challenge;\n+    } else {\n+        ++conn->super.stats.num_frames_sent.path_response;\n+    }\n+\n+    return 0;\n+}\n+\n static int update_traffic_key_cb(ptls_update_traffic_key_t *self, ptls_t *tls, int is_enc, size_t epoch, const void *secret)\n {\n     quicly_conn_t *conn = *ptls_get_data_ptr(tls);\n@@ -4591,23 +4580,10 @@ static int send_other_control_frames(quicly_conn_t *conn, quicly_send_context_t\n     int ret;\n \n     /* respond to all pending received PATH_CHALLENGE frames */\n-    if (conn->egress.path_challenge.head != NULL) {\n-        do {\n-            struct st_quicly_pending_path_challenge_t *c = conn->egress.path_challenge.head;\n-            if ((ret = do_allocate_frame(conn, s, QUICLY_PATH_CHALLENGE_FRAME_CAPACITY, ALLOCATE_FRAME_TYPE_NON_ACK_ELICITING)) !=\n-                0)\n-                return ret;\n-            s->dst = quicly_encode_path_challenge_frame(s->dst, c->is_response, c->data);\n-            if (c->is_response) {\n-                ++conn->super.stats.num_frames_sent.path_response;\n-            } else {\n-                ++conn->super.stats.num_frames_sent.path_challenge;\n-            }\n-            conn->egress.path_challenge.head = c->next;\n-            free(c);\n-        } while (conn->egress.path_challenge.head != NULL);\n-        conn->egress.path_challenge.tail_ref = &conn->egress.path_challenge.head;\n-        s->target.full_size = 1; /* datagrams carrying PATH_CHALLENGE / PATH_RESPONSE have to be full-sized */\n+    if (conn->egress.path_response.send_) {\n+        if ((ret = send_path_challenge(conn, s, 1, conn->egress.path_response.data)) != 0)\n+            return ret;\n+        conn->egress.path_response.send_ = 0;\n     }\n \n     /* MAX_STREAMS */\n@@ -5550,7 +5526,13 @@ static int handle_path_challenge_frame(quicly_conn_t *conn, struct st_quicly_han\n \n     if ((ret = quicly_decode_path_challenge_frame(&state->src, state->end, &frame)) != 0)\n         return ret;\n-    return schedule_path_challenge_frame(conn, 1, frame.data);\n+\n+    /* schedule the emission of PATH_RESPONSE frame */\n+    memcpy(conn->egress.path_response.data, frame.data, QUICLY_PATH_CHALLENGE_DATA_LEN);\n+    conn->egress.path_response.send_ = 1;\n+    conn->egress.pending_flows |= QUICLY_PENDING_FLOW_OTHERS_BIT;\n+\n+    return 0;\n }\n \n static int handle_path_response_frame(quicly_conn_t *conn, struct st_quicly_handle_payload_state_t *state)"
+        }
+    ],
+    "commitTime": "2023-12-12 13:03:08"
+}

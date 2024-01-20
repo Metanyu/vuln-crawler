@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-13 23:15:56",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-CUBEJSBACKENDAPIGATEWAY-6124870",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50709"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-14 10:19:14",
+    "remediation": "Upgrade @cubejs-backend/api-gateway to version 0.34.34 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "@cubejs-backend/api-gateway is a package that provides idempotent long polling API. Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') via a specially crafted request to a Cube API endpoint. An attacker can make the entire Cube API unavailable by submitting this request. "
+    },
+    "source_code": [
+        {
+            "filename": "packages/cubejs-api-gateway/src/gateway.ts",
+            "diff": "@@ -210,23 +210,13 @@ class ApiGateway {\n \n     app.use(\n       `${this.basePath}/graphql`,\n-      [\n-        ...userMiddlewares,\n-        async (req, res, next) => {\n-          try {\n-            await this.assertApiScope(\n-              'graphql',\n-              req?.context?.securityContext\n-            );\n-            if (next) next();\n-          } catch (e: unknown) {\n-            if (e instanceof CubejsHandlerError) {\n-              res.status(e.status).json({ error: e.message });\n-            }\n-          }\n-        },\n-      ],\n+      userMiddlewares,\n       userAsyncHandler(async (req, res) => {\n+        await this.assertApiScope(\n+          'graphql',\n+          req?.context?.securityContext\n+        );\n+\n         const compilerApi = await this.getCompilerApi(req.context);\n         let schema = compilerApi.getGraphQLSchema();\n         if (!schema) {\n@@ -339,29 +329,20 @@ class ApiGateway {\n     // Used by Rollup Designer\n     app.post(\n       `${this.basePath}/v1/pre-aggregations/can-use`,\n-      [\n-        ...userMiddlewares,\n-        async (req, res, next) => {\n-          try {\n-            await this.assertApiScope(\n-              'meta',\n-              req?.context?.securityContext\n-            );\n-            if (next) next();\n-          } catch (e: unknown) {\n-            if (e instanceof CubejsHandlerError) {\n-              res.status(e.status).json({ error: e.message });\n-            }\n-          }\n-        },\n-      ],\n+      userMiddlewares,\n       userAsyncHandler(async (req, res) => {\n+        await this.assertApiScope(\n+          'meta',\n+          req?.context?.securityContext\n+        );\n+\n         const { transformedQuery, references } = req.body;\n         const compilerApi = await this.getCompilerApi(req.context as RequestContext);\n         const canUsePreAggregationForTransformedQuery = compilerApi.canUsePreAggregationForTransformedQuery(\n           transformedQuery,\n           references,\n         );\n+\n         res.json({ canUsePreAggregationForTransformedQuery });\n       })\n     );"
+        },
+        {
+            "filename": "packages/cubejs-api-gateway/test/permissions.test.ts",
+            "diff": "@@ -75,9 +75,7 @@ describe('Gateway Api Scopes', () => {\n \n   test('/readyz and /livez accessible', async () => {\n     const { app, apiGateway } = createApiGateway({\n-      contextToApiScopes: async () => new Promise((resolve) => {\n-        resolve(['graphql', 'meta', 'data', 'jobs']);\n-      }),\n+      contextToApiScopes: async () => ['graphql', 'meta', 'data', 'jobs'],\n     });\n   \n     await request(app)\n@@ -95,9 +93,7 @@ describe('Gateway Api Scopes', () => {\n \n   test('GraphQL declined', async () => {\n     const { app, apiGateway } = createApiGateway({\n-      contextToApiScopes: async () => new Promise((resolve) => {\n-        resolve(['meta', 'data', 'jobs']);\n-      }),\n+      contextToApiScopes: async () => ['meta', 'data', 'jobs'],\n     });\n \n     const res = await request(app)\n@@ -113,9 +109,7 @@ describe('Gateway Api Scopes', () => {\n \n   test('Meta declined', async () => {\n     const { app, apiGateway } = createApiGateway({\n-      contextToApiScopes: async () => new Promise((resolve) => {\n-        resolve(['graphql', 'data', 'jobs']);\n-      }),\n+      contextToApiScopes: async () => ['graphql', 'data', 'jobs'],\n     });\n \n     const res1 = await request(app)\n@@ -137,11 +131,24 @@ describe('Gateway Api Scopes', () => {\n     apiGateway.release();\n   });\n \n+  test('catch error from contextToApiScopes (server should crash)', async () => {\n+    const { app, apiGateway } = createApiGateway({\n+      contextToApiScopes: async () => {\n+        throw new Error('Random error');\n+      },\n+    });\n+\n+    await request(app)\n+      .get('/cubejs-api/v1/meta')\n+      .set('Authorization', AUTH_TOKEN)\n+      .expect(500);\n+\n+    apiGateway.release();\n+  });\n+\n   test('Data declined', async () => {\n     const { app, apiGateway } = createApiGateway({\n-      contextToApiScopes: async () => new Promise((resolve) => {\n-        resolve(['graphql', 'meta', 'jobs']);\n-      }),\n+      contextToApiScopes: async () => ['graphql', 'meta', 'jobs'],\n     });\n \n     const res1 = await request(app)\n@@ -207,9 +214,7 @@ describe('Gateway Api Scopes', () => {\n \n   test('Jobs declined', async () => {\n     const { app, apiGateway } = createApiGateway({\n-      contextToApiScopes: async () => new Promise((resolve) => {\n-        resolve(['graphql', 'data', 'meta']);\n-      }),\n+      contextToApiScopes: async () => ['graphql', 'data', 'meta'],\n     });\n \n     const res1 = await request(app)"
+        }
+    ],
+    "commitTime": "2023-12-12 15:46:21"
+}

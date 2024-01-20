@@ -1,0 +1,59 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Vinci"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 3.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "low"
+        }
+    ],
+    "cvssScore": 3.9,
+    "disclosureTime": "2023-12-18 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-LIBSSH-6132397",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6004"
+        ],
+        "CWE": [
+            "CWE-77"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 13:44:11",
+    "remediation": "Upgrade libssh to version 0.9.8, 0.10.6 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Special Elements used in a Command ('Command Injection')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Special Elements used in a Command ('Command Injection') via the ProxyCommand / ProxyJump features. An attacker can inject malicious code through the hostname. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,130 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "manoonabbasi"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.7,
+    "disclosureTime": "2023-12-12 00:59:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12310",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JS-UPTIMEKUMA-6117630",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49804"
+        ],
+        "CWE": [
+            "CWE-384"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-12 15:58:19",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Session Fixation",
+    "vulnDescription": {
+        "Overview": "uptime-kuma is a Affected versions of this package are vulnerable to Session Fixation due to improper session management after a password change. An attacker can maintain access to an account without needing to re-authenticate by using an existing session that should have been invalidated. Notes: This is only exploitable if the attacker has access to an active session before the password change. Sessions are only deleted on the client side after a user loggs out, meaning a local attacker could reuse said token with deep system access over the browser "
+    },
+    "source_code": [
+        {
+            "filename": "config/vite.config.js",
+            "diff": "@@ -3,7 +3,6 @@ import vue from \"@vitejs/plugin-vue\";\n import { defineConfig } from \"vite\";\n import visualizer from \"rollup-plugin-visualizer\";\n import viteCompression from \"vite-plugin-compression\";\n-import commonjs from \"vite-plugin-commonjs\";\n \n const postCssScss = require(\"postcss-scss\");\n const postcssRTLCSS = require(\"postcss-rtlcss\");\n@@ -22,7 +21,6 @@ export default defineConfig({\n         \"CODESPACE_NAME\": JSON.stringify(process.env.CODESPACE_NAME),\n     },\n     plugins: [\n-        commonjs(),\n         vue(),\n         legacy({\n             targets: [ \"since 2015\" ],"
+        },
+        {
+            "filename": "extra/healthcheck.js",
+            "diff": "@@ -6,7 +6,7 @@\n  * \u26a0\ufe0f Deprecated: Changed to healthcheck.go, it will be deleted in the future.\n  * This script should be run after a period of time (180s), because the server may need some time to prepare.\n  */\n-const { FBSD } = require(\"../server/util-server\");\n+const FBSD = /^freebsd/.test(process.platform);\n \n process.env.NODE_TLS_REJECT_UNAUTHORIZED = \"0\";\n "
+        },
+        {
+            "filename": "extra/reset-password.js",
+            "diff": "@@ -5,6 +5,8 @@ const { R } = require(\"redbean-node\");\n const readline = require(\"readline\");\n const { initJWTSecret } = require(\"../server/util-server\");\n const User = require(\"../server/model/user\");\n+const { io } = require(\"socket.io-client\");\n+const { localWebSocketURL } = require(\"../server/config\");\n const args = require(\"args-parser\")(process.argv);\n const rl = readline.createInterface({\n     input: process.stdin,\n@@ -36,12 +38,16 @@ const main = async () => {\n                     // Reset all sessions by reset jwt secret\n                     await initJWTSecret();\n \n+                    // Disconnect all other socket clients of the user\n+                    await disconnectAllSocketClients(user.username, password);\n+\n                     break;\n                 } else {\n                     console.log(\"Passwords do not match, please try again.\");\n                 }\n             }\n             console.log(\"Password reset successfully.\");\n+\n         }\n     } catch (e) {\n         console.error(\"Error: \" + e.message);\n@@ -66,6 +72,45 @@ function question(question) {\n     });\n }\n \n+function disconnectAllSocketClients(username, password) {\n+    return new Promise((resolve) => {\n+        console.log(\"Connecting to \" + localWebSocketURL + \" to disconnect all other socket clients\");\n+\n+        // Disconnect all socket connections\n+        const socket = io(localWebSocketURL, {\n+            transports: [ \"websocket\" ],\n+            reconnection: false,\n+            timeout: 5000,\n+        });\n+        socket.on(\"connect\", () => {\n+            socket.emit(\"login\", {\n+                username,\n+                password,\n+            }, (res) => {\n+                if (res.ok) {\n+                    console.log(\"Logged in.\");\n+                    socket.emit(\"disconnectOtherSocketClients\");\n+                } else {\n+                    console.warn(\"Login failed.\");\n+                    console.warn(\"Please restart the server to disconnect all sessions.\");\n+                }\n+                socket.close();\n+            });\n+        });\n+\n+        socket.on(\"connect_error\", function () {\n+            // The localWebSocketURL is not guaranteed to be working for some complicated Uptime Kuma setup\n+            // Ask the user to restart the server manually\n+            console.warn(\"Failed to connect to \" + localWebSocketURL);\n+            console.warn(\"Please restart the server to disconnect all sessions manually.\");\n+            resolve();\n+        });\n+        socket.on(\"disconnect\", () => {\n+            resolve();\n+        });\n+    });\n+}\n+\n if (!process.env.TEST_BACKEND) {\n     main();\n }"
+        },
+        {
+            "filename": "package.json",
+            "diff": "@@ -192,7 +192,6 @@\n         \"typescript\": \"~4.4.4\",\n         \"v-pagination-3\": \"~0.1.7\",\n         \"vite\": \"~4.4.1\",\n-        \"vite-plugin-commonjs\": \"^0.8.0\",\n         \"vite-plugin-compression\": \"^0.5.1\",\n         \"vue\": \"~3.3.4\",\n         \"vue-chartjs\": \"~5.2.0\","
+        },
+        {
+            "filename": "server/config.js",
+            "diff": "@@ -1,29 +1,42 @@\n+const isFreeBSD = /^freebsd/.test(process.platform);\n+\n // Interop with browser\n const args = (typeof process !== \"undefined\") ? require(\"args-parser\")(process.argv) : {};\n-const demoMode = args[\"demo\"] || false;\n \n-const badgeConstants = {\n-    naColor: \"#999\",\n-    defaultUpColor: \"#66c20a\",\n-    defaultWarnColor: \"#eed202\",\n-    defaultDownColor: \"#c2290a\",\n-    defaultPendingColor: \"#f8a306\",\n-    defaultMaintenanceColor: \"#1747f5\",\n-    defaultPingColor: \"blue\",  // as defined by badge-maker / shields.io\n-    defaultStyle: \"flat\",\n-    defaultPingValueSuffix: \"ms\",\n-    defaultPingLabelSuffix: \"h\",\n-    defaultUptimeValueSuffix: \"%\",\n-    defaultUptimeLabelSuffix: \"h\",\n-    defaultCertExpValueSuffix: \" days\",\n-    defaultCertExpLabelSuffix: \"h\",\n-    // Values Come From Default Notification Times\n-    defaultCertExpireWarnDays: \"14\",\n-    defaultCertExpireDownDays: \"7\"\n-};\n+// If host is omitted, the server will accept connections on the unspecified IPv6 address (::) when IPv6 is available and the unspecified IPv4 address (0.0.0.0) otherwise.\n+// Dual-stack support for (::)\n+// Also read HOST if not FreeBSD, as HOST is a system environment variable in FreeBSD\n+let hostEnv = isFreeBSD ? null : process.env.HOST;\n+const hostname = args.host || process.env.UPTIME_KUMA_HOST || hostEnv;\n+\n+const port = [ args.port, process.env.UPTIME_KUMA_PORT, process.env.PORT, 3001 ]\n+    .map(portValue => parseInt(portValue))\n+    .find(portValue => !isNaN(portValue));\n+\n+const sslKey = args[\"ssl-key\"] || process.env.UPTIME_KUMA_SSL_KEY || process.env.SSL_KEY || undefined;\n+const sslCert = args[\"ssl-cert\"] || process.env.UPTIME_KUMA_SSL_CERT || process.env.SSL_CERT || undefined;\n+const sslKeyPassphrase = args[\"ssl-key-passphrase\"] || process.env.UPTIME_KUMA_SSL_KEY_PASSPHRASE || process.env.SSL_KEY_PASSPHRASE || undefined;\n+\n+const isSSL = sslKey && sslCert;\n+\n+function getLocalWebSocketURL() {\n+    const protocol = isSSL ? \"wss\" : \"ws\";\n+    const host = hostname || \"localhost\";\n+    return `${protocol}://${host}:${port}`;\n+}\n+\n+const localWebSocketURL = getLocalWebSocketURL();\n+\n+const demoMode = args[\"demo\"] || false;\n \n module.exports = {\n     args,\n+    hostname,\n+    port,\n+    sslKey,\n+    sslCert,\n+    sslKeyPassphrase,\n+    isSSL,\n+    localWebSocketURL,\n     demoMode,\n-    badgeConstants,\n };"
+        },
+        {
+            "filename": "server/routers/api-router.js",
+            "diff": "@@ -11,12 +11,11 @@ const { R } = require(\"redbean-node\");\n const apicache = require(\"../modules/apicache\");\n const Monitor = require(\"../model/monitor\");\n const dayjs = require(\"dayjs\");\n-const { UP, MAINTENANCE, DOWN, PENDING, flipStatus, log } = require(\"../../src/util\");\n+const { UP, MAINTENANCE, DOWN, PENDING, flipStatus, log, badgeConstants } = require(\"../../src/util\");\n const StatusPage = require(\"../model/status_page\");\n const { UptimeKumaServer } = require(\"../uptime-kuma-server\");\n const { UptimeCacheList } = require(\"../uptime-cache-list\");\n const { makeBadge } = require(\"badge-maker\");\n-const { badgeConstants } = require(\"../config\");\n const { Prometheus } = require(\"../prometheus\");\n \n let router = express.Router();"
+        },
+        {
+            "filename": "server/routers/status-page-router.js",
+            "diff": "@@ -5,7 +5,7 @@ const StatusPage = require(\"../model/status_page\");\n const { allowDevAllOrigin, sendHttpError } = require(\"../util-server\");\n const { R } = require(\"redbean-node\");\n const Monitor = require(\"../model/monitor\");\n-const { badgeConstants } = require(\"../config\");\n+const { badgeConstants } = require(\"../../src/util\");\n const { makeBadge } = require(\"badge-maker\");\n \n let router = express.Router();"
+        },
+        {
+            "filename": "server/server.js",
+            "diff": "@@ -81,7 +81,7 @@ const notp = require(\"notp\");\n const base32 = require(\"thirty-two\");\n \n const { UptimeKumaServer } = require(\"./uptime-kuma-server\");\n-const server = UptimeKumaServer.getInstance(args);\n+const server = UptimeKumaServer.getInstance();\n const io = module.exports.io = server.io;\n const app = server.app;\n \n@@ -91,7 +91,7 @@ const Monitor = require(\"./model/monitor\");\n const User = require(\"./model/user\");\n \n log.debug(\"server\", \"Importing Settings\");\n-const { getSettings, setSettings, setting, initJWTSecret, checkLogin, startUnitTest, FBSD, doubleCheckPassword, startE2eTests, shake256, SHAKE256_LENGTH\n+const { getSettings, setSettings, setting, initJWTSecret, checkLogin, startUnitTest, doubleCheckPassword, startE2eTests, shake256, SHAKE256_LENGTH\n } = require(\"./util-server\");\n \n log.debug(\"server\", \"Importing Notification\");\n@@ -115,19 +115,13 @@ const passwordHash = require(\"./password-hash\");\n const checkVersion = require(\"./check-version\");\n log.info(\"server\", \"Version: \" + checkVersion.version);\n \n-// If host is omitted, the server will accept connections on the unspecified IPv6 address (::) when IPv6 is available and the unspecified IPv4 address (0.0.0.0) otherwise.\n-// Dual-stack support for (::)\n-// Also read HOST if not FreeBSD, as HOST is a system environment variable in FreeBSD\n-let hostEnv = FBSD ? null : process.env.HOST;\n-let hostname = args.host || process.env.UPTIME_KUMA_HOST || hostEnv;\n+const hostname = config.hostname;\n \n if (hostname) {\n     log.info(\"server\", \"Custom hostname: \" + hostname);\n }\n \n-const port = [ args.port, process.env.UPTIME_KUMA_PORT, process.env.PORT, 3001 ]\n-    .map(portValue => parseInt(portValue))\n-    .find(portValue => !isNaN(portValue));\n+const port = config.port;\n \n const disableFrameSameOrigin = !!process.env.UPTIME_KUMA_DISABLE_FRAME_SAMEORIGIN || args[\"disable-frame-sameorigin\"] || false;\n const cloudflaredToken = args[\"cloudflared-token\"] || process.env.UPTIME_KUMA_CLOUDFLARED_TOKEN || undefined;\n@@ -1157,6 +1151,8 @@ let needSetup = false;\n                 let user = await doubleCheckPassword(socket, password.currentPassword);\n                 await user.resetPassword(password.newPassword);\n \n+                server.disconnectAllSocketClient(user.id, socket.id);\n+\n                 callback({\n                     ok: true,\n                     msg: \"Password has been updated successfully.\","
+        },
+        {
+            "filename": "server/socket-handlers/general-socket-handler.js",
+            "diff": "@@ -78,4 +78,14 @@ module.exports.generalSocketHandler = (socket, server) => {\n             });\n         }\n     });\n+\n+    // Disconnect all other socket clients of the user\n+    socket.on(\"disconnectOtherSocketClients\", async () => {\n+        try {\n+            checkLogin(socket);\n+            server.disconnectAllSocketClients(socket.userID, socket.id);\n+        } catch (e) {\n+            log.warn(\"disconnectAllSocketClients\", e.message);\n+        }\n+    });\n };"
+        },
+        {
+            "filename": "server/uptime-kuma-server.js",
+            "diff": "@@ -12,6 +12,7 @@ const { Settings } = require(\"./settings\");\n const dayjs = require(\"dayjs\");\n const childProcessAsync = require(\"promisify-child-process\");\n const path = require(\"path\");\n+const { isSSL, sslKey, sslCert, sslKeyPassphrase } = require(\"./config\");\n // DO NOT IMPORT HERE IF THE MODULES USED `UptimeKumaServer.getInstance()`, put at the bottom of this file instead.\n \n /**\n@@ -62,22 +63,17 @@ class UptimeKumaServer {\n      */\n     jwtSecret = null;\n \n-    static getInstance(args) {\n+    static getInstance() {\n         if (UptimeKumaServer.instance == null) {\n-            UptimeKumaServer.instance = new UptimeKumaServer(args);\n+            UptimeKumaServer.instance = new UptimeKumaServer();\n         }\n         return UptimeKumaServer.instance;\n     }\n \n-    constructor(args) {\n-        // SSL\n-        const sslKey = args[\"ssl-key\"] || process.env.UPTIME_KUMA_SSL_KEY || process.env.SSL_KEY || undefined;\n-        const sslCert = args[\"ssl-cert\"] || process.env.UPTIME_KUMA_SSL_CERT || process.env.SSL_CERT || undefined;\n-        const sslKeyPassphrase = args[\"ssl-key-passphrase\"] || process.env.UPTIME_KUMA_SSL_KEY_PASSPHRASE || process.env.SSL_KEY_PASSPHRASE || undefined;\n-\n+    constructor() {\n         log.info(\"server\", \"Creating express and socket.io instance\");\n         this.app = express();\n-        if (sslKey && sslCert) {\n+        if (isSSL) {\n             log.info(\"server\", \"Server Type: HTTPS\");\n             this.httpServer = https.createServer({\n                 key: fs.readFileSync(sslKey),\n@@ -422,6 +418,25 @@ class UptimeKumaServer {\n             }\n         }\n     }\n+\n+    /**\n+     * Force connected sockets of a user to refresh and disconnect.\n+     * Used for resetting password.\n+     * @param {string} userID\n+     * @param {string?} currentSocketID\n+     */\n+    disconnectAllSocketClients(userID, currentSocketID = undefined) {\n+        for (const socket of this.io.sockets.sockets.values()) {\n+            if (socket.userID === userID && socket.id !== currentSocketID) {\n+                try {\n+                    socket.emit(\"refresh\");\n+                    socket.disconnect();\n+                } catch (e) {\n+\n+                }\n+            }\n+        }\n+    }\n }\n \n module.exports = {"
+        },
+        {
+            "filename": "server/util-server.js",
+            "diff": "@@ -1,15 +1,14 @@\n const tcpp = require(\"tcp-ping\");\n const ping = require(\"@louislam/ping\");\n const { R } = require(\"redbean-node\");\n-const { log, genSecret } = require(\"../src/util\");\n+const { log, genSecret, badgeConstants } = require(\"../src/util\");\n const passwordHash = require(\"./password-hash\");\n const { Resolver } = require(\"dns\");\n const childProcess = require(\"child_process\");\n const iconv = require(\"iconv-lite\");\n const chardet = require(\"chardet\");\n const mqtt = require(\"mqtt\");\n const chroma = require(\"chroma-js\");\n-const { badgeConstants } = require(\"./config\");\n const mssql = require(\"mssql\");\n const { Client } = require(\"pg\");\n const postgresConParse = require(\"pg-connection-string\").parse;"
+        },
+        {
+            "filename": "src/components/BadgeGeneratorDialog.vue",
+            "diff": "@@ -135,7 +135,7 @@\n <script lang=\"ts\">\n import { Modal } from \"bootstrap\";\n import CopyableInput from \"./CopyableInput.vue\";\n-import { default as serverConfig } from \"../../server/config.js\";\n+import { badgeConstants } from \"../util.ts\";\n \n export default {\n     components: {\n@@ -230,7 +230,7 @@ export default {\n                     \"labelColor\",\n                 ],\n             },\n-            badgeConstants: serverConfig.badgeConstants,\n+            badgeConstants,\n         };\n     },\n "
+        },
+        {
+            "filename": "src/mixins/socket.js",
+            "diff": "@@ -288,6 +288,10 @@ export default {\n             socket.on(\"initServerTimezone\", () => {\n                 socket.emit(\"initServerTimezone\", dayjs.tz.guess());\n             });\n+\n+            socket.on(\"refresh\", () => {\n+                location.reload();\n+            });\n         },\n \n         /**"
+        },
+        {
+            "filename": "src/pages/EditMonitor.vue",
+            "diff": "@@ -848,9 +848,8 @@ import NotificationDialog from \"../components/NotificationDialog.vue\";\n import DockerHostDialog from \"../components/DockerHostDialog.vue\";\n import ProxyDialog from \"../components/ProxyDialog.vue\";\n import TagsManager from \"../components/TagsManager.vue\";\n-import { genSecret, isDev, MAX_INTERVAL_SECOND, MIN_INTERVAL_SECOND } from \"../util.ts\";\n+import { genSecret, isDev, MAX_INTERVAL_SECOND, MIN_INTERVAL_SECOND, sleep } from \"../util.ts\";\n import { hostNameRegexPattern } from \"../util-frontend\";\n-import { sleep } from \"../util\";\n import HiddenInput from \"../components/HiddenInput.vue\";\n \n const toast = useToast();"
+        },
+        {
+            "filename": "src/util.js",
+            "diff": "@@ -7,7 +7,7 @@\n // Backend uses the compiled file util.js\n // Frontend uses util.ts\n Object.defineProperty(exports, \"__esModule\", { value: true });\n-exports.localToUTC = exports.utcToLocal = exports.utcToISODateTime = exports.isoToUTCDateTime = exports.parseTimeFromTimeObject = exports.parseTimeObject = exports.getMaintenanceRelativeURL = exports.getMonitorRelativeURL = exports.genSecret = exports.getCryptoRandomInt = exports.getRandomInt = exports.getRandomArbitrary = exports.TimeLogger = exports.polyfill = exports.log = exports.debug = exports.ucfirst = exports.sleep = exports.flipStatus = exports.MIN_INTERVAL_SECOND = exports.MAX_INTERVAL_SECOND = exports.SQL_DATETIME_FORMAT_WITHOUT_SECOND = exports.SQL_DATETIME_FORMAT = exports.SQL_DATE_FORMAT = exports.STATUS_PAGE_MAINTENANCE = exports.STATUS_PAGE_PARTIAL_DOWN = exports.STATUS_PAGE_ALL_UP = exports.STATUS_PAGE_ALL_DOWN = exports.MAINTENANCE = exports.PENDING = exports.UP = exports.DOWN = exports.appName = exports.isDev = void 0;\n+exports.localToUTC = exports.utcToLocal = exports.utcToISODateTime = exports.isoToUTCDateTime = exports.parseTimeFromTimeObject = exports.parseTimeObject = exports.getMaintenanceRelativeURL = exports.getMonitorRelativeURL = exports.genSecret = exports.getCryptoRandomInt = exports.getRandomInt = exports.getRandomArbitrary = exports.TimeLogger = exports.polyfill = exports.log = exports.debug = exports.ucfirst = exports.sleep = exports.flipStatus = exports.badgeConstants = exports.MIN_INTERVAL_SECOND = exports.MAX_INTERVAL_SECOND = exports.SQL_DATETIME_FORMAT_WITHOUT_SECOND = exports.SQL_DATETIME_FORMAT = exports.SQL_DATE_FORMAT = exports.STATUS_PAGE_MAINTENANCE = exports.STATUS_PAGE_PARTIAL_DOWN = exports.STATUS_PAGE_ALL_UP = exports.STATUS_PAGE_ALL_DOWN = exports.MAINTENANCE = exports.PENDING = exports.UP = exports.DOWN = exports.appName = exports.isDev = void 0;\n const dayjs = require(\"dayjs\");\n exports.isDev = process.env.NODE_ENV === \"development\";\n exports.appName = \"Uptime Kuma\";\n@@ -24,6 +24,25 @@ exports.SQL_DATETIME_FORMAT = \"YYYY-MM-DD HH:mm:ss\";\n exports.SQL_DATETIME_FORMAT_WITHOUT_SECOND = \"YYYY-MM-DD HH:mm\";\n exports.MAX_INTERVAL_SECOND = 2073600; // 24 days\n exports.MIN_INTERVAL_SECOND = 20; // 20 seconds\n+exports.badgeConstants = {\n+    naColor: \"#999\",\n+    defaultUpColor: \"#66c20a\",\n+    defaultWarnColor: \"#eed202\",\n+    defaultDownColor: \"#c2290a\",\n+    defaultPendingColor: \"#f8a306\",\n+    defaultMaintenanceColor: \"#1747f5\",\n+    defaultPingColor: \"blue\",\n+    defaultStyle: \"flat\",\n+    defaultPingValueSuffix: \"ms\",\n+    defaultPingLabelSuffix: \"h\",\n+    defaultUptimeValueSuffix: \"%\",\n+    defaultUptimeLabelSuffix: \"h\",\n+    defaultCertExpValueSuffix: \" days\",\n+    defaultCertExpLabelSuffix: \"h\",\n+    // Values Come From Default Notification Times\n+    defaultCertExpireWarnDays: \"14\",\n+    defaultCertExpireDownDays: \"7\"\n+};\n /** Flip the status of s */\n function flipStatus(s) {\n     if (s === exports.UP) {"
+        },
+        {
+            "filename": "src/util.ts",
+            "diff": "@@ -29,6 +29,26 @@ export const SQL_DATETIME_FORMAT_WITHOUT_SECOND = \"YYYY-MM-DD HH:mm\";\n export const MAX_INTERVAL_SECOND = 2073600; // 24 days\n export const MIN_INTERVAL_SECOND = 20; // 20 seconds\n \n+export const badgeConstants = {\n+    naColor: \"#999\",\n+    defaultUpColor: \"#66c20a\",\n+    defaultWarnColor: \"#eed202\",\n+    defaultDownColor: \"#c2290a\",\n+    defaultPendingColor: \"#f8a306\",\n+    defaultMaintenanceColor: \"#1747f5\",\n+    defaultPingColor: \"blue\",  // as defined by badge-maker / shields.io\n+    defaultStyle: \"flat\",\n+    defaultPingValueSuffix: \"ms\",\n+    defaultPingLabelSuffix: \"h\",\n+    defaultUptimeValueSuffix: \"%\",\n+    defaultUptimeLabelSuffix: \"h\",\n+    defaultCertExpValueSuffix: \" days\",\n+    defaultCertExpLabelSuffix: \"h\",\n+    // Values Come From Default Notification Times\n+    defaultCertExpireWarnDays: \"14\",\n+    defaultCertExpireDownDays: \"7\"\n+};\n+\n /** Flip the status of s */\n export function flipStatus(s: number) {\n     if (s === UP) {"
+        }
+    ],
+    "commitTime": "2023-12-10 12:40:40"
+}

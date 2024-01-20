@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2021-06-18 21:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.56228",
+        "probability": "0.00188"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137932",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-21280"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:52:35",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.6 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write. Contiki-NG is an open-source, cross-platform operating system for internet of things devices. It is possible to cause an out-of-bounds write in versions of Contiki-NG prior to 4.6 when transmitting a 6LoWPAN packet with a chain of extension headers. Unfortunately, the written header is not checked to be within the available space, thereby making it possible to write outside the buffer. The problem has been patched in Contiki-NG 4.6. Users can apply the patch for this vulnerability out-of-band as a workaround. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/ipv6/sicslowpan.c",
+            "diff": "@@ -123,6 +123,7 @@\n \n #define UIP_IPPAYLOAD_BUF_POS(pos)         (&uip_buf[UIP_IPH_LEN + (pos)])\n #define UIP_UDP_BUF_POS(pos)               ((struct uip_udp_hdr *)UIP_IPPAYLOAD_BUF_POS(pos))\n+#define UIP_EXT_HDR_LEN                    2\n \n /** @} */\n \n@@ -1063,12 +1064,13 @@ compress_hdr_iphc(linkaddr_t *link_destaddr)\n  * are set to the appropriate values\n  *\n  * \\param buf Pointer to the buffer to uncompress the packet into.\n+ * \\param buf_size The size of the buffer to uncompress the packet into.\n  * \\param ip_len Equal to 0 if the packet is not a fragment (IP length\n  * is then inferred from the L2 length), non 0 if the packet is a 1st\n  * fragment.\n  */\n static void\n-uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)\n+uncompress_hdr_iphc(uint8_t *buf, uint16_t buf_size, uint16_t ip_len)\n {\n   uint8_t tmp, iphc0, iphc1, nhc;\n   struct uip_ext_hdr *exthdr;\n@@ -1262,23 +1264,32 @@ uncompress_hdr_iphc(uint8_t *buf, uint16_t ip_len)\n       return;\n     }\n     *last_nextheader = proto;\n+\n+    /* Check that there is enough room to write the extension header. */\n+    if((ip_payload - buf) + UIP_EXT_HDR_LEN + len > buf_size) {\n+      LOG_WARN(\"uncompression: cannot write ext header beyond target buffer\\n\");\n+      return;\n+    }\n+\n     /* uncompress the extension header */\n     exthdr = (struct uip_ext_hdr *)ip_payload;\n-    exthdr->len = (2 + len) / 8 - 1;\n-    exthdr->next = next;\n-    last_nextheader = &exthdr->next;\n-    if(ip_len == 0 && (uint8_t *)exthdr - uip_buf + 2 + len > sizeof(uip_buf)) {\n-      LOG_DBG(\"uncompression: ext header points beyond uip buffer boundary\\n\");\n+    exthdr->len = (UIP_EXT_HDR_LEN + len) / 8;\n+    if(exthdr->len == 0) {\n+      LOG_WARN(\"Extension header length is below 8\\n\");\n       return;\n     }\n-    memcpy((uint8_t*)exthdr + 2, hc06_ptr, len);\n+    exthdr->len--;\n+    exthdr->next = next;\n+    last_nextheader = &exthdr->next;\n+    memcpy((uint8_t *)exthdr + UIP_EXT_HDR_LEN, hc06_ptr, len);\n+\n     hc06_ptr += len;\n     uncomp_hdr_len += (exthdr->len + 1) * 8;\n     ip_payload += (exthdr->len + 1) * 8;\n     ext_hdr_len += (exthdr->len + 1) * 8;\n \n-    LOG_DBG(\"uncompression: %d len: %d exhdrlen: %d (calc: %d)\\n\",\n-           proto, len, exthdr->len, (exthdr->len + 1) * 8);\n+    LOG_DBG(\"uncompression: %d len: %d exthdr len: %d (calc: %d)\\n\",\n+            proto, len, exthdr->len, (exthdr->len + 1) * 8);\n   }\n \n   /* The next header is compressed, NHC is following */\n@@ -1806,6 +1817,7 @@ input(void)\n   /* offset of the fragment in the IP packet */\n   uint8_t frag_offset = 0;\n   uint8_t *buffer;\n+  uint16_t buffer_size;\n \n #if SICSLOWPAN_CONF_FRAG\n   uint8_t is_fragment = 0;\n@@ -1836,6 +1848,7 @@ input(void)\n \n   /* This is default uip_buf since we assume that this is not fragmented */\n   buffer = (uint8_t *)UIP_IP_BUF;\n+  buffer_size = UIP_BUFSIZE;\n \n   /* Save the RSSI of the incoming packet in case the upper layer will\n      want to query us for it later. */\n@@ -1868,6 +1881,7 @@ input(void)\n       }\n \n       buffer = frag_info[frag_context].first_frag;\n+      buffer_size = SICSLOWPAN_FIRST_FRAGMENT_SIZE;\n       break;\n     case SICSLOWPAN_DISPATCH_FRAGN:\n       /*\n@@ -1922,7 +1936,7 @@ input(void)\n   if(SICSLOWPAN_COMPRESSION > SICSLOWPAN_COMPRESSION_IPV6 &&\n      (PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH] & SICSLOWPAN_DISPATCH_IPHC_MASK) == SICSLOWPAN_DISPATCH_IPHC) {\n     LOG_DBG(\"uncompression: IPHC dispatch\\n\");\n-    uncompress_hdr_iphc(buffer, frag_size);\n+    uncompress_hdr_iphc(buffer, buffer_size, frag_size);\n   } else if(PACKETBUF_6LO_PTR[PACKETBUF_6LO_DISPATCH] == SICSLOWPAN_DISPATCH_IPV6) {\n     LOG_DBG(\"uncompression: IPV6 dispatch\\n\");\n     packetbuf_hdr_len += SICSLOWPAN_IPV6_HDR_LEN;"
+        }
+    ],
+    "commitTime": "2020-10-11 19:55:24"
+}

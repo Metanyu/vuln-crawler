@@ -1,0 +1,93 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.2,
+    "disclosureTime": "2023-12-13 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.26329",
+        "probability": "0.00064"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-STEDOLANJQ-6129738",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50246"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 13:30:42",
+    "remediation": "Upgrade stedolan/jq to version 1.7.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via the decToString function in decNumber.c . An attacker can cause a crash or potentially execute arbitrary code by providing a specially crafted input that triggers a heap-based buffer overflow. "
+    },
+    "source_code": [
+        {
+            "filename": "NEWS.md",
+            "diff": "@@ -2,7 +2,7 @@\n \n ## Security\n \n-- CVE-2023-50246: ....\n+- CVE-2023-50246: Fix heap buffer overflow in jvp\\_literal\\_number\\_literal\n - CVE-2023-50268: fix stack-buffer-overflow if comparing nan with payload\n \n ## CLI changes"
+        },
+        {
+            "filename": "src/jv.c",
+            "diff": "@@ -635,7 +635,7 @@ static const char* jvp_literal_number_literal(jv n) {\n   }\n \n   if (plit->literal_data == NULL) {\n-    int len = jvp_dec_number_ptr(n)->digits + 14;\n+    int len = jvp_dec_number_ptr(n)->digits + 15 /* 14 + NUL */;\n     plit->literal_data = jv_mem_alloc(len);\n \n     // Preserve the actual precision as we have parsed it"
+        },
+        {
+            "filename": "tests/shtest",
+            "diff": "@@ -609,4 +609,9 @@ if ! r=$($JQ --args -rn 1 -- '$ARGS.positional[0]' bar) || [ \"$r\" != 1 ]; then\n     exit 1\n fi\n \n+# CVE-2023-50246: No heap overflow for '-10E-1000000001'\n+$VALGRIND $Q $JQ . <<\\NUM\n+-10E-1000000001\n+NUM\n+\n exit 0"
+        }
+    ],
+    "commitTime": "2023-12-13 19:20:22"
+}

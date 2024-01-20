@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 2.9,
+    "disclosureTime": "2024-01-02 08:46:13",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05744",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-OPENHARMONYTHIRDPARTYMUSL-6141160",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47216"
+        ],
+        "CWE": [
+            "CWE-772"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-02 13:15:56",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Missing Release of Resource after Effective Lifetime",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Missing Release of Resource after Effective Lifetime in getifaddrs . An attacker can cause a denial of service by occupying resources. "
+    },
+    "source_code": []
+}

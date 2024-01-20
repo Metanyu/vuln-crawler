@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "@pb82",
+        "@rh-tguittet"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.2,
+    "disclosureTime": "2023-12-16 00:52:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10642",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-OCTOKITWEBHOOKS-6129527",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50728"
+        ],
+        "CWE": [
+            "CWE-755"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-17 13:56:25",
+    "remediation": "Upgrade @octokit/webhooks to version 9.26.3, 10.9.2, 11.1.2, 12.0.3 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "@octokit/webhooks is a GitHub webhook events toolset for Node.js Affected versions of this package are vulnerable to Improper Handling of Exceptional Conditions allowing an attacker to cause a denial of service by sending a crafted request that triggers an uncaught exception, terminating the Node.js process. "
+    },
+    "source_code": []
+}

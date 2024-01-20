@@ -1,0 +1,93 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "critical"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.1,
+    "disclosureTime": "2021-04-26 09:21:36",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.48689",
+        "probability": "0.00135"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEMAVEN-6144615",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-26291"
+        ],
+        "CWE": [
+            "CWE-494"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-04 15:16:41",
+    "remediation": "Upgrade org.apache.maven:maven-compat to version 3.8.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Resources Downloaded over Insecure Protocol",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Resources Downloaded over Insecure Protocol. Apache Maven will follow repositories that are defined in a dependency\u2019s Project Object Model (pom) which may be surprising to some users, resulting in potential risk if a malicious actor takes over that repository or is able to insert themselves into a position to pretend to be that repository. Maven is changing the default behavior to no longer follow http (non-SSL) repository references by default. More details available in the referenced urls. If you are currently using a repository manager to govern the repositories used by your builds, you are unaffected by the risks present in the legacy behavior, and are unaffected by this vulnerability and change to default behavior. For more information about repository management, visit this page . "
+    },
+    "source_code": [
+        {
+            "filename": "maven-core/src/main/java/org/apache/maven/internal/aether/DefaultRepositorySystemSessionFactory.java",
+            "diff": "@@ -188,8 +188,8 @@ else if ( request.isUpdateSnapshots() )\n         DefaultMirrorSelector mirrorSelector = new DefaultMirrorSelector();\n         for ( Mirror mirror : request.getMirrors() )\n         {\n-            mirrorSelector.add( mirror.getId(), mirror.getUrl(), mirror.getLayout(), false, mirror.getMirrorOf(),\n-                                mirror.getMirrorOfLayouts() );\n+            mirrorSelector.add( mirror.getId(), mirror.getUrl(), mirror.getLayout(), false, mirror.isBlocked(),\n+                                mirror.getMirrorOf(), mirror.getMirrorOfLayouts() );\n         }\n         session.setMirrorSelector( mirrorSelector );\n "
+        },
+        {
+            "filename": "maven-settings/pom.xml",
+            "diff": "@@ -46,7 +46,7 @@ under the License.\n         <groupId>org.codehaus.modello</groupId>\n         <artifactId>modello-maven-plugin</artifactId>\n         <configuration>\n-          <version>1.1.0</version>\n+          <version>1.2.0</version>\n           <models>\n             <model>src/main/mdo/settings.mdo</model>\n           </models>"
+        },
+        {
+            "filename": "maven-settings/src/main/mdo/settings.mdo",
+            "diff": "@@ -633,6 +633,15 @@\n             of the mirror to repositories with a matching layout (apart from a matching id). Since Maven 3.\n           </description>\n         </field>\n+        <field>\n+          <name>blocked</name>\n+          <version>1.2.0+</version>\n+          <type>boolean</type>\n+          <defaultValue>false</defaultValue>\n+          <description>\n+            Whether this mirror should be blocked from any download request but fail the download process, explaining why.\n+          </description>\n+        </field>\n       </fields>\n       <codeSegments>\n         <codeSegment>\n@@ -648,6 +657,10 @@\n         sb.append( \",mirrorOf=\" ).append( mirrorOf );\n         sb.append( \",url=\" ).append( this.url );\n         sb.append( \",name=\" ).append( this.name );\n+        if ( isBlocked() )\n+        {\n+            sb.append( \",blocked\" );\n+        }\n         sb.append( \"]\" );\n         return sb.toString();\n     }"
+        }
+    ],
+    "commitTime": "2021-03-19 19:36:00"
+}

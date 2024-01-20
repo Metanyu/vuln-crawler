@@ -1,0 +1,42 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Stefan Schiller"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.3,
+    "disclosureTime": "2024-01-05 09:33:02",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-GRUMPYDICTATORFIREFLYIII-6144789",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-22075"
+        ],
+        "CWE": [
+            "CWE-74"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-05 09:45:19",
+    "remediation": "Upgrade grumpydictator/firefly-iii to version 6.1.1 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection')",
+    "vulnDescription": {
+        "Overview": "grumpydictator/firefly-iii is a personal finances manager. Affected versions of this package are vulnerable to Improper Neutralization of Special Elements in Output Used by a Downstream Component ('Injection') via the webhooks feature. An attacker can inject malicious HTML content by submitting specially crafted input. "
+    },
+    "source_code": []
+}

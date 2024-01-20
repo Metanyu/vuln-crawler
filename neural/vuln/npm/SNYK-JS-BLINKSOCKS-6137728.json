@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "tianjk99"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-21 12:01:45",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14161",
+        "probability": "0.00047"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-BLINKSOCKS-6137728",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50481"
+        ],
+        "CWE": [
+            "CWE-326"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-21 15:26:26",
+    "remediation": "There is no fixed version for blinksocks . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Inadequate Encryption Strength",
+    "vulnDescription": {
+        "Overview": "blinksocks is an A framework for building composable proxy protocol stack Affected versions of this package are vulnerable to Inadequate Encryption Strength in its use of RC4 algorithms in the /presets/ssr-auth-chain.js component. "
+    },
+    "source_code": []
+}

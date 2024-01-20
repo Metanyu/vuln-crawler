@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "ebiNJ"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.3,
+    "disclosureTime": "2023-12-22 17:50:28",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.28087",
+        "probability": "0.00068"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-LINUXDEEPINDEEPINREADER-6139271",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50254"
+        ],
+        "CWE": [
+            "CWE-27"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 11:39:40",
+    "remediation": "Upgrade linuxdeepin/deepin-reader to version 6.0.7 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Path Traversal",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Path Traversal due to improper handling of docx file paths. An attacker can overwrite critical files and execute arbitrary code by convincing a user to open a malicious document. "
+    },
+    "source_code": [
+        {
+            "filename": "debian/changelog",
+            "diff": "@@ -1,3 +1,9 @@\n+deepin-reader (6.0.7) unstable; urgency=medium\n+\n+  * change log 6.0.7.\n+\n+ -- muyuankai <muyuankai@uniontech.com>  Tue, 19 Dec 2023 11:49:10 +0800\n+\n deepin-reader (6.0.6) unstable; urgency=medium\n \n   * fix: can not copy"
+        }
+    ],
+    "commitTime": "2023-12-19 05:11:52"
+}

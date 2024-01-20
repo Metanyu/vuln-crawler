@@ -1,0 +1,45 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Chris Chan",
+        "Louise Ng"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 8.8,
+    "disclosureTime": "2024-01-02 22:45:27",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-GILACMSGILA-6142623",
+    "identifiers": {
+        "CVE": [
+            "CVE-2020-26623"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-03 11:48:10",
+    "remediation": "There is no fixed version for gilacms/gila . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "gilacms/gila is an A framework to build your next awesome web application. Affected versions of this package are vulnerable to SQL Injection via the Area parameter under the Administration>Widget tab after the login portal. An attacker can execute arbitrary web scripts by injecting SQL commands. ",
+        "PoC": "http://targeturl/cm/list_rows/widget?page=1&area=dashboard'%20UNION%20ALL%20SELECT%20NULL,NULL,NULL,NULL,@@version,NULL--%20 "
+    },
+    "source_code": []
+}

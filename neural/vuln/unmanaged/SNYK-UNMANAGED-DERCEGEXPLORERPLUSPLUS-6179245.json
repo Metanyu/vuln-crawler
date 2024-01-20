@@ -1,0 +1,56 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:R/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "derceg/explorerplusplus"
+        }
+    ],
+    "credit": [
+        "Rafael Pedrero"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.3,
+    "description": "## Overview Affected versions of this package are vulnerable to Buffer Overflow via a long filename argument. A local attacker can execute arbitrary code by monitoring Structured Exception Handler (SEH) records. ## Remediation There is no fixed version for `derceg/explorerplusplus`. ## References - [Vulnerability Advisory](https://www.incibe.es/en/incibe-cert/notices/aviso/buffer-overflow-vulnerability-explorer) ",
+    "disclosureTime": "2024-01-17T14:43:01.419000Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-DERCEGEXPLORERPLUSPLUS-6179245",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0645"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "derceg/explorerplusplus",
+    "publicationTime": "2024-01-18T15:26:23.265155Z",
+    "remediation": "There is no fixed version for derceg/explorerplusplus . ",
+    "semver": {
+        "vulnerable": [
+            "[0]"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via a long filename argument. A local attacker can execute arbitrary code by monitoring Structured Exception Handler (SEH) records. ",
+        "References": [
+            "https://www.incibe.es/en/incibe-cert/notices/aviso/buffer-overflow-vulnerability-explorer"
+        ]
+    },
+    "vulnerableVersions": "[0]"
+}

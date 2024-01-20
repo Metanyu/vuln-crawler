@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Dor Konis"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-19 12:30:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHESUPERSET-6132133",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46104"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 08:40:04",
+    "remediation": "Upgrade apache-superset to version 2.1.3, 3.0.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Overview": "apache-superset is a modern, enterprise-ready business intelligence web application. Affected versions of this package are vulnerable to Uncontrolled Resource Consumption. An authenticated attacker can trigger this vulnerability by uploading a malicious ZIP file to import databases, dashboards, or datasets. "
+    },
+    "source_code": [
+        {
+            "filename": "superset/commands/importers/v1/utils.py",
+            "diff": "@@ -25,6 +25,7 @@\n from superset import db\n from superset.commands.importers.exceptions import IncorrectVersionError\n from superset.models.core import Database\n+from superset.utils.core import check_is_safe_zip\n \n METADATA_FILE_NAME = \"metadata.yaml\"\n IMPORT_VERSION = \"1.0.0\"\n@@ -147,6 +148,7 @@ def is_valid_config(file_name: str) -> bool:\n \n \n def get_contents_from_bundle(bundle: ZipFile) -> Dict[str, str]:\n+    check_is_safe_zip(bundle)\n     return {\n         remove_root(file_name): bundle.read(file_name).decode()\n         for file_name in bundle.namelist()"
+        },
+        {
+            "filename": "superset/config.py",
+            "diff": "@@ -1530,6 +1530,11 @@ def EMAIL_HEADER_MUTATOR(  # pylint: disable=invalid-name,unused-argument\n     Literal[\"examples\", \"all\"], Tuple[str, List[Dict[str, Any]]]\n ] = \"all\"\n \n+# Max allowed size for a zipped file\n+ZIPPED_FILE_MAX_SIZE = 100 * 1024 * 1024  # 100MB\n+# Max allowed compression ratio for a zipped file\n+ZIP_FILE_MAX_COMPRESS_RATIO = 200.0\n+\n # Configuration for environment tag shown on the navbar. Setting 'text' to '' will hide the tag.\n # 'color' can either be a hex color code, or a dot-indexed theme color (e.g. error.base)\n ENVIRONMENT_TAG_CONFIG = {"
+        },
+        {
+            "filename": "superset/utils/core.py",
+            "diff": "@@ -1998,6 +1998,25 @@ def create_zip(files: Dict[str, Any]) -> BytesIO:\n     return buf\n \n \n+def check_is_safe_zip(zip_file: ZipFile) -> None:\n+    \"\"\"\n+    Checks whether a ZIP file is safe, raises SupersetException if not.\n+\n+    :param zip_file:\n+    :return:\n+    \"\"\"\n+    uncompress_size = 0\n+    compress_size = 0\n+    for zip_file_element in zip_file.infolist():\n+        if zip_file_element.file_size > current_app.config[\"ZIPPED_FILE_MAX_SIZE\"]:\n+            raise SupersetException(\"Found file with size above allowed threshold\")\n+        uncompress_size += zip_file_element.file_size\n+        compress_size += zip_file_element.compress_size\n+    compress_ratio = uncompress_size / compress_size\n+    if compress_ratio > current_app.config[\"ZIP_FILE_MAX_COMPRESS_RATIO\"]:\n+        raise SupersetException(\"Zip compress ratio above allowed threshold\")\n+\n+\n def remove_extra_adhoc_filters(form_data: Dict[str, Any]) -> None:\n     \"\"\"\n     Remove filters from slice data that originate from a filter box or native filter"
+        },
+        {
+            "filename": "tests/unit_tests/utils/test_core.py",
+            "diff": "@@ -15,11 +15,25 @@\n # KIND, either express or implied.  See the License for the\n # specific language governing permissions and limitations\n # under the License.\n-from typing import Any, Dict\n+import os\n+from dataclasses import dataclass\n+from typing import Any, Dict, Optional\n+from unittest.mock import MagicMock\n \n+import pandas as pd\n import pytest\n \n-from superset.utils.core import QueryObjectFilterClause, remove_extra_adhoc_filters\n+from superset.exceptions import SupersetException\n+from superset.utils.core import (\n+    cast_to_boolean,\n+    check_is_safe_zip,\n+    DateColumn,\n+    is_test,\n+    normalize_dttm_col,\n+    parse_boolean_string,\n+    QueryObjectFilterClause,\n+    remove_extra_adhoc_filters,\n+)\n \n ADHOC_FILTER: QueryObjectFilterClause = {\n     \"col\": \"foo\",\n@@ -35,6 +49,12 @@\n }\n \n \n+@dataclass\n+class MockZipInfo:\n+    file_size: int\n+    compress_size: int\n+\n+\n @pytest.mark.parametrize(\n     \"original,expected\",\n     [\n@@ -84,3 +104,158 @@ def test_remove_extra_adhoc_filters(\n ) -> None:\n     remove_extra_adhoc_filters(original)\n     assert expected == original\n+\n+\n+def test_is_test() -> None:\n+    orig_value = os.getenv(\"SUPERSET_TESTENV\")\n+\n+    os.environ[\"SUPERSET_TESTENV\"] = \"true\"\n+    assert is_test()\n+    os.environ[\"SUPERSET_TESTENV\"] = \"false\"\n+    assert not is_test()\n+    os.environ[\"SUPERSET_TESTENV\"] = \"\"\n+    assert not is_test()\n+\n+    if orig_value is not None:\n+        os.environ[\"SUPERSET_TESTENV\"] = orig_value\n+\n+\n+@pytest.mark.parametrize(\n+    \"test_input,expected\",\n+    [\n+        (\"y\", True),\n+        (\"Y\", True),\n+        (\"yes\", True),\n+        (\"True\", True),\n+        (\"t\", True),\n+        (\"true\", True),\n+        (\"On\", True),\n+        (\"on\", True),\n+        (\"1\", True),\n+        (\"n\", False),\n+        (\"N\", False),\n+        (\"no\", False),\n+        (\"False\", False),\n+        (\"f\", False),\n+        (\"false\", False),\n+        (\"Off\", False),\n+        (\"off\", False),\n+        (\"0\", False),\n+        (\"foo\", False),\n+        (None, False),\n+    ],\n+)\n+def test_parse_boolean_string(test_input: Optional[str], expected: bool) -> None:\n+    assert parse_boolean_string(test_input) == expected\n+\n+\n+def test_int_values() -> None:\n+    assert cast_to_boolean(1) is True\n+    assert cast_to_boolean(0) is False\n+    assert cast_to_boolean(-1) is True\n+    assert cast_to_boolean(42) is True\n+    assert cast_to_boolean(0) is False\n+\n+\n+def test_float_values() -> None:\n+    assert cast_to_boolean(0.5) is True\n+    assert cast_to_boolean(3.14) is True\n+    assert cast_to_boolean(-2.71) is True\n+    assert cast_to_boolean(0.0) is False\n+\n+\n+def test_string_values() -> None:\n+    assert cast_to_boolean(\"true\") is True\n+    assert cast_to_boolean(\"TruE\") is True\n+    assert cast_to_boolean(\"false\") is False\n+    assert cast_to_boolean(\"FaLsE\") is False\n+    assert cast_to_boolean(\"\") is False\n+\n+\n+def test_none_value() -> None:\n+    assert cast_to_boolean(None) is None\n+\n+\n+def test_boolean_values() -> None:\n+    assert cast_to_boolean(True) is True\n+    assert cast_to_boolean(False) is False\n+\n+\n+def test_other_values() -> None:\n+    assert cast_to_boolean([]) is False\n+    assert cast_to_boolean({}) is False\n+    assert cast_to_boolean(object()) is False\n+\n+\n+def test_normalize_dttm_col() -> None:\n+    \"\"\"\n+    Tests for the ``normalize_dttm_col`` function.\n+\n+    In particular, this covers a regression when Pandas was upgraded from 1.5.3 to\n+    2.0.3 and the behavior of ``pd.to_datetime`` changed.\n+    \"\"\"\n+    df = pd.DataFrame({\"__time\": [\"2017-07-01T00:00:00.000Z\"]})\n+    assert (\n+        df.to_markdown()\n+        == \"\"\"\n+|    | __time                   |\n+|---:|:-------------------------|\n+|  0 | 2017-07-01T00:00:00.000Z |\n+    \"\"\".strip()\n+    )\n+\n+    # in 1.5.3 this would return a datetime64[ns] dtype, but in 2.0.3 we had to\n+    # add ``exact=False`` since there is a leftover after parsing the format\n+    dttm_cols = (DateColumn(\"__time\", \"%Y-%m-%d\"),)\n+\n+    # the function modifies the dataframe in place\n+    normalize_dttm_col(df, dttm_cols)\n+\n+    assert df[\"__time\"].astype(str).tolist() == [\"2017-07-01\"]\n+\n+\n+def test_check_if_safe_zip_success(app_context: None) -> None:\n+    \"\"\"\n+    Test if ZIP files are safe\n+    \"\"\"\n+    ZipFile = MagicMock()\n+    ZipFile.infolist.return_value = [\n+        MockZipInfo(file_size=1000, compress_size=10),\n+        MockZipInfo(file_size=1000, compress_size=10),\n+        MockZipInfo(file_size=1000, compress_size=10),\n+        MockZipInfo(file_size=1000, compress_size=10),\n+        MockZipInfo(file_size=1000, compress_size=10),\n+    ]\n+    check_is_safe_zip(ZipFile)\n+\n+\n+def test_check_if_safe_zip_high_rate(app_context: None) -> None:\n+    \"\"\"\n+    Test if ZIP files is not highly compressed\n+    \"\"\"\n+    ZipFile = MagicMock()\n+    ZipFile.infolist.return_value = [\n+        MockZipInfo(file_size=1000, compress_size=1),\n+        MockZipInfo(file_size=1000, compress_size=1),\n+        MockZipInfo(file_size=1000, compress_size=1),\n+        MockZipInfo(file_size=1000, compress_size=1),\n+        MockZipInfo(file_size=1000, compress_size=1),\n+    ]\n+    with pytest.raises(SupersetException):\n+        check_is_safe_zip(ZipFile)\n+\n+\n+def test_check_if_safe_zip_hidden_bomb(app_context: None) -> None:\n+    \"\"\"\n+    Test if ZIP file does not contain a big file highly compressed\n+    \"\"\"\n+    ZipFile = MagicMock()\n+    ZipFile.infolist.return_value = [\n+        MockZipInfo(file_size=1000, compress_size=100),\n+        MockZipInfo(file_size=1000, compress_size=100),\n+        MockZipInfo(file_size=1000, compress_size=100),\n+        MockZipInfo(file_size=1000, compress_size=100),\n+        MockZipInfo(file_size=1000 * (1024 * 1024), compress_size=100),\n+    ]\n+    with pytest.raises(SupersetException):\n+        check_is_safe_zip(ZipFile)"
+        }
+    ],
+    "commitTime": "2023-12-01 23:51:47"
+}

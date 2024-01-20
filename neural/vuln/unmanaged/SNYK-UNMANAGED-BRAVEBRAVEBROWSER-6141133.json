@@ -1,0 +1,46 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-30 19:46:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12282",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-BRAVEBRAVEBROWSER-6141133",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52263"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-01 14:03:05",
+    "remediation": "Upgrade brave/brave-browser to version 1.59.43 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "URL Redirection to Untrusted Site ('Open Redirect')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to URL Redirection to Untrusted Site ('Open Redirect') due to improper restrictions on the WebUI factory and redirect mechanisms. An attacker can manipulate URLs in a way that could lead to unintended web page redirections or unauthorized actions by exploiting the lack of proper schema validation in brave_content_browser_client.cc and brave_web_ui_controller_factory.cc . "
+    },
+    "source_code": []
+}

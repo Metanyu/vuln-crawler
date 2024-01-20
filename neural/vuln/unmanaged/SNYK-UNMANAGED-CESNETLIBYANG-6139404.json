@@ -1,0 +1,101 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-01 06:33:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.37123",
+        "probability": "0.00088"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CESNETLIBYANG-6139404",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-28902"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 22:14:05",
+    "remediation": "Upgrade CESNET/libyang to version 1.0.240 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference in the function read_yin_container() that could result in a crash. "
+    },
+    "source_code": [
+        {
+            "filename": "src/parser_yin.c",
+            "diff": "@@ -4572,7 +4572,7 @@ read_yin_anydata(struct lys_module *module, struct lys_node *parent, struct lyxm\n \n     for (r = 0; r < retval->ext_size; ++r) {\n         /* set flag, which represent LYEXT_OPT_VALID */\n-        if (retval->ext[r]->flags & LYEXT_OPT_VALID) {\n+        if (retval->ext[r] && (retval->ext[r]->flags & LYEXT_OPT_VALID)) {\n             retval->flags |= LYS_VALID_EXT;\n             break;\n         }\n@@ -4794,7 +4794,7 @@ read_yin_leaf(struct lys_module *module, struct lys_node *parent, struct lyxml_e\n \n     for (r = 0; r < retval->ext_size; ++r) {\n         /* set flag, which represent LYEXT_OPT_VALID */\n-        if (retval->ext[r]->flags & LYEXT_OPT_VALID) {\n+        if (retval->ext[r] && (retval->ext[r]->flags & LYEXT_OPT_VALID)) {\n             retval->flags |= LYS_VALID_EXT;\n             break;\n         }\n@@ -5108,7 +5108,7 @@ read_yin_leaflist(struct lys_module *module, struct lys_node *parent, struct lyx\n \n     for (r = 0; r < retval->ext_size; ++r) {\n         /* set flag, which represent LYEXT_OPT_VALID */\n-        if (retval->ext[r]->flags & LYEXT_OPT_VALID) {\n+        if (retval->ext[r] && (retval->ext[r]->flags & LYEXT_OPT_VALID)) {\n             retval->flags |= LYS_VALID_EXT;\n             break;\n         }\n@@ -5477,7 +5477,7 @@ read_yin_list(struct lys_module *module, struct lys_node *parent, struct lyxml_e\n \n     for (r = 0; r < retval->ext_size; ++r) {\n         /* set flag, which represent LYEXT_OPT_VALID */\n-        if (retval->ext[r]->flags & LYEXT_OPT_VALID) {\n+        if (retval->ext[r] && (retval->ext[r]->flags & LYEXT_OPT_VALID)) {\n             retval->flags |= LYS_VALID_EXT;\n             if (retval->ext[r]->flags & LYEXT_OPT_VALID_SUBTREE) {\n                 retval->flags |= LYS_VALID_EXT_SUBTREE;\n@@ -5701,8 +5701,9 @@ read_yin_container(struct lys_module *module, struct lys_node *parent, struct ly\n     }\n \n     for (r = 0; r < retval->ext_size; ++r) {\n-        /* set flag, which represent LYEXT_OPT_VALID */\n-        if (retval->ext[r]->flags & LYEXT_OPT_VALID) {\n+        /* extension instance may not yet be resolved */\n+        if (retval->ext[r] && (retval->ext[r]->flags & LYEXT_OPT_VALID)) {\n+             /* set flag, which represent LYEXT_OPT_VALID */\n             retval->flags |= LYS_VALID_EXT;\n             if (retval->ext[r]->flags & LYEXT_OPT_VALID_SUBTREE) {\n                 retval->flags |= LYS_VALID_EXT_SUBTREE;"
+        }
+    ],
+    "commitTime": "2021-03-08 13:08:05"
+}

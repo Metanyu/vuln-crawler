@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "malacupa"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-22 16:49:26",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23975",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CLICKHOUSECLICKHOUSE-6139288",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48704"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 19:00:35",
+    "remediation": "Upgrade clickhouse/clickhouse to version 23.3.18.15, 23.8.8.20, 23.9.6.20, 23.10.5.20 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow in the decompression logic of the Gorilla codec on the server's native interface. An attacker can cause a crash by sending data over TCP port 9000, which does not require authentication. "
+    },
+    "source_code": [
+        {
+            "filename": "src/Compression/CompressionCodecGorilla.cpp",
+            "diff": "@@ -264,7 +264,7 @@ UInt32 compressDataForType(const char * source, UInt32 source_size, char * dest,\n }\n \n template <typename T>\n-void decompressDataForType(const char * source, UInt32 source_size, char * dest)\n+void decompressDataForType(const char * source, UInt32 source_size, char * dest, UInt32 dest_size)\n {\n     const char * const source_end = source + source_size;\n \n@@ -280,6 +280,9 @@ void decompressDataForType(const char * source, UInt32 source_size, char * dest)\n     if (source + sizeof(T) > source_end || items_count < 1)\n         return;\n \n+    if (static_cast<UInt64>(items_count) * sizeof(T) > dest_size)\n+        throw Exception(ErrorCodes::CANNOT_DECOMPRESS, \"Cannot decompress Gorilla-encoded data: corrupted input data.\");\n+\n     prev_value = unalignedLoadLittleEndian<T>(source);\n     unalignedStoreLittleEndian<T>(dest, prev_value);\n \n@@ -422,22 +425,28 @@ void CompressionCodecGorilla::doDecompressData(const char * source, UInt32 sourc\n     if (static_cast<UInt32>(2 + bytes_to_skip) > source_size)\n         throw Exception(ErrorCodes::CANNOT_DECOMPRESS, \"Cannot decompress Gorilla-encoded data. File has wrong header\");\n \n+    if (bytes_to_skip >= uncompressed_size)\n+        throw Exception(ErrorCodes::CANNOT_DECOMPRESS, \"Cannot decompress Gorilla-encoded data. File has wrong header\");\n+\n     memcpy(dest, &source[2], bytes_to_skip);\n     UInt32 source_size_no_header = source_size - bytes_to_skip - 2;\n+    UInt32 uncompressed_size_left = uncompressed_size - bytes_to_skip;\n     switch (bytes_size) // NOLINT(bugprone-switch-missing-default-case)\n     {\n     case 1:\n-        decompressDataForType<UInt8>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip]);\n+        decompressDataForType<UInt8>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip], uncompressed_size_left);\n         break;\n     case 2:\n-        decompressDataForType<UInt16>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip]);\n+        decompressDataForType<UInt16>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip], uncompressed_size_left);\n         break;\n     case 4:\n-        decompressDataForType<UInt32>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip]);\n+        decompressDataForType<UInt32>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip], uncompressed_size_left);\n         break;\n     case 8:\n-        decompressDataForType<UInt64>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip]);\n+        decompressDataForType<UInt64>(&source[2 + bytes_to_skip], source_size_no_header, &dest[bytes_to_skip], uncompressed_size_left);\n         break;\n+    default:\n+        throw Exception(ErrorCodes::CANNOT_DECOMPRESS, \"Cannot decompress Gorilla-encoded data. File has wrong header\");\n     }\n }\n "
+        },
+        {
+            "filename": "tests/queries/0_stateless/02918_gorilla_invalid_file.reference",
+            "diff": "@@ -0,0 +1 @@\n+Exc"
+        },
+        {
+            "filename": "tests/queries/0_stateless/02918_gorilla_invalid_file.sh",
+            "diff": "@@ -0,0 +1,8 @@\n+#!/usr/bin/env bash\n+\n+CUR_DIR=$(cd \"$(dirname \"${BASH_SOURCE[0]}\")\" && pwd)\n+# shellcheck source=../shell_config.sh\n+. \"$CUR_DIR\"/../shell_config.sh\n+\n+echo -ne 'checksumchecksum\\x95\\xd3\\x02\\x00\\x00\\x01\\x00\\x00\\x00\\x0800\\xff\\xff\\xff\\xff\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08\\x02\\x03\\x04\\x05\\x06\\x07\\x08' |\n+    ${CLICKHOUSE_CURL} -sS \"${CLICKHOUSE_URL}&decompress=1&http_native_compression_disable_checksumming_on_decompress=1\" --data-binary @- 2>&1 | grep -oF 'Exc'"
+        }
+    ],
+    "commitTime": "2023-11-23 21:57:26"
+}

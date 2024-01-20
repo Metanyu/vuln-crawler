@@ -1,0 +1,91 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "vorfreuder"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2024-01-02 23:45:07",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-CESANTAMJS-6142638",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49551"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 14:06:24",
+    "remediation": "There is no fixed version for cesanta/mjs . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') via the mjs_op_json_parse function in the msj.c file. An attacker can disrupt service by sending crafted input. "
+    },
+    "source_code": [
+        {
+            "filename": "mjs.c",
+            "diff": "@@ -3313,8 +3313,11 @@ extern \"C\" {\n \n struct mjs_bcode_part;\n \n+#if MJS_ENABLE_DEBUG\n MJS_PRIVATE const char *opcodetostr(uint8_t opcode);\n MJS_PRIVATE size_t mjs_disasm_single(const uint8_t *code, size_t i);\n+#endif\n+\n MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t);\n \n /*\n@@ -8552,7 +8555,9 @@ MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res) {\n #endif\n \n     code = (const uint8_t *) bp.data.p;\n+#if MJS_ENABLE_DEBUG\n     mjs_disasm_single(code, i);\n+#endif\n     prev_opcode = opcode;\n     opcode = code[i];\n     switch (opcode) {\n@@ -8964,7 +8969,9 @@ MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,\n   size_t off = mjs->bcode_len;\n   mjs_val_t r = MJS_UNDEFINED;\n   mjs->error = mjs_parse(path, src, mjs);\n+#if MJS_ENABLE_DEBUG\n   if (cs_log_level >= LL_VERBOSE_DEBUG) mjs_dump(mjs, 1);\n+#endif\n   if (generate_jsc == -1) generate_jsc = mjs->generate_jsc;\n   if (mjs->error == MJS_OK) {\n #if MJS_GENERATE_JSC && defined(CS_MMAP)\n@@ -14163,6 +14170,8 @@ void mjs_dump(struct mjs *mjs, int do_disasm) {\n   LOG(LL_VERBOSE_DEBUG, (\"------- MJS VM DUMP END\"));\n }\n \n+#endif\n+\n MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,\n                               const char *arg_name, enum mjs_type expected_type,\n                               mjs_val_t *parg) {\n@@ -14286,5 +14295,3 @@ int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num) {\n   }\n   return ret;\n }\n-\n-#endif"
+        },
+        {
+            "filename": "mjs.h",
+            "diff": "@@ -70,7 +70,9 @@ typedef unsigned char uint8_t;\n extern \"C\" {\n #endif /* __cplusplus */\n \n-#define MJS_ENABLE_DEBUG 1\n+#ifndef MJS_ENABLE_DEBUG\n+#define MJS_ENABLE_DEBUG 0\n+#endif\n \n /*\n  *  Double-precision floating-point number, IEEE 754\n@@ -385,7 +387,9 @@ typedef unsigned char uint8_t;\n extern \"C\" {\n #endif /* __cplusplus */\n \n-#define MJS_ENABLE_DEBUG 1\n+#ifndef MJS_ENABLE_DEBUG\n+#define MJS_ENABLE_DEBUG 0\n+#endif\n \n /*\n  *  Double-precision floating-point number, IEEE 754"
+        },
+        {
+            "filename": "mjs_no_common.c",
+            "diff": "@@ -213,7 +213,9 @@ typedef unsigned char uint8_t;\n extern \"C\" {\n #endif /* __cplusplus */\n \n-#define MJS_ENABLE_DEBUG 1\n+#ifndef MJS_ENABLE_DEBUG\n+#define MJS_ENABLE_DEBUG 0\n+#endif\n \n /*\n  *  Double-precision floating-point number, IEEE 754\n@@ -4651,7 +4653,9 @@ MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,\n   size_t off = mjs->bcode_len;\n   mjs_val_t r = MJS_UNDEFINED;\n   mjs->error = mjs_parse(path, src, mjs);\n+#if MJS_ENABLE_DEBUG\n   if (cs_log_level >= LL_VERBOSE_DEBUG) mjs_dump(mjs, 1);\n+#endif\n   if (generate_jsc == -1) generate_jsc = mjs->generate_jsc;\n   if (mjs->error == MJS_OK) {\n #if MJS_GENERATE_JSC && defined(CS_MMAP)\n@@ -9639,8 +9643,6 @@ void mjs_fprintf(mjs_val_t v, struct mjs *mjs, FILE *fp) {\n   mjs_jprintf(v, mjs, &out);\n }\n \n-#if MJS_ENABLE_DEBUG\n-\n MJS_PRIVATE const char *opcodetostr(uint8_t opcode) {\n   static const char *names[] = {\n       \"NOP\", \"DROP\", \"DUP\", \"SWAP\", \"JMP\", \"JMP_TRUE\", \"JMP_NEUTRAL_TRUE\",\n@@ -9819,6 +9821,8 @@ void mjs_disasm(const uint8_t *code, size_t len) {\n   }\n }\n \n+#if MJS_ENABLE_DEBUG\n+\n static void mjs_dump_obj_stack(const char *name, const struct mbuf *m,\n                                struct mjs *mjs) {\n   char buf[50];\n@@ -9850,6 +9854,8 @@ void mjs_dump(struct mjs *mjs, int do_disasm) {\n   LOG(LL_VERBOSE_DEBUG, (\"------- MJS VM DUMP END\"));\n }\n \n+#endif\n+\n MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,\n                               const char *arg_name, enum mjs_type expected_type,\n                               mjs_val_t *parg) {\n@@ -9973,5 +9979,3 @@ int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num) {\n   }\n   return ret;\n }\n-\n-#endif"
+        },
+        {
+            "filename": "src/mjs_core_public.h",
+            "diff": "@@ -21,7 +21,9 @@ typedef unsigned char uint8_t;\n extern \"C\" {\n #endif /* __cplusplus */\n \n-#define MJS_ENABLE_DEBUG 1\n+#ifndef MJS_ENABLE_DEBUG\n+#define MJS_ENABLE_DEBUG 0\n+#endif\n \n /*\n  *  Double-precision floating-point number, IEEE 754"
+        },
+        {
+            "filename": "src/mjs_exec.c",
+            "diff": "@@ -584,7 +584,9 @@ MJS_PRIVATE mjs_err_t mjs_execute(struct mjs *mjs, size_t off, mjs_val_t *res) {\n #endif\n \n     code = (const uint8_t *) bp.data.p;\n+#if MJS_ENABLE_DEBUG\n     mjs_disasm_single(code, i);\n+#endif\n     prev_opcode = opcode;\n     opcode = code[i];\n     switch (opcode) {\n@@ -996,7 +998,9 @@ MJS_PRIVATE mjs_err_t mjs_exec_internal(struct mjs *mjs, const char *path,\n   size_t off = mjs->bcode_len;\n   mjs_val_t r = MJS_UNDEFINED;\n   mjs->error = mjs_parse(path, src, mjs);\n+#if MJS_ENABLE_DEBUG\n   if (cs_log_level >= LL_VERBOSE_DEBUG) mjs_dump(mjs, 1);\n+#endif\n   if (generate_jsc == -1) generate_jsc = mjs->generate_jsc;\n   if (mjs->error == MJS_OK) {\n #if MJS_GENERATE_JSC && defined(CS_MMAP)"
+        },
+        {
+            "filename": "src/mjs_util.c",
+            "diff": "@@ -304,6 +304,8 @@ void mjs_dump(struct mjs *mjs, int do_disasm) {\n   LOG(LL_VERBOSE_DEBUG, (\"------- MJS VM DUMP END\"));\n }\n \n+#endif\n+\n MJS_PRIVATE int mjs_check_arg(struct mjs *mjs, int arg_num,\n                               const char *arg_name, enum mjs_type expected_type,\n                               mjs_val_t *parg) {\n@@ -427,5 +429,3 @@ int mjs_get_offset_by_call_frame_num(struct mjs *mjs, int cf_num) {\n   }\n   return ret;\n }\n-\n-#endif"
+        },
+        {
+            "filename": "src/mjs_util.h",
+            "diff": "@@ -16,8 +16,11 @@ extern \"C\" {\n \n struct mjs_bcode_part;\n \n+#if MJS_ENABLE_DEBUG\n MJS_PRIVATE const char *opcodetostr(uint8_t opcode);\n MJS_PRIVATE size_t mjs_disasm_single(const uint8_t *code, size_t i);\n+#endif\n+\n MJS_PRIVATE const char *mjs_stringify_type(enum mjs_type t);\n \n /*"
+        }
+    ],
+    "commitTime": "2021-10-28 13:51:39"
+}

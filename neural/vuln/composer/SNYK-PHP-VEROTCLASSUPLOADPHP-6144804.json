@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.3,
+    "disclosureTime": "2024-01-04 17:44:10",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-VEROTCLASSUPLOADPHP-6144804",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6551"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-05 13:29:57",
+    "remediation": "There is no fixed version for verot/class.upload.php . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "verot/class.upload.php is a PHP class that can be used to upload files and manipulate images very easily. Affected versions of this package are vulnerable to Improper Input Validation when the default configuration is used. An attacker can inject malicious scripts that may be executed in the context of the user's browser by uploading specially crafted files. ",
+        "Workaround": "To mitigate this vulnerability it is recommended to use extension whitelisting accompanied by forcing the server to always provide content-type based on the file extension. The README has been updated to include these guidelines. "
+    },
+    "source_code": [
+        {
+            "filename": "README.md",
+            "diff": "@@ -168,6 +168,23 @@ echo $handle->process();\n die();\n ```\n \n+### Warning about security \n+\n+By default, the class relies on MIME type detection to assess whether the file can be uploaded or not. Several MIME type detection methods are used, depending on the server configuration. The class relies on a blacklist of dangerous file extensions to prevent uploads (or to rename dangerous scripts as text files), as well as a whitelist of accepted MIME types.\n+\n+But it is not the purpose of this class to do in-depth checking and heuristics to attempt to detect maliciously crafted files. For instance, an attacker can craft a file that will have the correct MIME type, but will carry a malicious payload, such as a valid GIF file which would contain some code leading to a XSS vulnerability. If this GIF file has a .html extension, it may be uploaded (depending on the class's settings) and display an XSS vulnerability. \n+\n+However, you can mitigate this by restricting the kind of files that can be uploaded, using `allowed` and `forbidden`, to whitelist and blacklist files depending on their MIME type or extension. *The most secure option would be to only whitelist extensions that you want to allow through, and then making sure that your server always serves the file with the content-type based on the file extension.* \n+\n+For instance, if you only want to allow one type of file, you could whitelist only its file extension. In the following example, only .html files are let through, and are not converted to a text file:\n+```php\n+$handle->allowed   = array('html');\n+$handle->forbidden = array();\n+$handle->no_script = false;\n+```\n+\n+In the end, it is your responsibility to make sure the correct files are uploaded. But more importantly, it is your responsibility to serve the uploaded files correctly, for instance by forcing the server to always provide the content-type based on the file extension.\n+\n \n ### Troubleshooting\n "
+        },
+        {
+            "filename": "src/class.upload.php",
+            "diff": "@@ -1892,6 +1892,8 @@ function init() {\n             'bat',\n             'phar',\n             'wsdl',\n+            'html',\n+            'htm',\n         );\n         \n         $this->forbidden = array_merge($this->dangerous, array(\n@@ -2118,7 +2120,7 @@ function  __construct($file, $lang = 'en_GB')  {\n      */\n     function upload($file, $lang = 'en_GB') {\n \n-        $this->version            = '17/11/2023';\n+        $this->version            = '07/12/2023';\n \n         $this->file_src_name      = '';\n         $this->file_src_name_body = '';"
+        }
+    ],
+    "commitTime": "2023-12-06 23:03:32"
+}

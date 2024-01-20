@@ -1,0 +1,97 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.0",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Vaibhav Hemant Dixit"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.0",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.0",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2022-05-17 00:12:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.50614",
+        "probability": "0.00147"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGOPENDAYLIGHTAAA-6141112",
+    "identifiers": {
+        "CVE": [
+            "CVE-2017-1000406"
+        ],
+        "CWE": [
+            "CWE-613"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-31 19:34:01",
+    "remediation": "Upgrade org.opendaylight.aaa:aaa-cli to version carbon-sr3 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Insufficient Session Expiration",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Insufficient Session Expiration. An attacker can continue to authenticate with a password after changing it until the cache is manually cleared or the system is restarted. "
+    },
+    "source_code": [
+        {
+            "filename": "aaa-cli/pom.xml",
+            "diff": "@@ -61,6 +61,11 @@ and is available at http://www.eclipse.org/legal/epl-v10.html INTERNAL\n       <artifactId>powermock-module-junit4</artifactId>\n       <scope>test</scope>\n     </dependency>\n+    <dependency>\n+      <groupId>${project.groupId}</groupId>\n+      <artifactId>aaa-idmlight</artifactId>\n+      <version>${project.version}</version>\n+    </dependency>\n   </dependencies>\n \n   <build>"
+        },
+        {
+            "filename": "aaa-cli/src/main/java/org/opendaylight/aaa/cli/dmstore/ChangeUserPassword.java",
+            "diff": "@@ -16,6 +16,7 @@\n import org.opendaylight.aaa.api.model.User;\n import org.opendaylight.aaa.api.model.Users;\n import org.opendaylight.aaa.cli.utils.CliUtils;\n+import org.opendaylight.aaa.idm.IdmLightProxy;\n \n @Command(name = \"change-user-pwd\", scope = \"aaa\", description = \"Change the user password.\")\n \n@@ -48,6 +49,7 @@ protected Object doExecute() throws Exception {\n         for (User usr : users.getUsers()) {\n             final String realPwd = SHA256Calculator.getSHA256(currentPwd, usr.getSalt());\n             if (usr.getName().equals(userName) && usr.getPassword().equals(realPwd)) {\n+                IdmLightProxy.clearClaimCache();\n                 usr.setPassword(newPwd);\n                 identityStore.updateUser(usr);\n                 return userName + \"'s password has been changed\";"
+        },
+        {
+            "filename": "aaa-cli/src/main/java/org/opendaylight/aaa/cli/dmstore/RemoveUser.java",
+            "diff": "@@ -14,6 +14,7 @@\n import org.opendaylight.aaa.cli.AaaCliAbstractCommand;\n import org.opendaylight.aaa.cli.utils.CliUtils;\n import org.opendaylight.aaa.cli.utils.DataStoreUtils;\n+import org.opendaylight.aaa.idm.IdmLightProxy;\n \n @Command(name = \"remove-user\", scope = \"aaa\", description = \"Remove user.\")\n \n@@ -43,6 +44,7 @@ protected Object doExecute() throws Exception {\n         if (identityStore.deleteUser(usrId) == null) {\n             return \"Failed to delete user \" + userName;\n         }\n+        IdmLightProxy.clearClaimCache();\n         return \"User \" + userName + \"has been deleted.\";\n     }\n }"
+        },
+        {
+            "filename": "features/authn/odl-aaa-cli/pom.xml",
+            "diff": "@@ -45,6 +45,13 @@\n     </dependencyManagement>\n \n     <dependencies>\n+        <dependency>\n+            <groupId>${project.groupId}</groupId>\n+            <artifactId>odl-aaa-authn</artifactId>\n+            <version>${project.version}</version>\n+            <type>xml</type>\n+            <classifier>features</classifier>\n+        </dependency>\n         <dependency>\n             <groupId>${project.groupId}</groupId>\n             <artifactId>odl-aaa-cert</artifactId>\n@@ -75,4 +82,4 @@\n             <version>${project.version}</version>\n         </dependency>\n     </dependencies>\n-</project>\n\\ No newline at end of file\n+</project>"
+        }
+    ],
+    "commitTime": "2017-11-22 17:10:28"
+}

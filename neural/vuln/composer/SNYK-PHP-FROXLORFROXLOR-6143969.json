@@ -1,0 +1,53 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Ahmed Hassan"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 4.3,
+    "disclosureTime": "2024-01-03 23:51:19",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-FROXLORFROXLOR-6143969",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50256"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-04 15:44:37",
+    "remediation": "Upgrade froxlor/froxlor to version 2.1.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "froxlor/froxlor is a server administration software. Affected versions of this package are vulnerable to Improper Input Validation via the registration form submission process. An attacker can bypass mandatory field requirements by submitting the form with essential fields left blank. "
+    },
+    "source_code": [
+        {
+            "filename": "lib/Froxlor/Api/Commands/Customers.php",
+            "diff": "@@ -1053,7 +1053,7 @@ public function update()\n \t\t\t$email = $this->getParam('email', true, $idna_convert->decode($result['email']));\n \t\t\t$name = $this->getParam('name', true, $result['name']);\n \t\t\t$firstname = $this->getParam('firstname', true, $result['firstname']);\n-\t\t\t$company_required = empty($result['company']) && ((!empty($name) && empty($firstname)) || (empty($name) && !empty($firstname)) || (empty($name) && empty($firstname)));\n+\t\t\t$company_required = (!empty($name) && empty($firstname)) || (empty($name) && !empty($firstname)) || (empty($name) && empty($firstname));\n \t\t\t$company = $this->getParam('company', !$company_required, $result['company']);\n \t\t\t$street = $this->getParam('street', true, $result['street']);\n \t\t\t$zipcode = $this->getParam('zipcode', true, $result['zipcode']);"
+        },
+        {
+            "filename": "templates/Froxlor/assets/js/jquery/validation.js",
+            "diff": "@@ -8,18 +8,18 @@ export default function () {\n \t\t\t\trules: {\n \t\t\t\t\t'name': {\n \t\t\t\t\t\trequired: function () {\n-\t\t\t\t\t\t\treturn $('#company').val().length === 0 || $('#firstname').val().length > 0;\n+\t\t\t\t\t\t\treturn $('#company').val().trim().length === 0 || $('#firstname').val().trim().length > 0;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t'firstname': {\n \t\t\t\t\t\trequired: function () {\n-\t\t\t\t\t\t\treturn $('#company').val().length === 0 || $('#name').val().length > 0;\n+\t\t\t\t\t\t\treturn $('#company').val().trim().length === 0 || $('#name').val().trim().length > 0;\n \t\t\t\t\t\t}\n \t\t\t\t\t},\n \t\t\t\t\t'company': {\n \t\t\t\t\t\trequired: function () {\n-\t\t\t\t\t\t\treturn $('#name').val().length === 0\n-\t\t\t\t\t\t\t\t&& $('#firstname').val().length === 0;\n+\t\t\t\t\t\t\treturn $('#name').val().trim().length === 0\n+\t\t\t\t\t\t\t\t&& $('#firstname').val().trim().length === 0;\n \t\t\t\t\t\t}\n \t\t\t\t\t}\n \t\t\t\t},"
+        }
+    ],
+    "commitTime": "2023-12-15 08:36:06"
+}

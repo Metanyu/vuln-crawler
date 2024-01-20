@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2023-12-15 12:30:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06936",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGWSO2CARBONAPIMGT-6140446",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6835"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-29 12:53:18",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation in the Forum feature. An attacker can manipulate the API rating by sending crafted input to the server. "
+    },
+    "source_code": [
+        {
+            "filename": "components/forum/org.wso2.carbon.forum/src/main/java/org/wso2/carbon/forum/registry/RegistryForumManager.java",
+            "diff": "@@ -763,6 +763,9 @@ public float rateTopic(String topicId, int rating, String username, String tenan\n         Registry registry;\n \n         try {\n+            final int MAX_RATE = 5;\n+            final int MIN_RATE = 1;\n+            rating = (rating > MAX_RATE) ? MAX_RATE : ((rating < MIN_RATE) ? MIN_RATE : rating);\n             registry = getRegistry(username, tenantDomain);\n             GenericArtifactManager artifactManager = getArtifactManager(registry, TOPIC_RXT_KEY);\n             GenericArtifact genericArtifact = artifactManager.getGenericArtifact(topicId);"
+        }
+    ],
+    "commitTime": "2021-08-26 06:02:37"
+}

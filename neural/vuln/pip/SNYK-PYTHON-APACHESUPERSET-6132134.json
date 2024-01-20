@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Jack Prince-Fulls"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-19 12:30:19",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHESUPERSET-6132134",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49736"
+        ],
+        "CWE": [
+            "CWE-89"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 08:39:39",
+    "remediation": "Upgrade apache-superset to version 2.1.3, 3.0.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "SQL Injection",
+    "vulnDescription": {
+        "Overview": "apache-superset is a modern, enterprise-ready business intelligence web application. Affected versions of this package are vulnerable to SQL Injection via the where_in JINJA macro which allows users to specify a quote. An attacker can manipulate SQL queries by crafting malicious input that exploits the quoting mechanism. "
+    },
+    "source_code": [
+        {
+            "filename": "superset/jinja_context.py",
+            "diff": "@@ -25,6 +25,7 @@\n from jinja2 import DebugUndefined\n from jinja2.sandbox import SandboxedEnvironment\n from sqlalchemy.engine.interfaces import Dialect\n+from sqlalchemy.sql.expression import bindparam\n from sqlalchemy.types import String\n from typing_extensions import TypedDict\n \n@@ -397,23 +398,39 @@ def validate_template_context(\n     return validate_context_types(context)\n \n \n-def where_in(values: list[Any], mark: str = \"'\") -> str:\n-    \"\"\"\n-    Given a list of values, build a parenthesis list suitable for an IN expression.\n+class WhereInMacro:  # pylint: disable=too-few-public-methods\n+    def __init__(self, dialect: Dialect):\n+        self.dialect = dialect\n \n-        >>> where_in([1, \"b\", 3])\n-        (1, 'b', 3)\n+    def __call__(self, values: list[Any], mark: Optional[str] = None) -> str:\n+        \"\"\"\n+        Given a list of values, build a parenthesis list suitable for an IN expression.\n \n-    \"\"\"\n+            >>> from sqlalchemy.dialects import mysql\n+            >>> where_in = WhereInMacro(dialect=mysql.dialect())\n+            >>> where_in([1, \"Joe's\", 3])\n+            (1, 'Joe''s', 3)\n \n-    def quote(value: Any) -> str:\n-        if isinstance(value, str):\n-            value = value.replace(mark, mark * 2)\n-            return f\"{mark}{value}{mark}\"\n-        return str(value)\n+        \"\"\"\n+        binds = [bindparam(f\"value_{i}\", value) for i, value in enumerate(values)]\n+        string_representations = [\n+            str(\n+                bind.compile(\n+                    dialect=self.dialect, compile_kwargs={\"literal_binds\": True}\n+                )\n+            )\n+            for bind in binds\n+        ]\n+        joined_values = \", \".join(string_representations)\n+        result = f\"({joined_values})\"\n+\n+        if mark:\n+            result += (\n+                \"\\n-- WARNING: the `mark` parameter was removed from the `where_in` \"\n+                \"macro for security reasons\\n\"\n+            )\n \n-    joined_values = \", \".join(quote(value) for value in values)\n-    return f\"({joined_values})\"\n+        return result\n \n \n class BaseTemplateProcessor:\n@@ -449,7 +466,7 @@ def __init__(\n         self.set_context(**kwargs)\n \n         # custom filters\n-        self._env.filters[\"where_in\"] = where_in\n+        self._env.filters[\"where_in\"] = WhereInMacro(database.get_dialect())\n \n     def set_context(self, **kwargs: Any) -> None:\n         self._context.update(kwargs)"
+        },
+        {
+            "filename": "tests/unit_tests/jinja_context_test.py",
+            "diff": "@@ -20,17 +20,22 @@\n \n import pytest\n from pytest_mock import MockFixture\n+from sqlalchemy.dialects import mysql\n \n from superset.datasets.commands.exceptions import DatasetNotFoundError\n-from superset.jinja_context import dataset_macro, where_in\n+from superset.jinja_context import dataset_macro, WhereInMacro\n \n \n def test_where_in() -> None:\n     \"\"\"\n     Test the ``where_in`` Jinja2 filter.\n     \"\"\"\n+    where_in = WhereInMacro(mysql.dialect())\n     assert where_in([1, \"b\", 3]) == \"(1, 'b', 3)\"\n-    assert where_in([1, \"b\", 3], '\"') == '(1, \"b\", 3)'\n+    assert where_in([1, \"b\", 3], '\"') == (\n+        \"(1, 'b', 3)\\n-- WARNING: the `mark` parameter was removed from the \"\n+        \"`where_in` macro for security reasons\\n\"\n+    )\n     assert where_in([\"O'Malley's\"]) == \"('O''Malley''s')\"\n \n "
+        }
+    ],
+    "commitTime": "2023-10-31 14:22:13"
+}

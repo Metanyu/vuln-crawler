@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-21 18:14:34",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-UNSAFELIBYAML-6137755",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-824"
+        ],
+        "RUSTSEC": [
+            "RUSTSEC-2023-0075"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2023-12-21 20:41:46",
+    "remediation": "Upgrade unsafe-libyaml to version 0.2.10 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Access of Uninitialized Pointer",
+    "vulnDescription": {
+        "Overview": "unsafe-libyaml is a libyaml transpile Affected versions of this package are vulnerable to Access of Uninitialized Pointer due to improper memory alignment when writing u64 values on 32-bit and 16-bit platforms. An attacker can cause undefined behavior or a deterministic crash by exploiting the insufficient alignment of data writes. "
+    },
+    "source_code": [
+        {
+            "filename": "src/lib.rs",
+            "diff": "@@ -60,11 +60,23 @@ mod externs {\n     use core::ptr;\n     use core::slice;\n \n-    const HEADER: usize = mem::size_of::<usize>();\n+    const HEADER: usize = {\n+        let need_len = mem::size_of::<usize>();\n+        // Round up to multiple of MALLOC_ALIGN.\n+        (need_len + MALLOC_ALIGN - 1) & !(MALLOC_ALIGN - 1)\n+    };\n \n     // `max_align_t` may be bigger than this, but libyaml does not use `long\n     // double` or u128.\n-    const MALLOC_ALIGN: usize = mem::align_of::<usize>();\n+    const MALLOC_ALIGN: usize = {\n+        let int_align = mem::align_of::<libc::c_ulong>();\n+        let ptr_align = mem::align_of::<usize>();\n+        if int_align >= ptr_align {\n+            int_align\n+        } else {\n+            ptr_align\n+        }\n+    };\n \n     pub unsafe fn malloc(size: libc::c_ulong) -> *mut libc::c_void {\n         let size = HEADER.force_add(size.force_into());"
+        }
+    ],
+    "commitTime": "2023-12-14 22:26:52"
+}

@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Evan Edwards"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 3.3,
+    "disclosureTime": "2023-12-05 23:43:07",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05786",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PYDRIVE2-6101007",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49297"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 13:37:14",
+    "remediation": "Upgrade PyDrive2 to version 1.16.2 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Deserialization of Untrusted Data",
+    "vulnDescription": {
+        "Details": "Serialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like Remote Method Invocation (RMI) , Java Management Extension (JMX) , Java Messaging System (JMS) , Action Message Format (AMF) , Java Server Faces (JSF) ViewState , etc. Deserialization of untrusted data ( CWE-502 ) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution. ",
+        "Overview": "PyDrive2 is a Google Drive API made easy. Maintained fork of PyDrive. Affected versions of this package are vulnerable to Deserialization of Untrusted Data via the LoadSettingsFile function. An attacker can execute arbitrary code by supplying a maliciously crafted YAML file that is deserialized unsafely. "
+    },
+    "source_code": [
+        {
+            "filename": "pydrive2/settings.py",
+            "diff": "@@ -2,9 +2,9 @@\n from yaml import YAMLError\n \n try:\n-    from yaml import CLoader as Loader\n+    from yaml import CSafeLoader as SafeLoader\n except ImportError:\n-    from yaml import Loader\n+    from yaml import SafeLoader\n \n SETTINGS_FILE = \"settings.yaml\"\n SETTINGS_STRUCT = {\n@@ -114,7 +114,7 @@ def LoadSettingsFile(filename=SETTINGS_FILE):\n     \"\"\"\n     try:\n         with open(filename) as stream:\n-            data = load(stream, Loader=Loader)\n+            data = load(stream, Loader=SafeLoader)\n     except (YAMLError, OSError) as e:\n         raise SettingsError(e)\n     return data"
+        }
+    ],
+    "commitTime": "2023-11-28 15:05:14"
+}

@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2024-01-02 03:25:24",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-JS-SERENITYWEBCOMMONASSETS-6141142",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "js",
+    "malicious": true,
+    "packageManager": "npm",
+    "publicationTime": "2024-01-02 08:04:44",
+    "remediation": "Avoid using all malicious instances of the @serenity-web/common-assets package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "@serenity-web/common-assets is a malicious package. This package contains malicious code, and its content was removed from the official package manager. While this package might be attempting to impersonate a valid organization, there is no connection between that organization and this package authorship. "
+    },
+    "source_code": []
+}

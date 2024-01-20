@@ -1,0 +1,56 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2024-01-03 05:45:05",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGWEBJARSBOWER-6142160",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46308"
+        ],
+        "CWE": [
+            "CWE-1321"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2024-01-03 09:55:53",
+    "remediation": "There is no fixed version for org.webjars.bower:plotly.js . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Prototype Pollution",
+    "vulnDescription": {
+        "Affected environments": "The following environments are susceptible to a Prototype Pollution attack: Application server Web server Web browser ",
+        "Details": "Prototype Pollution is a vulnerability affecting JavaScript. Prototype Pollution refers to the ability to inject properties into existing JavaScript language construct prototypes, such as objects. JavaScript allows all Object attributes to be altered, including their magical attributes such as __proto__ , constructor and prototype . An attacker manipulates these attributes to overwrite, or pollute, a JavaScript application object prototype of the base object by injecting other values. Properties on the Object.prototype are then inherited by all the JavaScript objects through the prototype chain. When that happens, this leads to either denial of service by triggering JavaScript exceptions, or it tampers with the application source code to force the code path that the attacker injects, thereby leading to remote code execution. There are two main ways in which the pollution of prototypes occurs: Unsafe Object recursive merge Property definition by path Unsafe Object recursive merge The logic of a vulnerable recursive merge function follows the following high-level model: merge (target, source) foreach property of source if property exists and is an object on both the target and the source merge(target[property], source[property]) else target[property] = source[property] When the source object contains a property named __proto__ defined with Object.defineProperty() , the condition that checks if the property exists and is an object on both the target and the source passes and the merge recurses with the target, being the prototype of Object and the source of Object as defined by the attacker. Properties are then copied on the Object prototype. Clone operations are a special sub-class of unsafe recursive merges, which occur when a recursive merge is conducted on an empty object: merge({},source) . lodash and Hoek are examples of libraries susceptible to recursive merge attacks. Property definition by path There are a few JavaScript libraries that use an API to define property values on an object based on a given path. The function that is generally affected contains this signature: theFunction(object, path, value) If the attacker can control the value of \u201cpath\u201d, they can set this value to __proto__.myValue . myValue is then assigned to the prototype of the class of the object. ",
+        "How to prevent": " Freeze the prototype\u2014 use Object.freeze (Object.prototype) . Require schema validation of JSON input. Avoid using unsafe recursive merge functions. Consider using objects without prototypes (for example, Object.create(null) ), breaking the prototype chain and preventing pollution. As a best practice use Map instead of Object . For more information on this vulnerability type: Arteau, Oliver. \u201cJavaScript prototype pollution attack in NodeJS application.\u201d GitHub, 26 May 2018 ",
+        "Overview": "org.webjars.bower:plotly.js is a package that provides an easy and simple way to export package.json data. Affected versions of this package are vulnerable to Prototype Pollution via the expandObjectPaths or nestedProperty functions. An attacker can manipulate the prototype of base objects by injecting properties into existing JavaScript objects. ",
+        "Types of attacks": "There are a few methods by which Prototype Pollution can be manipulated: Type Origin Short description Denial of service (DoS) Client This is the most likely attack. DoS occurs when Object holds generic functions that are implicitly called for various operations (for example, toString and valueOf ). The attacker pollutes Object.prototype.someattr and alters its state to an unexpected value such as Int or Object . In this case, the code fails and is likely to cause a denial of service. For example: if an attacker pollutes Object.prototype.toString by defining it as an integer, if the codebase at any point was reliant on someobject.toString() it would fail. Remote Code Execution Client Remote code execution is generally only possible in cases where the codebase evaluates a specific attribute of an object, and then executes that evaluation. For example: eval(someobject.someattr) . In this case, if the attacker pollutes Object.prototype.someattr they are likely to be able to leverage this in order to execute code. Property Injection Client The attacker pollutes properties that the codebase relies on for their informative value, including security properties such as cookies or tokens. For example: if a codebase checks privileges for someuser.isAdmin , then when the attacker pollutes Object.prototype.isAdmin and sets it to equal true , they can then achieve admin privileges. "
+    },
+    "source_code": [
+        {
+            "filename": "src/lib/nested_property.js",
+            "diff": "@@ -24,13 +24,20 @@ module.exports = function nestedProperty(container, propStr) {\n         throw 'bad property string';\n     }\n \n-    var j = 0;\n     var propParts = propStr.split('.');\n     var indexed;\n     var indices;\n-    var i;\n+    var i, j;\n+\n+    for(j = 0; j < propParts.length; j++) {\n+        // guard against polluting __proto__ and other internals\n+        if(String(propParts[j]).slice(0, 2) === '__') {\n+            throw 'bad property string';\n+        }\n+    }\n \n     // check for parts of the nesting hierarchy that are numbers (ie array elements)\n+    j = 0;\n     while(j < propParts.length) {\n         // look for non-bracket chars, then any number of [##] blocks\n         indexed = String(propParts[j]).match(/^([^\\[\\]]*)((\\[\\-?[0-9]*\\])+)$/);"
+        },
+        {
+            "filename": "test/jasmine/tests/lib_test.js",
+            "diff": "@@ -468,7 +468,9 @@ describe('Test lib.js:', function() {\n \n         it('should fail on a bad property string', function() {\n             var badStr = [\n-                [], {}, false, undefined, null, NaN, Infinity\n+                [], {}, false, undefined, null, NaN, Infinity,\n+                // should guard against prototype pollution\n+                'x.__proto__.polluted', 'x.y.__proto__.polluted'\n             ];\n \n             function badProp(i) {"
+        }
+    ],
+    "commitTime": "2023-08-11 15:37:09"
+}

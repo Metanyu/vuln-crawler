@@ -1,0 +1,41 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "H",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Jossef Harush Kadouri - Checkmarx"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 9.8,
+    "disclosureTime": "2024-01-02 22:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "High",
+    "id": "SNYK-JS-EVERYTHING-6142161",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-506"
+        ]
+    },
+    "language": "js",
+    "malicious": true,
+    "packageManager": "npm",
+    "publicationTime": "2024-01-03 08:44:15",
+    "remediation": "Avoid using all malicious instances of the everything package. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Malicious Package",
+    "vulnDescription": {
+        "Overview": "everything is a malicious package. This package relies on every other public NPM package, resulting in millions of transitive dependencies. Installing this library leads to a Denial of Service (DOS) causing issues such as storage space exhaustion and disruptions in build pipelines. "
+    },
+    "source_code": []
+}

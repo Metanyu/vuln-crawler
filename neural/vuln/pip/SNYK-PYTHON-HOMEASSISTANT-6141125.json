@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 6.4,
+    "disclosureTime": "2024-01-01 06:32:06",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.16501",
+        "probability": "0.00050"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-HOMEASSISTANT-6141125",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-41899"
+        ],
+        "CWE": [
+            "CWE-918"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 12:11:47",
+    "remediation": "Upgrade homeassistant to version 2023.9.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Server-side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Server-side Request Forgery (SSRF) through 'hassio.addon_stdin', where an attacker capable of calling this service may be able to invoke any Supervisor REST API endpoints with a POST request. An attacker able to exploit will be able to control the data dictionary, including its addon and input key/values. "
+    },
+    "source_code": [
+        {
+            "filename": "homeassistant/components/hassio/__init__.py",
+            "diff": "@@ -32,6 +32,7 @@\n     HassJob,\n     HomeAssistant,\n     ServiceCall,\n+    async_get_hass,\n     callback,\n )\n from homeassistant.exceptions import HomeAssistantError\n@@ -149,9 +150,22 @@\n SERVICE_RESTORE_PARTIAL = \"restore_partial\"\n \n \n+def valid_addon(value: Any) -> str:\n+    \"\"\"Validate value is a valid addon slug.\"\"\"\n+    value = cv.slug(value)\n+\n+    hass: HomeAssistant | None = None\n+    with suppress(HomeAssistantError):\n+        hass = async_get_hass()\n+\n+    if hass and (addons := get_addons_info(hass)) is not None and value not in addons:\n+        raise vol.Invalid(\"Not a valid add-on slug\")\n+    return value\n+\n+\n SCHEMA_NO_DATA = vol.Schema({})\n \n-SCHEMA_ADDON = vol.Schema({vol.Required(ATTR_ADDON): cv.string})\n+SCHEMA_ADDON = vol.Schema({vol.Required(ATTR_ADDON): valid_addon})\n \n SCHEMA_ADDON_STDIN = SCHEMA_ADDON.extend(\n     {vol.Required(ATTR_INPUT): vol.Any(dict, cv.string)}\n@@ -174,7 +188,7 @@\n     {\n         vol.Optional(ATTR_HOMEASSISTANT): cv.boolean,\n         vol.Optional(ATTR_FOLDERS): vol.All(cv.ensure_list, [cv.string]),\n-        vol.Optional(ATTR_ADDONS): vol.All(cv.ensure_list, [cv.string]),\n+        vol.Optional(ATTR_ADDONS): vol.All(cv.ensure_list, [cv.slug]),\n     }\n )\n \n@@ -189,7 +203,7 @@\n     {\n         vol.Optional(ATTR_HOMEASSISTANT): cv.boolean,\n         vol.Optional(ATTR_FOLDERS): vol.All(cv.ensure_list, [cv.string]),\n-        vol.Optional(ATTR_ADDONS): vol.All(cv.ensure_list, [cv.string]),\n+        vol.Optional(ATTR_ADDONS): vol.All(cv.ensure_list, [cv.slug]),\n     }\n )\n "
+        },
+        {
+            "filename": "homeassistant/components/hassio/handler.py",
+            "diff": "@@ -8,6 +8,7 @@\n from typing import Any\n \n import aiohttp\n+from yarl import URL\n \n from homeassistant.components.http import (\n     CONF_SERVER_HOST,\n@@ -530,6 +531,11 @@ async def send_command(\n \n         This method is a coroutine.\n         \"\"\"\n+        url = f\"http://{self._ip}{command}\"\n+        if url != str(URL(url)):\n+            _LOGGER.error(\"Invalid request %s\", command)\n+            raise HassioAPIError()\n+\n         try:\n             request = await self.websession.request(\n                 method,"
+        },
+        {
+            "filename": "tests/components/hassio/test_handler.py",
+            "diff": "@@ -413,3 +413,10 @@ async def test_api_reboot_host(\n \n     assert await handler.async_reboot_host(hass) == {}\n     assert aioclient_mock.call_count == 1\n+\n+\n+async def test_send_command_invalid_command(hass: HomeAssistant, hassio_stubs) -> None:\n+    \"\"\"Test send command fails when command is invalid.\"\"\"\n+    hassio: HassIO = hass.data[\"hassio\"]\n+    with pytest.raises(HassioAPIError):\n+        await hassio.send_command(\"/test/../bad\")"
+        },
+        {
+            "filename": "tests/components/hassio/test_init.py",
+            "diff": "@@ -5,6 +5,7 @@\n from unittest.mock import patch\n \n import pytest\n+from voluptuous import Invalid\n \n from homeassistant.auth.const import GROUP_ID_ADMIN\n from homeassistant.components import frontend\n@@ -100,29 +101,29 @@ def mock_all(aioclient_mock, request, os_info):\n                 \"version_latest\": \"1.0.0\",\n                 \"version\": \"1.0.0\",\n                 \"auto_update\": True,\n+                \"addons\": [\n+                    {\n+                        \"name\": \"test\",\n+                        \"slug\": \"test\",\n+                        \"state\": \"stopped\",\n+                        \"update_available\": False,\n+                        \"version\": \"1.0.0\",\n+                        \"version_latest\": \"1.0.0\",\n+                        \"repository\": \"core\",\n+                        \"icon\": False,\n+                    },\n+                    {\n+                        \"name\": \"test2\",\n+                        \"slug\": \"test2\",\n+                        \"state\": \"stopped\",\n+                        \"update_available\": False,\n+                        \"version\": \"1.0.0\",\n+                        \"version_latest\": \"1.0.0\",\n+                        \"repository\": \"core\",\n+                        \"icon\": False,\n+                    },\n+                ],\n             },\n-            \"addons\": [\n-                {\n-                    \"name\": \"test\",\n-                    \"slug\": \"test\",\n-                    \"installed\": True,\n-                    \"update_available\": False,\n-                    \"version\": \"1.0.0\",\n-                    \"version_latest\": \"1.0.0\",\n-                    \"repository\": \"core\",\n-                    \"url\": \"https://github.com/home-assistant/addons/test\",\n-                },\n-                {\n-                    \"name\": \"test2\",\n-                    \"slug\": \"test2\",\n-                    \"installed\": True,\n-                    \"update_available\": False,\n-                    \"version\": \"1.0.0\",\n-                    \"version_latest\": \"1.0.0\",\n-                    \"repository\": \"core\",\n-                    \"url\": \"https://github.com\",\n-                },\n-            ],\n         },\n     )\n     aioclient_mock.get(\n@@ -243,7 +244,7 @@ async def test_setup_api_ping(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert hass.components.hassio.get_core_info()[\"version_latest\"] == \"1.0.0\"\n     assert hass.components.hassio.is_hassio()\n \n@@ -288,7 +289,7 @@ async def test_setup_api_push_api_data(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert not aioclient_mock.mock_calls[1][2][\"ssl\"]\n     assert aioclient_mock.mock_calls[1][2][\"port\"] == 9999\n     assert aioclient_mock.mock_calls[1][2][\"watchdog\"]\n@@ -307,7 +308,7 @@ async def test_setup_api_push_api_data_server_host(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert not aioclient_mock.mock_calls[1][2][\"ssl\"]\n     assert aioclient_mock.mock_calls[1][2][\"port\"] == 9999\n     assert not aioclient_mock.mock_calls[1][2][\"watchdog\"]\n@@ -324,7 +325,7 @@ async def test_setup_api_push_api_data_default(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert not aioclient_mock.mock_calls[1][2][\"ssl\"]\n     assert aioclient_mock.mock_calls[1][2][\"port\"] == 8123\n     refresh_token = aioclient_mock.mock_calls[1][2][\"refresh_token\"]\n@@ -404,7 +405,7 @@ async def test_setup_api_existing_hassio_user(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert not aioclient_mock.mock_calls[1][2][\"ssl\"]\n     assert aioclient_mock.mock_calls[1][2][\"port\"] == 8123\n     assert aioclient_mock.mock_calls[1][2][\"refresh_token\"] == token.token\n@@ -421,7 +422,7 @@ async def test_setup_core_push_timezone(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert aioclient_mock.mock_calls[2][2][\"timezone\"] == \"testzone\"\n \n     with patch(\"homeassistant.util.dt.set_default_time_zone\"):\n@@ -441,7 +442,7 @@ async def test_setup_hassio_no_additional_data(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert aioclient_mock.mock_calls[-1][3][\"Authorization\"] == \"Bearer 123456\"\n \n \n@@ -486,13 +487,17 @@ async def test_service_register(hassio_env, hass: HomeAssistant) -> None:\n \n @pytest.mark.freeze_time(\"2021-11-13 11:48:00\")\n async def test_service_calls(\n-    hassio_env,\n     hass: HomeAssistant,\n     aioclient_mock: AiohttpClientMocker,\n     caplog: pytest.LogCaptureFixture,\n ) -> None:\n     \"\"\"Call service and check the API calls behind that.\"\"\"\n-    assert await async_setup_component(hass, \"hassio\", {})\n+    with patch.dict(os.environ, MOCK_ENVIRON), patch(\n+        \"homeassistant.components.hassio.HassIO.is_connected\",\n+        return_value=None,\n+    ):\n+        assert await async_setup_component(hass, \"hassio\", {})\n+        await hass.async_block_till_done()\n \n     aioclient_mock.post(\"http://127.0.0.1/addons/test/start\", json={\"result\": \"ok\"})\n     aioclient_mock.post(\"http://127.0.0.1/addons/test/stop\", json={\"result\": \"ok\"})\n@@ -519,14 +524,14 @@ async def test_service_calls(\n     )\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 10\n+    assert aioclient_mock.call_count == 26\n     assert aioclient_mock.mock_calls[-1][2] == \"test\"\n \n     await hass.services.async_call(\"hassio\", \"host_shutdown\", {})\n     await hass.services.async_call(\"hassio\", \"host_reboot\", {})\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 12\n+    assert aioclient_mock.call_count == 28\n \n     await hass.services.async_call(\"hassio\", \"backup_full\", {})\n     await hass.services.async_call(\n@@ -541,7 +546,7 @@ async def test_service_calls(\n     )\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 14\n+    assert aioclient_mock.call_count == 30\n     assert aioclient_mock.mock_calls[-1][2] == {\n         \"name\": \"2021-11-13 11:48:00\",\n         \"homeassistant\": True,\n@@ -566,7 +571,7 @@ async def test_service_calls(\n     )\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 16\n+    assert aioclient_mock.call_count == 32\n     assert aioclient_mock.mock_calls[-1][2] == {\n         \"addons\": [\"test\"],\n         \"folders\": [\"ssl\"],\n@@ -584,7 +589,7 @@ async def test_service_calls(\n     )\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 17\n+    assert aioclient_mock.call_count == 33\n     assert aioclient_mock.mock_calls[-1][2] == {\n         \"name\": \"backup_name\",\n         \"location\": \"backup_share\",\n@@ -599,13 +604,35 @@ async def test_service_calls(\n     )\n     await hass.async_block_till_done()\n \n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 34\n     assert aioclient_mock.mock_calls[-1][2] == {\n         \"name\": \"2021-11-13 11:48:00\",\n         \"location\": None,\n     }\n \n \n+async def test_invalid_service_calls(\n+    hass: HomeAssistant,\n+    aioclient_mock: AiohttpClientMocker,\n+) -> None:\n+    \"\"\"Call service with invalid input and check that it raises.\"\"\"\n+    with patch.dict(os.environ, MOCK_ENVIRON), patch(\n+        \"homeassistant.components.hassio.HassIO.is_connected\",\n+        return_value=None,\n+    ):\n+        assert await async_setup_component(hass, \"hassio\", {})\n+        await hass.async_block_till_done()\n+\n+    with pytest.raises(Invalid):\n+        await hass.services.async_call(\n+            \"hassio\", \"addon_start\", {\"addon\": \"does_not_exist\"}\n+        )\n+    with pytest.raises(Invalid):\n+        await hass.services.async_call(\n+            \"hassio\", \"addon_stdin\", {\"addon\": \"does_not_exist\", \"input\": \"test\"}\n+        )\n+\n+\n async def test_service_calls_core(\n     hassio_env, hass: HomeAssistant, aioclient_mock: AiohttpClientMocker\n ) -> None:\n@@ -889,7 +916,7 @@ async def test_setup_hardware_integration(\n         await hass.async_block_till_done()\n \n     assert result\n-    assert aioclient_mock.call_count == 18\n+    assert aioclient_mock.call_count == 22\n     assert len(mock_setup_entry.mock_calls) == 1\n \n "
+        }
+    ],
+    "commitTime": "2023-08-29 17:57:41"
+}

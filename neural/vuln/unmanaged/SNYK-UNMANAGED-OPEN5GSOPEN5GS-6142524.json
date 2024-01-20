@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "liuxiaoxinxinxin"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2024-01-02 22:45:26",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-OPEN5GSOPEN5GS-6142524",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50019"
+        ],
+        "CWE": [
+            "CWE-755"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 11:55:16",
+    "remediation": "Upgrade open5gs/open5gs to version 2.7.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Exceptional Conditions",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Handling of Exceptional Conditions due to improper error handling in the gmm_state_authentication function in /src/amf/gmm-sm.c file. An attacker can cause the AMF to crash by sending an InitialUEMessage and a Registration request at a specific time. "
+    },
+    "source_code": [
+        {
+            "filename": "src/amf/gmm-sm.c",
+            "diff": "@@ -1716,6 +1716,39 @@ void gmm_state_authentication(ogs_fsm_t *s, amf_event_t *e)\n             END\n             break;\n \n+        CASE(OGS_SBI_SERVICE_NAME_NUDM_UECM)\n+            if (sbi_message->res_status != OGS_SBI_HTTP_STATUS_CREATED &&\n+                sbi_message->res_status != OGS_SBI_HTTP_STATUS_NO_CONTENT &&\n+                sbi_message->res_status != OGS_SBI_HTTP_STATUS_OK) {\n+                ogs_error(\"[%s] HTTP response error [%d]\",\n+                        amf_ue->supi, sbi_message->res_status);\n+            }\n+\n+            SWITCH(sbi_message->h.resource.component[1])\n+            CASE(OGS_SBI_RESOURCE_NAME_REGISTRATIONS)\n+                SWITCH(sbi_message->h.method)\n+                CASE(OGS_SBI_HTTP_METHOD_PUT)\n+                    /*\n+                     * Issue #2733\n+                     *\n+                     * We need to ignore this message in this state.\n+                     */\n+                    ogs_error(\"[%s] Ignore SBI message\", amf_ue->supi);\n+                    break;\n+                DEFAULT\n+                    ogs_error(\"[%s] Invalid HTTP method [%s]\",\n+                            amf_ue->suci, sbi_message->h.method);\n+                    ogs_assert_if_reached();\n+                END\n+                break;\n+\n+            DEFAULT\n+                ogs_error(\"Invalid resource name [%s]\",\n+                        sbi_message->h.resource.component[1]);\n+                ogs_assert_if_reached();\n+            END\n+            break;\n+\n         DEFAULT\n             ogs_error(\"Invalid service name [%s]\", sbi_message->h.service.name);\n             ogs_assert_if_reached();"
+        }
+    ],
+    "commitTime": "2023-11-25 12:21:23"
+}

@@ -1,0 +1,105 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-06 21:51:56",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.38117",
+        "probability": "0.00090"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-GHOSTSCRIPT-6102832",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46751"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 12:48:14",
+    "remediation": "Upgrade ghostscript to version 10.02.1 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference via the gdev_prn_open_printer_seekable function. An attacker can cause the application to crash by exploiting a dangling pointer. "
+    },
+    "source_code": [
+        {
+            "filename": "base/gdevprn.c",
+            "diff": "@@ -1271,6 +1271,7 @@ gdev_prn_open_printer_seekable(gx_device *pdev, bool binary_mode,\n               && !IS_LIBCTX_STDERR(pdev->memory, gp_get_file(ppdev->file))) {\n \n                 code = gx_device_close_output_file(pdev, ppdev->fname, ppdev->file);\n+                ppdev->file = NULL;\n                 if (code < 0)\n                     return code;\n             }"
+        },
+        {
+            "filename": "devices/gdevtsep.c",
+            "diff": "@@ -737,6 +737,7 @@ tiffsep_initialize_device_procs(gx_device *dev)\n {\n     gdev_prn_initialize_device_procs(dev);\n \n+    set_dev_proc(dev, output_page, gdev_prn_output_page_seekable);\n     set_dev_proc(dev, open_device, tiffsep_prn_open);\n     set_dev_proc(dev, close_device, tiffsep_prn_close);\n     set_dev_proc(dev, map_color_rgb, tiffsep_decode_color);"
+        }
+    ],
+    "commitTime": "2023-10-31 11:57:42"
+}

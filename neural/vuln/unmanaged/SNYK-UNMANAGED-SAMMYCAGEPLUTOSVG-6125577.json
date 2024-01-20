@@ -1,0 +1,65 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "W4terf1re"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-14 06:55:29",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-SAMMYCAGEPLUTOSVG-6125577",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-44709"
+        ],
+        "CWE": [
+            "CWE-131"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-14 12:54:19",
+    "remediation": "There is no fixed version for sammycage/plutosvg . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Incorrect Calculation of Buffer Size",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Incorrect Calculation of Buffer Size via the plutosvg_load_from_memory component in the plutosvg.c file. An attacker can execute arbitrary code or cause a denial of service by supplying a crafted input that triggers the overflow. ",
+        "PoC": "#include <plutosvg.h> #include <stdlib.h> #include <stdio.h> int main(int argc, char* argv[]) { plutovg_surface_t* surface = plutosvg_load_from_file(argv[1], NULL, 0, 0, 96.0); return 0; } "
+    },
+    "source_code": []
+}

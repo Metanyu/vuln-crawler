@@ -1,0 +1,60 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Martin Mirchev"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-22 03:49:04",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-PROFTPDPROFTPD-6138258",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51713"
+        ],
+        "CWE": [
+            "CWE-125"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 13:41:45",
+    "remediation": "Upgrade proftpd/proftpd to version 1.3.8a or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Read",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Read when handling unexpectedly formatted input text from client, caused by quote/backslash semantics. An attacker can cause a one-byte out-of-bounds read, leading to a daemon crash by sending specially crafted commands. "
+    },
+    "source_code": [
+        {
+            "filename": "include/str.h",
+            "diff": "@@ -1,6 +1,6 @@\n /*\n  * ProFTPD - FTP server daemon\n- * Copyright (c) 2008-2021 The ProFTPD Project team\n+ * Copyright (c) 2008-2023 The ProFTPD Project team\n  *\n  * This program is free software; you can redistribute it and/or modify\n  * it under the terms of the GNU General Public License as published by\n@@ -137,6 +137,7 @@ const char *pr_gid2str(pool *, gid_t);\n #define PR_STR_FL_PRESERVE_COMMENTS\t\t0x0001\n #define PR_STR_FL_PRESERVE_WHITESPACE\t\t0x0002\n #define PR_STR_FL_IGNORE_CASE\t\t\t0x0004\n+#define PR_STR_FL_IGNORE_QUOTES\t\t\t0x0008\n \n char *pr_str_get_token(char **, char *);\n char *pr_str_get_token2(char **, char *, size_t *);"
+        },
+        {
+            "filename": "src/main.c",
+            "diff": "@@ -821,15 +821,36 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {\n     return NULL;\n   }\n \n+  /* By default, pr_str_get_word will handle quotes and backslashes for\n+   * escaping characters.  This can produce words which are shorter, use\n+   * fewer bytes than the corresponding input buffer.\n+   *\n+   * In this particular situation, we use the length of this initial word\n+   * for determining the length of the remaining buffer bytes, assumed to\n+   * contain the FTP command arguments.  If this initial word is thus\n+   * unexpectedly \"shorter\", due to nonconformant FTP text, it can lead\n+   * the subsequent buffer scan, looking for CRNUL sequencees, to access\n+   * unexpected memory addresses (Issue #1683).\n+   *\n+   * Thus for this particular situation, we tell the function to ignore/skip\n+   * such quote/backslash semantics, and treat them as any other character\n+   * using the IGNORE_QUOTES flag.\n+   */\n+\n   ptr = buf;\n-  wrd = pr_str_get_word(&ptr, str_flags);\n+  wrd = pr_str_get_word(&ptr, str_flags|PR_STR_FL_IGNORE_QUOTES);\n   if (wrd == NULL) {\n     /* Nothing there...bail out. */\n     pr_trace_msg(\"ctrl\", 5, \"command '%s' is empty, ignoring\", buf);\n     errno = ENOENT;\n     return NULL;\n   }\n \n+  /* Note that this first word is the FTP command.  This is why we make\n+   * use of the ptr buffer, which advances through the input buffer as\n+   * we read words from the buffer.\n+   */\n+\n   subpool = make_sub_pool(p);\n   pr_pool_tag(subpool, \"make_ftp_cmd pool\");\n   cmd = pcalloc(subpool, sizeof(cmd_rec));\n@@ -856,6 +877,7 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {\n   arg_len = buflen - strlen(wrd);\n   arg = pcalloc(cmd->pool, arg_len + 1);\n \n+  /* Remember that ptr here is advanced past the first word. */\n   for (i = 0, j = 0; i < arg_len; i++) {\n     pr_signals_handle();\n     if (i > 1 &&\n@@ -864,14 +886,13 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {\n \n       /* Strip out the NUL by simply not copying it into the new buffer. */\n       have_crnul = TRUE;\n+\n     } else {\n       arg[j++] = ptr[i];\n     }\n   }\n \n-  cmd->arg = arg;\n-\n-  if (have_crnul) {\n+  if (have_crnul == TRUE) {\n     char *dup_arg;\n \n     /* Now make a copy of the stripped argument; this is what we need to\n@@ -881,6 +902,11 @@ static cmd_rec *make_ftp_cmd(pool *p, char *buf, size_t buflen, int flags) {\n     ptr = dup_arg;\n   }\n \n+  cmd->arg = arg;\n+\n+  /* Now we can read the remamining words, as command arguments, from the\n+   * input buffer.\n+   */\n   while ((wrd = pr_str_get_word(&ptr, str_flags)) != NULL) {\n     pr_signals_handle();\n     *((char **) push_array(tarr)) = pstrdup(cmd->pool, wrd);"
+        },
+        {
+            "filename": "src/str.c",
+            "diff": "@@ -1,6 +1,6 @@\n /*\n  * ProFTPD - FTP server daemon\n- * Copyright (c) 2008-2022 The ProFTPD Project team\n+ * Copyright (c) 2008-2023 The ProFTPD Project team\n  *\n  * This program is free software; you can redistribute it and/or modify\n  * it under the terms of the GNU General Public License as published by\n@@ -1241,7 +1241,7 @@ int pr_str_get_nbytes(const char *str, const char *units, off_t *nbytes) {\n \n char *pr_str_get_word(char **cp, int flags) {\n   char *res, *dst;\n-  char quote_mode = 0;\n+  int quote_mode = FALSE;\n \n   if (cp == NULL ||\n      !*cp ||\n@@ -1270,24 +1270,28 @@ char *pr_str_get_word(char **cp, int flags) {\n     }\n   }\n \n-  if (**cp == '\\\"') {\n-    quote_mode++;\n-    (*cp)++;\n+  if (!(flags & PR_STR_FL_IGNORE_QUOTES)) {\n+    if (**cp == '\\\"') {\n+      quote_mode = TRUE;\n+      (*cp)++;\n+    }\n   }\n \n   while (**cp && (quote_mode ? (**cp != '\\\"') : !PR_ISSPACE(**cp))) {\n     pr_signals_handle();\n \n-    if (**cp == '\\\\' && quote_mode) {\n-\n+    if (**cp == '\\\\' &&\n+        quote_mode == TRUE) {\n       /* Escaped char */\n       if (*((*cp)+1)) {\n-        *dst = *(++(*cp));\n+        *dst++ = *(++(*cp));\n+        (*cp)++;\n+        continue;\n       }\n     }\n \n     *dst++ = **cp;\n-    ++(*cp);\n+    (*cp)++;\n   }\n \n   if (**cp) {"
+        },
+        {
+            "filename": "tests/api/str.c",
+            "diff": "@@ -1,6 +1,6 @@\n /*\n  * ProFTPD - FTP server testsuite\n- * Copyright (c) 2008-2021 The ProFTPD Project team\n+ * Copyright (c) 2008-2023 The ProFTPD Project team\n  *\n  * This program is free software; you can redistribute it and/or modify\n  * it under the terms of the GNU General Public License as published by\n@@ -700,19 +700,23 @@ END_TEST\n START_TEST (get_word_test) {\n   char *ok, *res, *str;\n \n+  mark_point();\n   res = pr_str_get_word(NULL, 0);\n   ck_assert_msg(res == NULL, \"Failed to handle null arguments\");\n   ck_assert_msg(errno == EINVAL, \"Failed to set errno to EINVAL\");\n \n+  mark_point();\n   str = NULL;\n   res = pr_str_get_word(&str, 0);\n   ck_assert_msg(res == NULL, \"Failed to handle null str argument\");\n   ck_assert_msg(errno == EINVAL, \"Failed to set errno to EINVAL\");\n \n+  mark_point();\n   str = pstrdup(p, \"  \");\n   res = pr_str_get_word(&str, 0);\n   ck_assert_msg(res == NULL, \"Failed to handle whitespace argument\");\n \n+  mark_point();\n   str = pstrdup(p, \" foo\");\n   res = pr_str_get_word(&str, PR_STR_FL_PRESERVE_WHITESPACE);\n   ck_assert_msg(res != NULL, \"Failed to handle whitespace argument: %s\",\n@@ -728,6 +732,7 @@ START_TEST (get_word_test) {\n   ok = \"foo\";\n   ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n \n+  mark_point();\n   str = pstrdup(p, \"  # foo\");\n   res = pr_str_get_word(&str, 0);\n   ck_assert_msg(res == NULL, \"Failed to handle commented argument\");\n@@ -747,6 +752,8 @@ START_TEST (get_word_test) {\n   ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n \n   /* Test multiple embedded quotes. */\n+\n+  mark_point();\n   str = pstrdup(p, \"foo \\\"bar baz\\\" qux \\\"quz norf\\\"\");\n   res = pr_str_get_word(&str, 0);\n   ck_assert_msg(res != NULL, \"Failed to handle quoted argument: %s\",\n@@ -775,6 +782,46 @@ START_TEST (get_word_test) {\n \n   ok = \"quz norf\";\n   ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n+\n+  /* Test embedded quotes with backslashes (Issue #1683). */\n+  mark_point();\n+\n+  str = pstrdup(p, \"\\\"\\\\\\\\SYST\\\"\");\n+  res = pr_str_get_word(&str, 0);\n+  ck_assert_msg(res != NULL, \"Failed to handle quoted argument: %s\",\n+    strerror(errno));\n+\n+  ok = \"\\\\SYST\";\n+  ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n+\n+  mark_point();\n+  str = pstrdup(p, \"\\\"\\\"\\\\\\\\SYST\");\n+  res = pr_str_get_word(&str, 0);\n+  ck_assert_msg(res != NULL, \"Failed to handle quoted argument: %s\",\n+    strerror(errno));\n+\n+  /* Note that pr_str_get_word() is intended to be called multiple times\n+   * on an advancing buffer, effectively tokenizing the buffer.  This is\n+   * why the function does NOT decrement its quote mode.\n+   */\n+  ok = \"\";\n+  ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n+\n+  /* Now do the same tests with the IGNORE_QUOTES flag */\n+  mark_point();\n+\n+  str = ok = pstrdup(p, \"\\\"\\\\\\\\SYST\\\"\");\n+  res = pr_str_get_word(&str, PR_STR_FL_IGNORE_QUOTES);\n+  ck_assert_msg(res != NULL, \"Failed to handle quoted argument: %s\",\n+    strerror(errno));\n+  ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n+\n+  mark_point();\n+  str = ok = pstrdup(p, \"\\\"\\\"\\\\\\\\SYST\");\n+  res = pr_str_get_word(&str, PR_STR_FL_IGNORE_QUOTES);\n+  ck_assert_msg(res != NULL, \"Failed to handle quoted argument: %s\",\n+    strerror(errno));\n+  ck_assert_msg(strcmp(res, ok) == 0, \"Expected '%s', got '%s'\", ok, res);\n }\n END_TEST\n "
+        }
+    ],
+    "commitTime": "2023-09-10 17:24:16"
+}

@@ -1,0 +1,101 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Maksymilian Arciemowicz"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-06 07:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06911",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CURL-6102045",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46219"
+        ],
+        "CWE": [
+            "CWE-311"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 07:20:58",
+    "remediation": "Upgrade curl to version 8.5.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Missing Encryption of Sensitive Data",
+    "vulnDescription": {
+        "Overview": "curl is a command line tool and library for transferring data with URL syntax, supporting DICT, FILE, FTP, FTPS, GOPHER, GOPHERS, HTTP, HTTPS, IMAP, IMAPS, LDAP, LDAPS, MQTT, POP3, POP3S, RTMP, RTMPS, RTSP, SCP, SFTP, SMB, SMBS, SMTP, SMTPS, TELNET and TFTP. libcurl offers a myriad of powerful features. Affected versions of this package are vulnerable to Missing Encryption of Sensitive Data when saving HSTS data to an excessively long file name. An attacker can cause the application to misinterpret the HSTS status, potentially leading to security policy bypass. "
+    },
+    "source_code": [
+        {
+            "filename": "lib/fopen.c",
+            "diff": "@@ -39,6 +39,51 @@\n #include \"curl_memory.h\"\n #include \"memdebug.h\"\n \n+/*\n+  The dirslash() function breaks a null-terminated pathname string into\n+  directory and filename components then returns the directory component up\n+  to, *AND INCLUDING*, a final '/'.  If there is no directory in the path,\n+  this instead returns a \"\" string.\n+\n+  This function returns a pointer to malloc'ed memory.\n+\n+  The input path to this function is expected to have a file name part.\n+*/\n+\n+#ifdef _WIN32\n+#define PATHSEP \"\\\\\"\n+#define IS_SEP(x) (((x) == '/') || ((x) == '\\\\'))\n+#elif defined(MSDOS) || defined(__EMX__) || defined(OS2)\n+#define PATHSEP \"\\\\\"\n+#define IS_SEP(x) ((x) == '\\\\')\n+#else\n+#define PATHSEP \"/\"\n+#define IS_SEP(x) ((x) == '/')\n+#endif\n+\n+static char *dirslash(const char *path)\n+{\n+  size_t n;\n+  struct dynbuf out;\n+  DEBUGASSERT(path);\n+  Curl_dyn_init(&out, CURL_MAX_INPUT_LENGTH);\n+  n = strlen(path);\n+  if(n) {\n+    /* find the rightmost path separator, if any */\n+    while(n && !IS_SEP(path[n-1]))\n+      --n;\n+    /* skip over all the path separators, if any */\n+    while(n && IS_SEP(path[n-1]))\n+      --n;\n+  }\n+  if(Curl_dyn_addn(&out, path, n))\n+    return NULL;\n+  /* if there was a directory, append a single trailing slash */\n+  if(n && Curl_dyn_addn(&out, PATHSEP, 1))\n+    return NULL;\n+  return Curl_dyn_ptr(&out);\n+}\n+\n /*\n  * Curl_fopen() opens a file for writing with a temp name, to be renamed\n  * to the final name when completed. If there is an existing file using this\n@@ -50,25 +95,34 @@ CURLcode Curl_fopen(struct Curl_easy *data, const char *filename,\n                     FILE **fh, char **tempname)\n {\n   CURLcode result = CURLE_WRITE_ERROR;\n-  unsigned char randsuffix[9];\n+  unsigned char randbuf[41];\n   char *tempstore = NULL;\n   struct_stat sb;\n   int fd = -1;\n+  char *dir;\n   *tempname = NULL;\n \n+  dir = dirslash(filename);\n+  if(!dir)\n+    goto fail;\n+\n   *fh = fopen(filename, FOPEN_WRITETEXT);\n   if(!*fh)\n     goto fail;\n-  if(fstat(fileno(*fh), &sb) == -1 || !S_ISREG(sb.st_mode))\n+  if(fstat(fileno(*fh), &sb) == -1 || !S_ISREG(sb.st_mode)) {\n+    free(dir);\n     return CURLE_OK;\n+  }\n   fclose(*fh);\n   *fh = NULL;\n \n-  result = Curl_rand_alnum(data, randsuffix, sizeof(randsuffix));\n+  result = Curl_rand_alnum(data, randbuf, sizeof(randbuf));\n   if(result)\n     goto fail;\n \n-  tempstore = aprintf(\"%s.%s.tmp\", filename, randsuffix);\n+  /* The temp file name should not end up too long for the target file\n+     system */\n+  tempstore = aprintf(\"%s%s.tmp\", dir, randbuf);\n   if(!tempstore) {\n     result = CURLE_OUT_OF_MEMORY;\n     goto fail;\n@@ -95,6 +149,7 @@ CURLcode Curl_fopen(struct Curl_easy *data, const char *filename,\n   if(!*fh)\n     goto fail;\n \n+  free(dir);\n   *tempname = tempstore;\n   return CURLE_OK;\n \n@@ -105,7 +160,7 @@ CURLcode Curl_fopen(struct Curl_easy *data, const char *filename,\n   }\n \n   free(tempstore);\n-\n+  free(dir);\n   return result;\n }\n "
+        }
+    ],
+    "commitTime": "2023-11-23 14:46:34"
+}

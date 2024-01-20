@@ -1,0 +1,133 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Blake Williams"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.1,
+    "disclosureTime": "2024-01-04 21:44:44",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUBY-VIEWCOMPONENT-6144786",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-21636"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "ruby",
+    "malicious": false,
+    "packageManager": "rubygems",
+    "publicationTime": "2024-01-05 08:44:25",
+    "remediation": "Upgrade view_component to version 3.9.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting') via the #call and #output_postamble methods. An attacker can inject malicious scripts that may be executed in the context of the user's browser session by including user-defined content that is not properly sanitized. Note: This is exploitable via the #call method only if a component that defines it is rendered directly from a controller. ",
+        "Workaround": "This vulnerability can be mitigated by sanitizing the return value of #call . "
+    },
+    "source_code": [
+        {
+            "filename": ".github/workflows/ci.yml",
+            "diff": "@@ -89,7 +89,7 @@ jobs:\n       uses: actions/upload-artifact@v3.1.3\n       if: always()\n       with:\n-        name: simplecov-resultset-rails${{matrix.rails_version}}-ruby${{matrix.ruby_version}}\n+        name: simplecov-resultset-rails${{matrix.rails_version}}-ruby${{matrix.ruby_version}}-${{matrix.mode}}\n         path: coverage\n   primer_view_components_compatibility:\n     name: Test compatibility with Primer ViewComponents (main)"
+        },
+        {
+            "filename": ".rubocop.yml",
+            "diff": "@@ -1,3 +1,4 @@\n+ruby_version: 2.5\n require:\n   - standard\n   - \"rubocop-md\""
+        },
+        {
+            "filename": "docs/CHANGELOG.md",
+            "diff": "@@ -38,6 +38,10 @@ nav_order: 5\n \n     *Mitchell Henke*\n \n+* Ensure HTML output safety.\n+\n+    *Cameron Dutro*\n+\n ## 3.8.0\n \n * Use correct value for the `config.action_dispatch.show_exceptions` config option for edge Rails."
+        },
+        {
+            "filename": "lib/view_component/base.rb",
+            "diff": "@@ -106,9 +106,9 @@ def render_in(view_context, &block)\n       if render?\n         # Avoid allocating new string when output_postamble is blank\n         if output_postamble.blank?\n-          render_template_for(@__vc_variant).to_s\n+          safe_render_template_for(@__vc_variant).to_s\n         else\n-          render_template_for(@__vc_variant).to_s + output_postamble\n+          safe_render_template_for(@__vc_variant).to_s + safe_output_postamble\n         end\n       else\n         \"\"\n@@ -160,7 +160,7 @@ def render_parent_to_string\n     #\n     # @return [String]\n     def output_postamble\n-      \"\"\n+      @@default_output_postamble ||= \"\".html_safe\n     end\n \n     # Called before rendering the component. Override to perform operations that\n@@ -307,6 +307,38 @@ def content_evaluated?\n       defined?(@__vc_content_evaluated) && @__vc_content_evaluated\n     end\n \n+    def maybe_escape_html(text)\n+      return text if request && !request.format.html?\n+      return text if text.nil? || text.empty?\n+\n+      if text.html_safe?\n+        text\n+      else\n+        yield\n+        html_escape(text)\n+      end\n+    end\n+\n+    def safe_render_template_for(variant)\n+      if compiler.renders_template_for_variant?(variant)\n+        render_template_for(variant)\n+      else\n+        maybe_escape_html(render_template_for(variant)) do\n+          Kernel.warn(\"WARNING: The #{self.class} component rendered HTML-unsafe output. The output will be automatically escaped, but you may want to investigate.\")\n+        end\n+      end\n+    end\n+\n+    def safe_output_postamble\n+      maybe_escape_html(output_postamble) do\n+        Kernel.warn(\"WARNING: The #{self.class} component was provided an HTML-unsafe postamble. The postamble will be automatically escaped, but you may want to investigate.\")\n+      end\n+    end\n+\n+    def compiler\n+      @compiler ||= self.class.compiler\n+    end\n+\n     # Set the controller used for testing components:\n     #\n     # ```ruby"
+        },
+        {
+            "filename": "lib/view_component/compiler.rb",
+            "diff": "@@ -16,6 +16,7 @@ class Compiler\n     def initialize(component_class)\n       @component_class = component_class\n       @redefinition_lock = Mutex.new\n+      @variants_rendering_templates = Set.new\n     end\n \n     def compiled?\n@@ -68,6 +69,7 @@ def render_template_for(variant = nil)\n       else\n         templates.each do |template|\n           method_name = call_method_name(template[:variant])\n+          @variants_rendering_templates << template[:variant]\n \n           redefinition_lock.synchronize do\n             component_class.silence_redefinition_of_method(method_name)\n@@ -89,6 +91,10 @@ def #{method_name}\n       CompileCache.register(component_class)\n     end\n \n+    def renders_template_for_variant?(variant)\n+      @variants_rendering_templates.include?(variant)\n+    end\n+\n     private\n \n     attr_reader :component_class, :redefinition_lock"
+        },
+        {
+            "filename": "lib/view_component/test_helpers.rb",
+            "diff": "@@ -178,13 +178,14 @@ def with_controller_class(klass)\n     # @param full_path [String] The path to set for the current request.\n     # @param host [String] The host to set for the current request.\n     # @param method [String] The request method to set for the current request.\n-    def with_request_url(full_path, host: nil, method: nil)\n+    def with_request_url(full_path, host: nil, method: nil, format: :html)\n       old_request_host = vc_test_request.host\n       old_request_method = vc_test_request.request_method\n       old_request_path_info = vc_test_request.path_info\n       old_request_path_parameters = vc_test_request.path_parameters\n       old_request_query_parameters = vc_test_request.query_parameters\n       old_request_query_string = vc_test_request.query_string\n+      old_request_format = vc_test_request.format.symbol\n       old_controller = defined?(@vc_test_controller) && @vc_test_controller\n \n       path, query = full_path.split(\"?\", 2)\n@@ -197,6 +198,7 @@ def with_request_url(full_path, host: nil, method: nil)\n       vc_test_request.set_header(\"action_dispatch.request.query_parameters\",\n         Rack::Utils.parse_nested_query(query).with_indifferent_access)\n       vc_test_request.set_header(Rack::QUERY_STRING, query)\n+      vc_test_request.format = format\n       yield\n     ensure\n       vc_test_request.host = old_request_host\n@@ -205,6 +207,7 @@ def with_request_url(full_path, host: nil, method: nil)\n       vc_test_request.path_parameters = old_request_path_parameters\n       vc_test_request.set_header(\"action_dispatch.request.query_parameters\", old_request_query_parameters)\n       vc_test_request.set_header(Rack::QUERY_STRING, old_request_query_string)\n+      vc_test_request.format = old_request_format\n       @vc_test_controller = old_controller\n     end\n "
+        },
+        {
+            "filename": "test/sandbox/app/components/after_render_component.rb",
+            "diff": "@@ -2,10 +2,10 @@\n \n class AfterRenderComponent < ViewComponent::Base\n   def call\n-    \"Hello, \"\n+    \"Hello, \".html_safe\n   end\n \n   def output_postamble\n-    \"World!\"\n+    \"World!\".html_safe\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/content_predicate_component.rb",
+            "diff": "@@ -5,7 +5,7 @@ def call\n     if content?\n       content\n     else\n-      \"Default\"\n+      \"Default\".html_safe\n     end\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/custom_test_controller_component.rb",
+            "diff": "@@ -2,6 +2,6 @@\n \n class CustomTestControllerComponent < ViewComponent::Base\n   def call\n-    helpers.foo\n+    html_escape(helpers.foo)\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/inherited_from_uncompilable_component.rb",
+            "diff": "@@ -2,6 +2,6 @@\n \n class InheritedFromUncompilableComponent < UncompilableComponent\n   def call\n-    \"<div>hello world</div>\"\n+    \"<div>hello world</div>\".html_safe\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/inline_render_component.rb",
+            "diff": "@@ -6,6 +6,6 @@ def initialize(items:)\n   end\n \n   def call\n-    @items.map { |c| render(c) }.join\n+    @items.map { |c| render(c) }.join.html_safe\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/message_component.rb",
+            "diff": "@@ -6,6 +6,6 @@ def initialize(message:)\n   end\n \n   def call\n-    @message\n+    html_escape(@message)\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/render_check_component.rb",
+            "diff": "@@ -6,6 +6,6 @@ def render?\n   end\n \n   def call\n-    \"Rendered\"\n+    \"Rendered\".html_safe\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/components/unsafe_component.rb",
+            "diff": "@@ -0,0 +1,9 @@\n+# frozen_string_literal: true\n+\n+class UnsafeComponent < ViewComponent::Base\n+  def call\n+    user_input = \"<script>alert('hello!')</script>\"\n+\n+    \"<div>hello #{user_input}</div>\"\n+  end\n+end"
+        },
+        {
+            "filename": "test/sandbox/app/components/unsafe_postamble_component.rb",
+            "diff": "@@ -0,0 +1,11 @@\n+# frozen_string_literal: true\n+\n+class UnsafePostambleComponent < ViewComponent::Base\n+  def call\n+    \"<div>some content</div>\".html_safe\n+  end\n+\n+  def output_postamble\n+    \"<script>alert('hello!')</script>\"\n+  end\n+end"
+        },
+        {
+            "filename": "test/sandbox/app/components/variant_ivar_component.rb",
+            "diff": "@@ -6,6 +6,6 @@ def initialize(variant:)\n   end\n \n   def call\n-    @variant.to_s\n+    html_escape(@variant.to_s)\n   end\n end"
+        },
+        {
+            "filename": "test/sandbox/app/controllers/integration_examples_controller.rb",
+            "diff": "@@ -59,4 +59,12 @@ def inherited_sidecar\n   def inherited_from_uncompilable_component\n     render(InheritedFromUncompilableComponent.new)\n   end\n+\n+  def unsafe_component\n+    render(UnsafeComponent.new)\n+  end\n+\n+  def unsafe_postamble_component\n+    render(UnsafePostambleComponent.new)\n+  end\n end"
+        },
+        {
+            "filename": "test/sandbox/config/routes.rb",
+            "diff": "@@ -29,6 +29,8 @@\n   get :cached_partial, to: \"integration_examples#cached_partial\"\n   get :inherited_sidecar, to: \"integration_examples#inherited_sidecar\"\n   get :inherited_from_uncompilable_component, to: \"integration_examples#inherited_from_uncompilable_component\"\n+  get :unsafe_component, to: \"integration_examples#unsafe_component\"\n+  get :unsafe_postamble_component, to: \"integration_examples#unsafe_postamble_component\"\n   post :create, to: \"integration_examples#create\"\n \n   constraints(lambda { |request| request.env[\"warden\"].authenticate! }) do"
+        },
+        {
+            "filename": "test/sandbox/test/collection_test.rb",
+            "diff": "@@ -12,7 +12,7 @@ def initialize(**attributes)\n       end\n \n       def call\n-        \"<div data-name='#{product.name}'><h1>#{product.name}</h1></div>\"\n+        \"<div data-name='#{product.name}'><h1>#{product.name}</h1></div>\".html_safe\n       end\n     end\n "
+        },
+        {
+            "filename": "test/sandbox/test/integration_test.rb",
+            "diff": "@@ -723,4 +723,22 @@ def test_path_traversal_raises_error\n       get \"/_system_test_entrypoint?file=#{path}\"\n     end\n   end\n+\n+  def test_unsafe_component\n+    warnings = capture_warnings { get \"/unsafe_component\" }\n+    assert_select(\"script\", false)\n+    assert(\n+      warnings.any? { |warning| warning.include?(\"component rendered HTML-unsafe output\") },\n+      \"Rendering UnsafeComponent did not emit an HTML safety warning\"\n+    )\n+  end\n+\n+  def test_unsafe_postamble_component\n+    warnings = capture_warnings { get \"/unsafe_postamble_component\" }\n+    assert_select(\"script\", false)\n+    assert(\n+      warnings.any? { |warning| warning.include?(\"component was provided an HTML-unsafe postamble\") },\n+      \"Rendering UnsafePostambleComponent did not emit an HTML safety warning\"\n+    )\n+  end\n end"
+        },
+        {
+            "filename": "test/sandbox/test/rendering_test.rb",
+            "diff": "@@ -151,7 +151,9 @@ def test_renders_haml_template\n   end\n \n   def test_render_jbuilder_template\n-    render_inline(JbuilderComponent.new(message: \"bar\")) { \"foo\" }\n+    with_request_url(\"/\", format: :json) do\n+      render_inline(JbuilderComponent.new(message: \"bar\")) { \"foo\" }\n+    end\n \n     assert_text(\"foo\")\n     assert_text(\"bar\")\n@@ -1084,7 +1086,7 @@ def test_content_predicate_false\n   end\n \n   def test_content_predicate_true\n-    render_inline(ContentPredicateComponent.new.with_content(\"foo\"))\n+    render_inline(ContentPredicateComponent.new.with_content(\"foo\".html_safe))\n \n     assert_text(\"foo\")\n   end"
+        },
+        {
+            "filename": "test/test_helper.rb",
+            "diff": "@@ -179,3 +179,11 @@ def with_compiler_mode(mode)\n ensure\n   ViewComponent::Compiler.mode = previous_mode\n end\n+\n+def capture_warnings(&block)\n+  [].tap do |warnings|\n+    Kernel.stub(:warn, ->(msg) { warnings << msg }) do\n+      block.call\n+    end\n+  end\n+end"
+        }
+    ],
+    "commitTime": "2024-01-04 19:25:54"
+}

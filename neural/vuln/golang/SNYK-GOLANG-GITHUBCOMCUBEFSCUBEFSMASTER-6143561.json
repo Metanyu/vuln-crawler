@@ -1,0 +1,48 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "AdamKorcz"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5,
+    "disclosureTime": "2024-01-03 16:14:54",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCUBEFSCUBEFSMASTER-6143561",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46742"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 15:34:28",
+    "remediation": "Upgrade github.com/cubefs/cubefs/master to version 3.3.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to users' secret keys and access keys being leaked in the logs in multiple components. A lower-privileged user with access to the logs can retrieve sensitive information and impersonate other users with higher privileges than themselves. "
+    },
+    "source_code": [
+        {
+            "filename": "master/user.go",
+            "diff": "@@ -106,7 +106,7 @@ func (u *User) createKey(param *proto.UserCreateParam) (userInfo *proto.UserInfo\n \t}\n \tu.userStore.Store(userID, userInfo)\n \tu.AKStore.Store(accessKey, AKUser)\n-\tlog.LogInfof(\"action[createUser], userID: %v, accesskey[%v], secretkey[%v]\", userID, accessKey, secretKey)\n+\n \treturn\n }\n "
+        }
+    ],
+    "commitTime": "2023-11-17 03:29:15"
+}

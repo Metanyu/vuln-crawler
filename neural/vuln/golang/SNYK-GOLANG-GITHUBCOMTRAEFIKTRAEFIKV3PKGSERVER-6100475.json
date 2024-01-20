@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Khang Tran"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.8,
+    "disclosureTime": "2023-12-04 21:51:57",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12618",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMTRAEFIKTRAEFIKV3PKGSERVER-6100475",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47106"
+        ],
+        "CWE": [
+            "CWE-177"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-07 06:36:08",
+    "remediation": "Upgrade github.com/traefik/traefik/v3/pkg/server to version 3.0.0-beta5 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of URL Encoding (Hex Encoding)",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Handling of URL Encoding (Hex Encoding) when a request is sent with a URL fragment. An attacker can bypass frontend proxy URI-based access control restrictions by exploiting the automatic URL encoding and forwarding of the fragment to the backend server. Note: This is only exploitable if another frontend proxy like Nginx is used. "
+    },
+    "source_code": [
+        {
+            "filename": "integration/simple_test.go",
+            "diff": "@@ -1480,3 +1480,31 @@ func (s *SimpleSuite) TestEncodeSemicolons(c *check.C) {\n \t\t}\n \t}\n }\n+\n+func (s *SimpleSuite) TestDenyFragment(c *check.C) {\n+\ts.createComposeProject(c, \"base\")\n+\n+\ts.composeUp(c)\n+\tdefer s.composeDown(c)\n+\n+\tcmd, output := s.traefikCmd(withConfigFile(\"fixtures/simple_default.toml\"))\n+\tdefer output(c)\n+\n+\terr := cmd.Start()\n+\tc.Assert(err, checker.IsNil)\n+\tdefer s.killCmd(cmd)\n+\n+\t// Expected a 404 as we did not configure anything\n+\terr = try.GetRequest(\"http://127.0.0.1:8000/\", 1*time.Second, try.StatusCodeIs(http.StatusNotFound))\n+\tc.Assert(err, checker.IsNil)\n+\n+\tconn, err := net.Dial(\"tcp\", \"127.0.0.1:8000\")\n+\tc.Assert(err, checker.IsNil)\n+\n+\t_, err = conn.Write([]byte(\"GET /#/?bar=toto;boo=titi HTTP/1.1\\nHost: other.localhost\\n\\n\"))\n+\tc.Assert(err, checker.IsNil)\n+\n+\tresp, err := http.ReadResponse(bufio.NewReader(conn), nil)\n+\tc.Assert(err, checker.IsNil)\n+\tc.Assert(resp.StatusCode, checker.Equals, http.StatusBadRequest)\n+}"
+        },
+        {
+            "filename": "pkg/server/server_entrypoint_tcp.go",
+            "diff": "@@ -535,6 +535,7 @@ func createHTTPServer(ctx context.Context, ln net.Listener, configuration *stati\n \t\treturn nil, err\n \t}\n \n+\thandler = denyFragment(handler)\n \tif configuration.HTTP.EncodeQuerySemicolons {\n \t\thandler = encodeQuerySemicolons(handler)\n \t} else {\n@@ -620,3 +621,20 @@ func encodeQuerySemicolons(h http.Handler) http.Handler {\n \t\t}\n \t})\n }\n+\n+// When go receives an HTTP request, it assumes the absence of fragment URL.\n+// However, it is still possible to send a fragment in the request.\n+// In this case, Traefik will encode the '#' character, altering the request's intended meaning.\n+// To avoid this behavior, the following function rejects requests that include a fragment in the URL.\n+func denyFragment(h http.Handler) http.Handler {\n+\treturn http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {\n+\t\tif strings.Contains(req.URL.RawPath, \"#\") {\n+\t\t\tlog.WithoutContext().Debugf(\"Rejecting request because it contains a fragment in the URL path: %s\", req.URL.RawPath)\n+\t\t\trw.WriteHeader(http.StatusBadRequest)\n+\n+\t\t\treturn\n+\t\t}\n+\n+\t\th.ServeHTTP(rw, req)\n+\t})\n+}"
+        }
+    ],
+    "commitTime": "2023-11-16 15:54:07"
+}

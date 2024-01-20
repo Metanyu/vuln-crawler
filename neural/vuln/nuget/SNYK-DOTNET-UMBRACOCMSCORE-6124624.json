@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-12 20:52:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.08378",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-DOTNET-UMBRACOCMSCORE-6124624",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49089"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "dotnet",
+    "malicious": false,
+    "packageManager": "nuget",
+    "publicationTime": "2023-12-13 14:55:18",
+    "remediation": "Upgrade UmbracoCms.Core to version 8.18.10 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal')",
+    "vulnDescription": {
+        "Overview": "UmbracoCms.Core is an ASP.NET CMS. Affected versions of this package are vulnerable to Improper Limitation of a Pathname to a Restricted Directory ('Path Traversal') due to insufficient validation of user-supplied input in the package creation functionality. An attacker with permission to create packages can manipulate file paths to write files outside of the intended directory. "
+    },
+    "source_code": [
+        {
+            "filename": "src/Umbraco.Core/Packaging/PackagesRepository.cs",
+            "diff": "@@ -217,6 +217,15 @@ public string ExportPackage(PackageDefinition definition)\n                     Directory.CreateDirectory(IOHelper.MapPath(_mediaFolderPath));\n \n                 var packPath = _mediaFolderPath.EnsureEndsWith('/') + (definition.Name + \"_\" + definition.Version).Replace(' ', '_') + \".zip\";\n+\n+                var absolutePackPath = Path.GetFullPath(IOHelper.MapPath(packPath));\n+                var expectedRoot = Path.GetFullPath(IOHelper.MapPath(_mediaFolderPath.EnsureEndsWith('/')));\n+\n+                if (absolutePackPath.StartsWith(expectedRoot) == false)\n+                {\n+                    throw new IOException(\"Invalid path due to the package name\");\n+                }\n+\n                 ZipPackage(temporaryPath, IOHelper.MapPath(packPath));\n \n                 //we need to update the package path and save it"
+        }
+    ],
+    "commitTime": "2023-12-11 12:01:21"
+}

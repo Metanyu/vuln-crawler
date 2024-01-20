@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Om Apip"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.1,
+    "disclosureTime": "2023-12-06 02:44:22",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23062",
+        "probability": "0.00059"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CHROMIUM-6101229",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6512"
+        ],
+        "CWE": [
+            "CWE-451"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-06 15:53:19",
+    "remediation": "Upgrade chromium to version 120.0.6099.62 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "User Interface (UI) Misrepresentation of Critical Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to User Interface (UI) Misrepresentation of Critical Information due to an inappropriate implementation in the Web Browser UI. "
+    },
+    "source_code": []
+}

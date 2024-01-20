@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "dr0v"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-07 18:45:40",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-GPACGPAC-6112475",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48958"
+        ],
+        "CWE": [
+            "CWE-401"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 14:17:33",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Memory Leak",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Memory Leak in the gf_mpd_resolve_url function. An attacker can cause a denial of service. "
+    },
+    "source_code": [
+        {
+            "filename": "src/media_tools/mpd.c",
+            "diff": "@@ -4813,7 +4813,10 @@ GF_Err gf_mpd_resolve_url(GF_MPD *mpd, GF_MPD_Representation *rep, GF_MPD_Adapta\n \n \tif (!media_url) {\n \t\tGF_MPD_BaseURL *base = gf_list_get(rep->base_URLs, 0);\n-\t\tif (!base) return GF_BAD_PARAM;\n+\t\tif (!base) {\n+\t\t\tgf_free(url);\n+\t\t\treturn GF_BAD_PARAM;\n+\t\t}\n \t\tmedia_url = base->URL;\n \t}\n \turl_to_solve = NULL;"
+        }
+    ],
+    "commitTime": "2023-11-16 10:07:25"
+}

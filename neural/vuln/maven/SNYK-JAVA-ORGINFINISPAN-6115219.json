@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 2.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "low"
+        }
+    ],
+    "cvssScore": 7.2,
+    "disclosureTime": "2023-12-06 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12303",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGINFINISPAN-6115219",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-5384"
+        ],
+        "CWE": [
+            "CWE-312"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-11 16:58:05",
+    "remediation": "There is no fixed version for org.infinispan:infinispan-parent . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cleartext Storage of Sensitive Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cleartext Storage of Sensitive Information due to the improper handling of sensitive information when serializing cache configurations. An attacker can obtain sensitive credentials by accessing the serialized configuration data in XML/JSON/YAML formats. Note: The issue's impact is limited because only users with administrator permissions can retrieve the cache configurations, and the recommended approach for connecting via JDBC is using the datasource configuration, which does not expose the database credentials. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2023-12-09 07:51:12",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23612",
+        "probability": "0.00060"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-GPACGPAC-6114708",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46932"
+        ],
+        "CWE": [
+            "CWE-122"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-10 12:03:26",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Heap-based Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Heap-based Buffer Overflow via the str2ulong class in src/media_tools/avilib.c . "
+    },
+    "source_code": [
+        {
+            "filename": "src/media_tools/avilib.c",
+            "diff": "@@ -2000,6 +2000,7 @@ int avi_parse_input_file(avi_t *AVI, int getIndex)\n \t\t\t\t\ti+= 12;\n \t\t\t\t\tcontinue;\n \t\t\t\t}\n+\t\t\t\tif (i+4>=hdrl_len) ERR_EXIT(AVI_ERR_READ)\n \n \t\t\t\tn = str2ulong(hdrl_data+i+4);\n \t\t\t\tn = PAD_EVEN(n);"
+        }
+    ],
+    "commitTime": "2023-12-04 09:03:04"
+}

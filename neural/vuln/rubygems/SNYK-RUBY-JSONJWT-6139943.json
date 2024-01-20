@@ -1,0 +1,47 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "P3ngu1nW"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.4,
+    "disclosureTime": "2023-12-25 22:44:52",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06926",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-RUBY-JSONJWT-6139943",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51774"
+        ],
+        "CWE": [
+            "CWE-347"
+        ]
+    },
+    "language": "ruby",
+    "malicious": false,
+    "packageManager": "rubygems",
+    "publicationTime": "2023-12-27 13:27:01",
+    "remediation": "There is no fixed version for json-jwt . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Verification of Cryptographic Signature",
+    "vulnDescription": {
+        "Overview": "json-jwt is a JSON Web Token and its family (JSON Web Signature, JSON Web Encryption and JSON Web Key) in Ruby. Affected versions of this package are vulnerable to Improper Verification of Cryptographic Signature due to a sign/encryption confusion attack via the JSON::JWT.decode function . An attacker can bypass identity checks by exploiting the confusion between signature and encryption mechanisms in the token verification process. Note: Exploiting this vulnerability is possible if the developer uses the RS-* of signing algorithms and an attacker has access to the public key. "
+    },
+    "source_code": []
+}

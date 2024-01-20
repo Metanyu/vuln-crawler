@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.6,
+    "disclosureTime": "2024-01-01 06:30:19",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-DETERMINED-6141128",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-62988"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-01 12:42:00",
+    "remediation": "Upgrade determined to version 0.26.7 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "determined is a Determined Deep Learning Training Platform Affected versions of this package are vulnerable to Race Condition in the workspace list. It could cause outdated workspace list results to appear when switching between different workspace list filter options. "
+    },
+    "source_code": []
+}

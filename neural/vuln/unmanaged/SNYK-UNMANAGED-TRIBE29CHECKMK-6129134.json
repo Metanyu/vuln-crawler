@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Jan-Philipp Litza"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-13 09:44:22",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TRIBE29CHECKMK-6129134",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-31210"
+        ],
+        "CWE": [
+            "CWE-427"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 15:31:50",
+    "remediation": "Upgrade tribe29/checkmk to version 2.2.0p17 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Search Path Element",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Search Path Element due to the improper handling of the LD_LIBRARY_PATH environment variable. An attacker can escalate privileges by injecting malicious libraries into the search path used by the dynamic linker. "
+    },
+    "source_code": [
+        {
+            "filename": "agents/check_mk_agent.linux",
+            "diff": "@@ -1176,16 +1176,18 @@ section_omd_core() {\n \n         # The files within a site are site-user writable! Therefore we must not use them!\n         # The version files are only root writable so we can use them instead.\n-        site_version=\"$(realpath \"${1}/version\" | sed 's|.*/||')\"\n+        site_version() {\n+            printf \"%s\" \"$(realpath \"${1}/version\" | sed 's|.*/||')\"\n+        }\n \n         site_cmd() {\n             # DO NOT ACCESS /omd/sites/${site}/bin/cmd directly.\n             # bin might point anywhere -> priv escalation.\n-            printf \"/omd/versions/%s/bin/%s\" \"${site_version}\" \"${2}\"\n+            printf \"/omd/versions/%s/bin/%s\" \"$(site_version \"${1}\")\" \"${2}\"\n         }\n \n         site_lib() {\n-            printf \"/omd/versions/%s/lib\" \"${site_version}\"\n+            printf \"/omd/versions/%s/lib\" \"$(site_version \"${1}\")\"\n         }\n \n         waitmax_for_unixcat_with_site_ld_library_path() {"
+        }
+    ],
+    "commitTime": "2023-12-11 16:28:48"
+}

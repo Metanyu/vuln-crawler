@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 8.7,
+    "disclosureTime": "2023-12-05 01:45:37",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06970",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-AZURERTOSTHREADX-6100969",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-48693"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-07 06:27:40",
+    "remediation": "Upgrade azure-rtos/threadx to version 6.3.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation due to improper parameter checking mechanism. An attacker can cause arbitrary read and write, which may lead to privilege escalation. "
+    },
+    "source_code": [
+        {
+            "filename": "ports_arch/ARMv8-A/update.ps1",
+            "diff": "@@ -78,7 +78,7 @@ Write-Verbose (\"Patch files: $PatchFiles\")\n Write-Verbose (\"LogDir: $LogDir\")\n \n $cores = @(\"cortex_a35\", \"cortex_a53\", \"cortex_a55\", \"cortex_a57\", \"cortex_a65\", \"cortex_a65ae\", \"cortex_a72\", \"cortex_a73\", \"cortex_a75\", \"cortex_a76\", \"cortex_a76ae\", \"cortex_a77\")\n-$compilers = @(\"ac6\", \"gnu\", \"iar\", \"ghs\")\n+$compilers = @(\"ac6\", \"gnu\")\n $patches = (\n     ('example_build\\sample_threadx\\.cproject', (\n         (('value=\"cortex-a35\"'), ('value=\"cortex-$core_short_lower\"')),"
+        }
+    ],
+    "commitTime": "2023-09-14 01:43:51"
+}

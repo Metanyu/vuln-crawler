@@ -1,0 +1,81 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Tareq Ahamed"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-21 12:30:28",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.14000",
+        "probability": "0.00046"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-APACHEAIRFLOW-6137748",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49920"
+        ],
+        "CWE": [
+            "CWE-352"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 19:46:39",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "apache-airflow is a platform to programmatically author, schedule, and monitor workflows. Affected versions of this package are vulnerable to Cross-site Request Forgery (CSRF) that allows triggering a DAG in a GET request, by convincing a user who is authenticated to the Airflow UI to visit a malicious website in the same browser. "
+    },
+    "source_code": [
+        {
+            "filename": "airflow/www/templates/airflow/dag.html",
+            "diff": "@@ -254,7 +254,7 @@ <h4 class=\"pull-right js-dataset-triggered\" style=\"user-select: none;-moz-user-s\n           {% else %}\n             <a href=\"{{ url_for('Airflow.trigger', dag_id=dag.dag_id, origin=url_for(request.endpoint, dag_id=dag.dag_id, **request.args)) }}\"\n           {% endif %}\n-              title=\"Trigger&nbsp;DAG\"\n+              onclick=\"return triggerDag(this, '{{ dag.dag_id }}')\" title=\"Trigger&nbsp;DAG\"\n               aria-label=\"Trigger DAG\"\n               class=\"btn btn-default btn-icon-only{{ ' disabled' if not dag.can_trigger }} trigger-dropdown-btn\">\n               <span class=\"material-icons\" aria-hidden=\"true\">play_arrow</span>\n@@ -289,5 +289,10 @@ <h4 class=\"pull-right js-dataset-triggered\" style=\"user-select: none;-moz-user-s\n       }\n       return false;\n     }\n+\n+    function triggerDag(link, dagId) {\n+      postAsForm(link.href, {});\n+      return false;\n+    }\n   </script>\n {% endblock %}"
+        },
+        {
+            "filename": "airflow/www/templates/airflow/dags.html",
+            "diff": "@@ -385,7 +385,7 @@ <h2>{{ page_title }}</h2>\n                   </div>\n                 {% else %}\n                   <a href=\"{{ url_for('Airflow.trigger', dag_id=dag.dag_id, redirect_url=url_for(request.endpoint)) }}\"\n-                    title=\"Trigger&nbsp;DAG\"\n+                  onclick=\"return triggerDag(this, '{{ dag.dag_id }}')\" title=\"Trigger&nbsp;DAG\"\n                     aria-label=\"Trigger DAG\"\n                     class=\"btn btn-sm btn-default btn-icon-only{{ ' disabled' if not dag.can_trigger }} trigger-dropdown-btn\">\n                     <span class=\"material-icons\" aria-hidden=\"true\">play_arrow</span>\n@@ -483,5 +483,10 @@ <h2>{{ page_title }}</h2>\n       }\n       return false;\n     }\n+\n+    function triggerDag(link, dagId) {\n+      postAsForm(link.href, {});\n+      return false;\n+    }\n   </script>\n {% endblock %}"
+        },
+        {
+            "filename": "airflow/www/views.py",
+            "diff": "@@ -2047,7 +2047,9 @@ def trigger(self, dag_id: str, session: Session = NEW_SESSION):\n             if isinstance(run_conf, dict) and any(run_conf)\n         }\n \n-        if request.method == \"GET\" and (ui_fields_defined or show_trigger_form_if_no_params):\n+        if request.method == \"GET\" or (\n+            not request_conf and (ui_fields_defined or show_trigger_form_if_no_params)\n+        ):\n             # Populate conf textarea with conf requests parameter, or dag.params\n             default_conf = \"\"\n "
+        },
+        {
+            "filename": "tests/www/views/test_views_trigger_dag.py",
+            "diff": "@@ -57,7 +57,7 @@ def test_trigger_dag_button_normal_exist(admin_client):\n )\n def test_trigger_dag_button(admin_client, req, expected_run_id):\n     test_dag_id = \"example_bash_operator\"\n-    admin_client.post(f\"dags/{test_dag_id}/trigger?{req}\")\n+    admin_client.post(f\"dags/{test_dag_id}/trigger?{req}\", data={\"conf\": \"{}\"})\n     with create_session() as session:\n         run = session.query(DagRun).filter(DagRun.dag_id == test_dag_id).first()\n     assert run is not None\n@@ -68,8 +68,12 @@ def test_trigger_dag_button(admin_client, req, expected_run_id):\n def test_duplicate_run_id(admin_client):\n     test_dag_id = \"example_bash_operator\"\n     run_id = \"test_run\"\n-    admin_client.post(f\"dags/{test_dag_id}/trigger?run_id={run_id}\", follow_redirects=True)\n-    response = admin_client.post(f\"dags/{test_dag_id}/trigger?run_id={run_id}\", follow_redirects=True)\n+    admin_client.post(\n+        f\"dags/{test_dag_id}/trigger?run_id={run_id}\", data={\"conf\": \"{}\"}, follow_redirects=True\n+    )\n+    response = admin_client.post(\n+        f\"dags/{test_dag_id}/trigger?run_id={run_id}\", data={\"conf\": \"{}\"}, follow_redirects=True\n+    )\n     check_content_in_response(f\"The run ID {run_id} already exists\", response)\n \n \n@@ -112,7 +116,9 @@ def test_trigger_dag_conf_not_dict(admin_client):\n def test_trigger_dag_wrong_execution_date(admin_client):\n     test_dag_id = \"example_bash_operator\"\n \n-    response = admin_client.post(f\"dags/{test_dag_id}/trigger\", data={\"execution_date\": \"not_a_date\"})\n+    response = admin_client.post(\n+        f\"dags/{test_dag_id}/trigger\", data={\"conf\": \"{}\", \"execution_date\": \"not_a_date\"}\n+    )\n     check_content_in_response(\"Invalid execution date\", response)\n \n     with create_session() as session:\n@@ -124,7 +130,9 @@ def test_trigger_dag_execution_date_data_interval(admin_client):\n     test_dag_id = \"example_bash_operator\"\n     exec_date = timezone.utcnow()\n \n-    admin_client.post(f\"dags/{test_dag_id}/trigger\", data={\"execution_date\": exec_date.isoformat()})\n+    admin_client.post(\n+        f\"dags/{test_dag_id}/trigger\", data={\"conf\": \"{}\", \"execution_date\": exec_date.isoformat()}\n+    )\n \n     with create_session() as session:\n         run = session.query(DagRun).filter(DagRun.dag_id == test_dag_id).first()\n@@ -361,7 +369,7 @@ def test_trigger_dag_params_array_value_none_render(admin_client, dag_maker, ses\n def test_dag_run_id_pattern(session, admin_client, pattern, run_id, result):\n     with conf_vars({(\"scheduler\", \"allowed_run_id_pattern\"): pattern}):\n         test_dag_id = \"example_bash_operator\"\n-        admin_client.post(f\"dags/{test_dag_id}/trigger?&run_id={run_id}\")\n+        admin_client.post(f\"dags/{test_dag_id}/trigger?run_id={run_id}\", data={\"conf\": \"{}\"})\n         run = session.query(DagRun).filter(DagRun.dag_id == test_dag_id).first()\n         if result:\n             assert run is not None"
+        }
+    ],
+    "commitTime": "2023-12-02 23:38:20"
+}

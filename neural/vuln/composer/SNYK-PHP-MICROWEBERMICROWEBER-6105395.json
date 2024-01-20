@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "uonghoangminhchau"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.1,
+    "disclosureTime": "2023-12-08 01:46:09",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-MICROWEBERMICROWEBER-6105395",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6599"
+        ],
+        "CWE": [
+            "CWE-544"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-08 07:23:54",
+    "remediation": "Upgrade microweber/microweber to version 2.0.0 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Missing Standardized Error Handling Mechanism",
+    "vulnDescription": {
+        "Overview": "microweber/microweber is a new generation CMS with drag and drop. Affected versions of this package are vulnerable to Missing Standardized Error Handling Mechanism due to improper error handling. An attacker can take advantage of it to get information about the application through error content. "
+    },
+    "source_code": [
+        {
+            "filename": "src/MicroweberPackages/FileManager/Http/Controllers/PluploadController.php",
+            "diff": "@@ -358,9 +358,9 @@ public function upload()\n         $fileName = preg_replace('/\\s+\\d+%|\\)/', '', $fileName);\n         $fileName = preg_replace(\"/[\\/\\&%#\\$]/\", \"_\", $fileName);\n         $fileName = preg_replace(\"/[\\\"\\']/\", \" \", $fileName);\n-        $fileName = str_replace(array('(', ')', \"'\", \"!\", \"`\", \"*\", \"#\"), '_', $fileName);\n-        $fileName = str_replace(' ', '_', $fileName);\n-        $fileName = str_replace('..', '.', $fileName);\n+        $fileName = str_replace(array('(', ')', \"'\", \"!\", \"`\", \"*\", \"#\", \"<\", \">\"), '-', $fileName);\n+        $fileName = str_replace(' ', '-', $fileName);\n+        $fileName = str_replace('..', '-', $fileName);\n         $fileName = strtolower($fileName);\n         $fileName = mw()->url_manager->clean_url_wrappers($fileName);\n         $fileName = substr($fileName, 0, -(strlen($fileNameExtension)));"
+        },
+        {
+            "filename": "src/MicroweberPackages/Media/MediaManager.php",
+            "diff": "@@ -380,7 +380,7 @@ public function get($params)\n     public function save($data)\n     {\n         $data = app()->html_clean->cleanArray($data);\n-\n+        $data = xss_clean($data);\n         $s = array();\n \n         if (isset($data['content-id'])) {\n@@ -513,6 +513,9 @@ public function save($data)\n \n             $s['filename'] = $data['src'];\n         }\n+        if (isset($s['filename']) && !is_string($s['filename'])) {\n+           return false;\n+        }\n \n         if (!isset($data['position']) and !isset($s['id'])) {\n             $s['position'] = 9999999;\n@@ -525,6 +528,7 @@ public function save($data)\n \n         if ((!isset($s['id']) or (isset($s['id']) and $s['id'] == 0))\n             and isset($s['filename'])\n+            and is_string($s['filename'])\n             and isset($s['rel_id'])\n             and isset($s['rel_type'])\n         ) {\n@@ -540,7 +544,7 @@ public function save($data)\n             }\n         }\n \n-        if (!isset($s['id']) and isset($s['filename']) and !isset($data['media_type'])) {\n+        if (!isset($s['id']) and isset($s['filename']) and is_string($s['filename']) and !isset($data['media_type'])) {\n             $ext = get_file_extension($s['filename']);\n             $data['media_type'] = $this->_guess_media_type_from_file_ext($ext);\n         }\n@@ -559,11 +563,6 @@ public function save($data)\n             $s['image_options'] = @json_encode($data['image_options']);\n         }\n \n-        if (isset($s['filename']) && is_array($s['filename'])) {\n-            if (isset($s['filename']['error'])) {\n-                return false;\n-            }\n-        }\n \n         if (isset($s['rel_type']) and isset($s['rel_id'])) {\n             $s['rel_id'] = trim($s['rel_id']);"
+        },
+        {
+            "filename": "src/MicroweberPackages/Media/Traits/MediaTrait.php",
+            "diff": "@@ -82,7 +82,7 @@ public static function bootMediaTrait()\n                                 'rel_id' => $model->id,\n                                 'title' => 'Picture',\n                                 'media_type' => 'picture',\n-                                'src' => $url,\n+                                'filename' => $url,\n                             ));\n                         }\n                     }"
+        },
+        {
+            "filename": "src/MicroweberPackages/Media/migrations/2020_07_02_000000_create_media_table.php",
+            "diff": "@@ -18,7 +18,7 @@ public function up()\n                 $table->id();\n                 $table->text('title')->nullable();\n                 $table->text('description')->nullable();\n-                $table->text('embed_code')->nullable();\n+                //$table->text('embed_code')->nullable();\n                 $table->text('filename')->nullable();\n                 $table->text('media_type')->nullable()->index();\n "
+        },
+        {
+            "filename": "src/MicroweberPackages/Media/tests/LegacyMediaTest.php",
+            "diff": "@@ -4,7 +4,7 @@\n \n use MicroweberPackages\\Core\\tests\\TestCase;\n \n-class MediaTest extends TestCase\n+class LegacyMediaTest extends TestCase\n {\n     public function testSaveMedia()\n     {\n@@ -13,7 +13,7 @@ public function testSaveMedia()\n             'rel_id' => 3,\n             'title' => 'My new pic',\n             'media_type' => 'picture',\n-            'src' => 'http://lorempixel.com/400/200/',\n+            'filename' => 'http://lorempixel.com/400/200/',\n         );\n         $saved_pic_id = save_media($picture);\n \n@@ -35,7 +35,7 @@ public function testDeleteMedia()\n             'rel_id' => 3,\n             'title' => 'My new pic to del',\n             'media_type' => 'picture',\n-            'src' => 'http://lorempixel.com/400/200/',\n+            'filename' => 'http://lorempixel.com/400/200/',\n         );\n         $saved_pic_id = save_media($picture);\n         $picture_data = get_media_by_id($saved_pic_id);\n@@ -48,5 +48,42 @@ public function testDeleteMedia()\n         $this->assertEquals(is_array($picture_data), true);\n         $this->assertEquals($title, 'My new pic to del');\n         $this->assertEquals(!($delete), false);\n+    }\n+\n+    public function testSaveMediaArrayInFilename()\n+    {\n+        $picture = array(\n+            'rel_type' => 'content',\n+            'rel_id' => 3,\n+            'title' => 'My new pic',\n+            'media_type' => 'picture',\n+            'filename' => ['http://lorempixel.com/400/200/', 'http://lorempixel.com/400/200/'],\n+        );\n+        $saved_pic_id = save_media($picture);\n+\n+        $this->assertFalse($saved_pic_id);\n+    }\n+    public function testSaveMediaXssFilename()\n+    {\n+        $xss = '<style>@keyframes x{}</style><xss style=\"animation-name:x\" onanimationend=\"alert(document.cookie)\"></xss>';\n+\n+        $picture = array(\n+            'rel_type' => 'content',\n+            'rel_id' => 3,\n+            'title' => 'My new pic to xss'.$xss,\n+            'description' => 'My new pic description xss'.$xss,\n+            'media_type' => 'picture',\n+            'filename' => 'http://lorempixel.com/400/200/'.$xss,\n+        );\n+        $saved_pic_id = save_media($picture);\n+        $picture_data = get_media_by_id($saved_pic_id);\n+\n+        $this->assertNotEquals($picture_data['title'], $picture['title']);\n+        $this->assertNotEquals($picture_data['description'], $picture['description']);\n+        $this->assertNotEquals($picture_data['filename'], $picture['filename']);\n+\n+\n+\n+\n     }\n }"
+        }
+    ],
+    "commitTime": "2023-06-08 14:32:44"
+}

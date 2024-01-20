@@ -1,0 +1,68 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Bofei Chen",
+        "Lei Zhang",
+        "Guangliang Yang",
+        "Keke Lian",
+        "Xinyou Huang"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-15 09:46:47",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12058",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHEDUBBO-6128859",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-29234"
+        ],
+        "CWE": [
+            "CWE-502"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 13:31:30",
+    "remediation": "Upgrade org.apache.dubbo:dubbo-parent to version 3.1.10, 3.2.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Deserialization of Untrusted Data",
+    "vulnDescription": {
+        "Details": "Serialization is a process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is called deserialization. Serialization is commonly used for communication (sharing objects between multiple hosts) and persistence (store the object state in a file or a database). It is an integral part of popular protocols like Remote Method Invocation (RMI) , Java Management Extension (JMX) , Java Messaging System (JMS) , Action Message Format (AMF) , Java Server Faces (JSF) ViewState , etc. Deserialization of untrusted data ( CWE-502 ) is when the application deserializes untrusted data without sufficiently verifying that the resulting data will be valid, thus allowing the attacker to control the state or the flow of the execution. ",
+        "Overview": "Affected versions of this package are vulnerable to Deserialization of Untrusted Data due to improper handling of input during the deserialization process. An attacker can execute arbitrary code or cause a denial of service by sending a crafted payload that exploits the deserialization flaw. "
+    },
+    "source_code": []
+}

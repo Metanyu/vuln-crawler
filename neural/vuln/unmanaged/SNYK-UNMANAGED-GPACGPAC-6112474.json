@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "ReturnHere"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-07 18:45:36",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-GPACGPAC-6112474",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46871"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 14:16:54",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption via the NewSFDouble function in the scenegraph/vrml_tools.c file. "
+    },
+    "source_code": [
+        {
+            "filename": "src/scenegraph/vrml_tools.c",
+            "diff": "@@ -714,7 +714,7 @@ void gf_sg_vrml_field_pointer_del(void *field, u32 FieldType)\n \t\tgf_sg_mfscript_del( * ((MFScript *) field));\n \t\tbreak;\n \tcase GF_SG_VRML_SFSCRIPT:\n-\t\treturn;\n+\t\tbreak;\n \n \tdefault:\n \t\tassert(0);\n@@ -1131,7 +1131,7 @@ GF_Err gf_sg_vrml_mf_reset(void *mf, u32 FieldType)\n \t\tgf_sg_mfurl_del( * ((MFURL *) mf));\n \t\tbreak;\n \tcase GF_SG_VRML_MFSCRIPT:\n-\t\tgf_sg_mfscript_del( * ((MFScript *) mf));\t\n+\t\tgf_sg_mfscript_del( * ((MFScript *) mf));\n \t\tbreak;\n \tdefault:\n \t\tif (mffield->array) gf_free(mffield->array);"
+        }
+    ],
+    "commitTime": "2023-10-23 13:02:07"
+}

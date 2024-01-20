@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "iskindar"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-21 17:48:18",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12298",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-TATSW3M-6138248",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4255"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 12:50:21",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the checkType function in etc.c . Note: This issue was introduced as part of the fix for CVE-2022-38223 . "
+    },
+    "source_code": [
+        {
+            "filename": "etc.c",
+            "diff": "@@ -393,7 +393,10 @@ checkType(Str s, Lineprop **oprop, Linecolor **ocolor)\n \t\t\t    if (color)\n \t\t\t\tcolor -= plen;\n #endif\n-\t\t\t    plen = *(--plens);\n+\t\t\t    if (plens == plens_buffer)\n+\t\t\t\tplen = 0;\n+\t\t\t    else\n+\t\t\t\tplen = *(--plens);\n \t\t\t    str += 2;\n \t\t\t}\n \t\t    }\n@@ -419,7 +422,10 @@ checkType(Str s, Lineprop **oprop, Linecolor **ocolor)\n \t\t\t    if (color)\n \t\t\t\tcolor -= plen;\n #endif\n-\t\t\t    plen = *(--plens);\n+\t\t\t    if (plens == plens_buffer)\n+\t\t\t\tplen = 0;\n+\t\t\t    else\n+\t\t\t\tplen = *(--plens);\n \t\t\t    str++;\n \t\t\t}\n #else"
+        }
+    ],
+    "commitTime": "2023-07-13 07:48:23"
+}

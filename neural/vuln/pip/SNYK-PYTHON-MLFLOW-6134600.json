@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "kevin-mizu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 10,
+    "disclosureTime": "2023-12-20 15:47:38",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05757",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6134600",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6975"
+        ],
+        "CWE": [
+            "CWE-29"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 08:55:10",
+    "remediation": "Upgrade mlflow to version 2.9.2 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Improper Access Control via a specially crafted path input that exploits improper neutralization of special elements through the FTP model. An attacker can gain unauthorized read or write access to files on the server by submitting a path with directory traversal sequences. "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/store/artifact/ftp_artifact_repo.py",
+            "diff": "@@ -106,10 +106,10 @@ def list_artifacts(self, path=None):\n             if not self._is_dir(ftp, list_dir):\n                 return []\n             artifact_files = ftp.nlst(list_dir)\n-            artifact_files = list(filter(lambda x: x != \".\" and x != \"..\", artifact_files))\n             # Make sure artifact_files is a list of file names because ftp.nlst\n             # may return absolute paths.\n             artifact_files = [os.path.basename(f) for f in artifact_files]\n+            artifact_files = list(filter(lambda x: x != \".\" and x != \"..\", artifact_files))\n             infos = []\n             for file_name in artifact_files:\n                 file_path = file_name if path is None else posixpath.join(path, file_name)"
+        },
+        {
+            "filename": "tests/store/artifact/test_ftp_artifact_repo.py",
+            "diff": "@@ -67,6 +67,18 @@ def test_list_artifacts(ftp_mock):\n     assert artifacts[1].file_size is None\n \n \n+def test_list_artifacts_malicious_path(ftp_mock):\n+    artifact_root_path = \"/experiment_id/run_id/\"\n+    repo = FTPArtifactRepository(\"ftp://test_ftp\" + artifact_root_path)\n+    repo.get_ftp_client = MagicMock()\n+    call_mock = MagicMock(return_value=ftp_mock)\n+    repo.get_ftp_client.return_value = MagicMock(__enter__=call_mock)\n+    ftp_mock.nlst = MagicMock(return_value=[\".\", \"/.\", \"/..\", \"//..\"])\n+\n+    artifacts = repo.list_artifacts(path=None)\n+    assert artifacts == []\n+\n+\n def test_list_artifacts_when_ftp_nlst_returns_absolute_paths(ftp_mock):\n     artifact_root_path = \"/experiment_id/run_id/\"\n     repo = FTPArtifactRepository(\"ftp://test_ftp\" + artifact_root_path)"
+        }
+    ],
+    "commitTime": "2023-12-12 08:35:51"
+}

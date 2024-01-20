@@ -1,0 +1,66 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "tianocore/edk2"
+        }
+    ],
+    "credit": [
+        "Francisco Falcon",
+        "Iv\u00e1n Arce"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.8,
+            "cvssV3Vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:C/C:L/I:N/A:N",
+            "modificationTime": "2024-01-17T13:48:46.609987Z",
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.8,
+    "description": "## Overview Affected versions of this package are vulnerable to Information Exposure due to the use of predictable TCP initial sequence numbers. An attacker can intercept or hijack a TCP session by predicting the sequence numbers used in the TCP connection establishment process. ## Remediation A fix was pushed into the `master` branch but not yet published. ## References - [Additional Information](https://blog.quarkslab.com/pixiefail-nine-vulnerabilities-in-tianocores-edk-ii-ipv6-network-stack.html) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2258703) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TIANOCOREEDK2-6170043",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-45236"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "tianocore/edk2",
+    "publicationTime": "2024-01-17T21:26:04.646957Z",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "semver": {
+        "vulnerable": [
+            "[0]"
+        ]
+    },
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure due to the use of predictable TCP initial sequence numbers. An attacker can intercept or hijack a TCP session by predicting the sequence numbers used in the TCP connection establishment process. ",
+        "References": [
+            "https://blog.quarkslab.com/pixiefail-nine-vulnerabilities-in-tianocores-edk-ii-ipv6-network-stack.html",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2258703"
+        ]
+    },
+    "vulnerableVersions": "[0]"
+}

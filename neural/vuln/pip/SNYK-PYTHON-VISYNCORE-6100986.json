@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.5,
+    "disclosureTime": "2023-12-01 06:42:51",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-VISYNCORE-6100986",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-1236"
+        ],
+        "PVE": [
+            "PVE-2023-62405"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 12:54:35",
+    "remediation": "Upgrade visyn-core to version 6.0.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "CSV Injection",
+    "vulnDescription": {
+        "Overview": "visyn-core is a Core repository for datavisyn applications. Affected versions of this package are vulnerable to CSV Injection due to improper escape of + , - , @ , = characters in the function _json2xlsx . "
+    },
+    "source_code": []
+}

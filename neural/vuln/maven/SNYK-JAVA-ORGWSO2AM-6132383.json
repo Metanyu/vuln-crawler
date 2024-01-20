@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.6,
+    "disclosureTime": "2023-12-15 12:30:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06936",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGWSO2AM-6132383",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6836"
+        ],
+        "CWE": [
+            "CWE-611"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-20 13:24:32",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "XML External Entity (XXE) Injection",
+    "vulnDescription": {
+        "Details": "XXE Injection is a type of attack against an application that parses XML input. XML is a markup language that defines a set of rules for encoding documents in a format that is both human-readable and machine-readable. By default, many XML processors allow specification of an external entity, a URI that is dereferenced and evaluated during XML processing. When an XML document is being parsed, the parser can make a request and include the content at the specified URI inside of the XML document. Attacks can include disclosing local files, which may contain sensitive data such as passwords or private user data, using file: schemes or relative paths in the system identifier. For example, below is a sample XML document, containing an XML element- username. <xml> <?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> <username>John</username> </xml> An external XML entity - xxe , is defined using a system identifier and present within a DOCTYPE header. These entities can access local or remote content. For example the below code contains an external XML entity that would fetch the content of /etc/passwd and display it to the user rendered by username . <xml> <?xml version=\"1.0\" encoding=\"ISO-8859-1\"?> <!DOCTYPE foo [ <!ENTITY xxe SYSTEM \"file:///etc/passwd\" >]> <username>&xxe;</username> </xml> Other XXE Injection attacks can access local resources that may not stop returning data, possibly impacting application availability and leading to Denial of Service. ",
+        "Overview": "Affected versions of this package are vulnerable to XML External Entity (XXE) Injection via the processing of XML content. An attacker can access sensitive information or interact with internal systems by submitting crafted XML data that includes external entity references. "
+    },
+    "source_code": [
+        {
+            "filename": "components/event-receiver/org.wso2.carbon.event.input.adapter.core/src/main/java/org/wso2/carbon/event/input/adapter/core/internal/ds/InputEventAdapterServiceDS.java",
+            "diff": "@@ -36,6 +36,10 @@\n import javax.xml.bind.JAXBContext;\n import javax.xml.bind.JAXBException;\n import javax.xml.bind.Unmarshaller;\n+import javax.xml.stream.XMLInputFactory;\n+import javax.xml.stream.XMLStreamException;\n+import javax.xml.stream.XMLStreamReader;\n+import javax.xml.transform.stream.StreamSource;\n \n @Component(\n         name = \"event.input.adapter.service\",\n@@ -137,11 +141,19 @@ private AdapterConfigs loadGlobalConfigs() {\n                 log.warn(EventAdapterConstants.GLOBAL_CONFIG_FILE_NAME + \" can not found in \" + path + \", hence Input\" +\n                         \" Event Adapters will be running with default global configs.\");\n             }\n-            return (AdapterConfigs) unmarshaller.unmarshal(configFile);\n-        } catch (JAXBException e) {\n+            return (AdapterConfigs) unmarshaller.unmarshal(getXMLStreamReader(path));\n+        } catch (JAXBException | XMLStreamException e) {\n             log.error(\"Error in loading \" + EventAdapterConstants.GLOBAL_CONFIG_FILE_NAME + \" from \" + path + \", \" +\n                     \"hence Input Event Adapters will be running with default global configs.\");\n         }\n         return new AdapterConfigs();\n     }\n+\n+    private XMLStreamReader getXMLStreamReader(String filePath) throws XMLStreamException {\n+        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();\n+        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);\n+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);\n+        XMLStreamReader xmlStreamReader = xmlInputFactory.createXMLStreamReader(new StreamSource(filePath));\n+        return xmlStreamReader;\n+    }\n }"
+        },
+        {
+            "filename": "components/template-manager/org.wso2.carbon.event.template.manager.core/src/main/java/org/wso2/carbon/event/template/manager/core/internal/util/TemplateManagerHelper.java",
+            "diff": "@@ -47,6 +47,10 @@\n import javax.xml.bind.JAXBException;\n import javax.xml.bind.Marshaller;\n import javax.xml.bind.Unmarshaller;\n+import javax.xml.stream.XMLInputFactory;\n+import javax.xml.stream.XMLStreamException;\n+import javax.xml.stream.XMLStreamReader;\n+import javax.xml.transform.stream.StreamSource;\n import java.io.File;\n import java.io.IOException;\n import java.io.StringReader;\n@@ -133,9 +137,10 @@ private static Domain unmarshalDomain(File fileEntry) {\n         try {\n             JAXBContext jaxbContext = JAXBContext.newInstance(Domain.class);\n             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();\n-            domain = (Domain) jaxbUnmarshaller.unmarshal(fileEntry);\n+            XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(new StreamSource(fileEntry));\n+            domain = (Domain) jaxbUnmarshaller.unmarshal(xmlStreamReader);\n \n-        } catch (JAXBException e) {\n+        } catch (JAXBException | XMLStreamException e) {\n             log.error(\"JAXB Exception when unmarshalling domain template file at \"\n                     + fileEntry.getPath(), e);\n         }\n@@ -157,8 +162,9 @@ private static ScenarioConfiguration unmarshalConfiguration(Object configFileCon\n             StringReader reader = new StringReader(new String((byte[]) configFileContent));\n             JAXBContext jaxbContext = JAXBContext.newInstance(ScenarioConfiguration.class);\n             Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();\n-            scenarioConfiguration = (ScenarioConfiguration) jaxbUnmarshaller.unmarshal(reader);\n-        } catch (JAXBException e) {\n+            XMLStreamReader xmlStreamReader = getXMLInputFactory().createXMLStreamReader(new StreamSource(reader));\n+            scenarioConfiguration = (ScenarioConfiguration) jaxbUnmarshaller.unmarshal(xmlStreamReader);\n+        } catch (JAXBException | XMLStreamException e) {\n             log.error(\"JAXB Exception occurred when unmarshalling configuration \", e);\n         }\n \n@@ -642,4 +648,11 @@ public static String getCommonArtifactId(String domainName, String artifactType,\n                                              int sequenceNumber) {\n         return domainName + TemplateManagerConstants.CONFIG_NAME_SEPARATOR + artifactType + sequenceNumber;\n     }\n+\n+    private static XMLInputFactory getXMLInputFactory() {\n+        XMLInputFactory xmlInputFactory = XMLInputFactory.newFactory();\n+        xmlInputFactory.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);\n+        xmlInputFactory.setProperty(XMLInputFactory.SUPPORT_DTD, false);\n+        return xmlInputFactory;\n+    }\n }"
+        }
+    ],
+    "commitTime": "2020-02-14 11:58:05"
+}

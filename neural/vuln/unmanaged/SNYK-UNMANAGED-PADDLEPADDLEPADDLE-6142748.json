@@ -1,0 +1,134 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Tong Liu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2024-01-03 09:45:13",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-PADDLEPADDLEPADDLE-6142748",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52306"
+        ],
+        "CWE": [
+            "CWE-369"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 17:04:32",
+    "remediation": "Upgrade paddlepaddle/paddle to version 2.6.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Divide By Zero",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Divide By Zero via the paddle.lerp function, when tensor shape is invalid. An attacker can cause a runtime crash. "
+    },
+    "source_code": [
+        {
+            "filename": "paddle/fluid/pybind/op_function_common.cc",
+            "diff": "@@ -412,7 +412,7 @@ std::vector<int> CastPyArg2Ints(PyObject* obj,\n             i));\n       }\n     }\n-  } else if (PySequence_Check(obj)) {\n+  } else if (PySequence_Check(obj) && !PyObject_TypeCheck(obj, p_tensor_type)) {\n     Py_ssize_t len = PySequence_Size(obj);\n     value.reserve(len);\n     PyObject* item = nullptr;\n@@ -488,7 +488,7 @@ std::vector<int64_t> CastPyArg2Longs(PyObject* obj,\n             i));\n       }\n     }\n-  } else if (PySequence_Check(obj)) {\n+  } else if (PySequence_Check(obj) && !PyObject_TypeCheck(obj, p_tensor_type)) {\n     Py_ssize_t len = PySequence_Size(obj);\n     PyObject* item = nullptr;\n     for (Py_ssize_t i = 0; i < len; i++) {\n@@ -567,7 +567,7 @@ std::vector<float> CastPyArg2Floats(PyObject* obj,\n             i));\n       }\n     }\n-  } else if (PySequence_Check(obj)) {\n+  } else if (PySequence_Check(obj) && !PyObject_TypeCheck(obj, p_tensor_type)) {\n     Py_ssize_t len = PySequence_Size(obj);\n     PyObject* item = nullptr;\n     for (Py_ssize_t i = 0; i < len; i++) {\n@@ -642,7 +642,7 @@ std::vector<double> CastPyArg2Float64s(PyObject* obj,\n             i));\n       }\n     }\n-  } else if (PySequence_Check(obj)) {\n+  } else if (PySequence_Check(obj) && !PyObject_TypeCheck(obj, p_tensor_type)) {\n     Py_ssize_t len = PySequence_Size(obj);\n     PyObject* item = nullptr;\n     for (Py_ssize_t i = 0; i < len; i++) {"
+        },
+        {
+            "filename": "paddle/phi/infermeta/binary.cc",
+            "diff": "@@ -2663,6 +2663,12 @@ void SearchsortedInferMeta(const MetaTensor& sorted_sequence,\n                            MetaTensor* out) {\n   auto sequences_dims = sorted_sequence.dims();\n   auto values_dims = value.dims();\n+  PADDLE_ENFORCE_GE(\n+      sequences_dims.size(),\n+      1,\n+      phi::errors::InvalidArgument(\n+          \"Input sequences's dimension(%d) must be greater or equal than 1\",\n+          sequences_dims.size()));\n \n   bool flag = true;\n   if (sequences_dims.size() != values_dims.size()) {"
+        },
+        {
+            "filename": "paddle/phi/kernels/cpu/broadcast_kernel.cc",
+            "diff": "@@ -28,6 +28,11 @@ void BroadcastKernel(const Context& dev_ctx,\n                      const DenseTensor& x,\n                      int root,\n                      DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be broadcast must not empyt.\"));\n+\n #if defined(PADDLE_WITH_GLOO)\n   dev_ctx.template Alloc<T>(out);\n   auto comm_context ="
+        },
+        {
+            "filename": "paddle/phi/kernels/cpu/dot_kernel.cc",
+            "diff": "@@ -27,6 +27,9 @@ void DotKernel(const Context& dev_ctx,\n                const DenseTensor& x,\n                const DenseTensor& y,\n                DenseTensor* out) {\n+  if (out->numel() <= 0) {\n+    return;\n+  }\n   auto const *x_ptr = x.data<T>(), *x_ptr_ = &x_ptr[0];\n   auto const *y_ptr = y.data<T>(), *y_ptr_ = &y_ptr[0];\n   T* z = dev_ctx.template Alloc<T>(out);"
+        },
+        {
+            "filename": "paddle/phi/kernels/cpu/eig_kernel.cc",
+            "diff": "@@ -24,6 +24,10 @@ void EigKernel(const Context& dev_ctx,\n                const DenseTensor& x,\n                DenseTensor* out_w,\n                DenseTensor* out_v) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      errors::InvalidArgument(\"EigKernel input tensor is empty.\"));\n   if (!IsComplexType(x.dtype())) {\n     dev_ctx.template Alloc<phi::dtype::Complex<T>>(out_w);\n     dev_ctx.template Alloc<phi::dtype::Complex<T>>(out_v);"
+        },
+        {
+            "filename": "paddle/phi/kernels/cpu/reduce_kernel.cc",
+            "diff": "@@ -29,6 +29,10 @@ void ReduceKernel(const Context& dev_ctx,\n                   int root,\n                   int reduce_type,\n                   DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be reduced must not empyt.\"));\n #if defined(PADDLE_WITH_GLOO)\n   out->Resize(x.dims());\n   dev_ctx.template Alloc<T>(out);"
+        },
+        {
+            "filename": "paddle/phi/kernels/cpu/top_k_kernel.cc",
+            "diff": "@@ -153,6 +153,12 @@ void TopkKernel(const Context& dev_ctx,\n   }\n \n   int k = k_scalar.to<int>();\n+  PADDLE_ENFORCE_GE(\n+      x.numel(),\n+      k,\n+      errors::InvalidArgument(\n+          \"x has only %d element, can not find %d top values.\", x.numel(), k));\n+\n   if (k_scalar.FromTensor()) {\n     auto out_dims = out->dims();\n     // accroding to axis to set K value in the dim"
+        },
+        {
+            "filename": "paddle/phi/kernels/funcs/gather_scatter_functor.cc",
+            "diff": "@@ -122,7 +122,6 @@ struct cpu_gather_scatter_functor {\n \n           self_idx = is_scatter_like ? replace_index : index_idx;\n           src_idx = is_scatter_like ? index_idx : replace_index;\n-\n           reduce_op((tensor_t*)(self_data + self_idx),  // NOLINT\n                     (tensor_t*)(src_data + src_idx));   // NOLINT\n           index_idx++;"
+        },
+        {
+            "filename": "paddle/phi/kernels/funcs/reduce_function.h",
+            "diff": "@@ -988,6 +988,10 @@ void ReduceKernel(const KPDevice& dev_ctx,\n                   const TransformOp& transform,\n                   const std::vector<int>& origin_reduce_dims,\n                   bool is_mean = false) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be reduced must not empyt.\"));\n #ifdef PADDLE_WITH_XPU_KP\n   auto stream = dev_ctx.x_context()->xpu_stream;\n #else\n@@ -1298,6 +1302,11 @@ void ReduceKernelImpl(const Context& dev_ctx,\n                       const std::vector<int64_t>& dims,\n                       bool keep_dim,\n                       bool reduce_all) {\n+  PADDLE_ENFORCE_GT(\n+      input.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be reduced must not empyt.\"));\n+\n   dev_ctx.template Alloc<OutT>(output);\n \n   if (reduce_all) {"
+        },
+        {
+            "filename": "paddle/phi/kernels/funcs/repeat_tensor2index_tensor.h",
+            "diff": "@@ -32,6 +32,11 @@ void RepeatsTensor2IndexTensor(const Context& ctx,\n \n   int64_t index_size = 0;\n   for (int i = 0; i < repeats.dims()[0]; i++) {\n+    PADDLE_ENFORCE_GE(repeats_data[i],\n+                      0,\n+                      phi::errors::InvalidArgument(\n+                          \"repeats must grater or equal than 0, but got %d\",\n+                          repeats_data[i]));\n     index_size += repeats_data[i];\n   }\n   std::vector<RepeatsT> index_vec(index_size);"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/broadcast_kernel.cu",
+            "diff": "@@ -28,6 +28,11 @@ void BroadcastKernel(const Context& dev_ctx,\n                      const DenseTensor& x,\n                      int root,\n                      DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be broadcast must not empyt.\"));\n+\n #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)\n   dev_ctx.template Alloc<T>(out);\n   gpuStream_t stream = dev_ctx.stream();"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/dot_kernel.cu",
+            "diff": "@@ -31,6 +31,9 @@ void DotKernel(const Context& dev_ctx,\n                const DenseTensor& x,\n                const DenseTensor& y,\n                DenseTensor* out) {\n+  if (out->numel() <= 0) {\n+    return;\n+  }\n   dev_ctx.template Alloc<T>(out);\n   if (out->dims().size() == 0) {\n     auto eigen_out = phi::EigenScalar<T>::From(*out);"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/lerp_kernel.cu",
+            "diff": "@@ -51,6 +51,16 @@ void LerpKernel(const Context &ctx,\n                 const DenseTensor &y,\n                 const DenseTensor &weight,\n                 DenseTensor *out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"LerpKernel's input x must not empyt.\"));\n+\n+  PADDLE_ENFORCE_GT(\n+      y.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"LerpKernel's input y must not empyt.\"));\n+\n   int rank = out->dims().size();\n   PADDLE_ENFORCE_GE(\n       rank,"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/reduce_kernel.cu",
+            "diff": "@@ -29,6 +29,10 @@ void ReduceKernel(const Context& dev_ctx,\n                   int root,\n                   int reduce_type,\n                   DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"Tensor need be reduced must not empyt.\"));\n #if defined(PADDLE_WITH_NCCL) || defined(PADDLE_WITH_RCCL)\n   out->Resize(x.dims());\n   dev_ctx.template Alloc<T>(out);"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/top_k_kernel.cu",
+            "diff": "@@ -77,6 +77,11 @@ void TopkKernel(const Context& dev_ctx,\n   if (axis < 0) axis += in_dims.size();\n \n   int k = k_scalar.to<int>();\n+  PADDLE_ENFORCE_GE(\n+      x.numel(),\n+      k,\n+      errors::InvalidArgument(\n+          \"x has only %d element, can not find %d top values.\", x.numel(), k));\n   if (k_scalar.FromTensor()) {\n     phi::DDim out_dims = out->dims();\n     out_dims[axis] = k;"
+        },
+        {
+            "filename": "paddle/phi/kernels/impl/lerp_kernel_impl.h",
+            "diff": "@@ -83,6 +83,16 @@ void LerpKernel(const Context& ctx,\n                 const DenseTensor& y,\n                 const DenseTensor& weight,\n                 DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"LerpKernel's input x must not empyt.\"));\n+\n+  PADDLE_ENFORCE_GT(\n+      y.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\"LerpKernel's input y must not empyt.\"));\n+\n   int rank = out->dims().size();\n   PADDLE_ENFORCE_GE(\n       rank,"
+        },
+        {
+            "filename": "paddle/phi/kernels/impl/repeat_interleave_kernel_impl.h",
+            "diff": "@@ -58,6 +58,11 @@ void RepeatInterleaveKernel(const Context& ctx,\n                             int repeats,\n                             int dim,\n                             DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(repeats,\n+                    0,\n+                    phi::errors::InvalidArgument(\n+                        \"repeats must grater than 0, but got %d\", repeats));\n+\n   auto place = ctx.GetPlace();\n   auto cpu_place = phi::CPUPlace();\n "
+        },
+        {
+            "filename": "python/paddle/tensor/manipulation.py",
+            "diff": "@@ -543,6 +543,8 @@ def unstack(x, axis=0, num=None):\n         raise ValueError(\n             '`axis` must be in the range [-{0}, {0})'.format(x.ndim)\n         )\n+    if num is not None and (num < 0 or num > x.shape[axis]):\n+        raise ValueError(f'`num` must be in the range [0, {x.shape[axis]})')\n     if in_dynamic_mode():\n         if num is None:\n             num = x.shape[axis]\n@@ -4372,7 +4374,6 @@ def repeat_interleave(x, repeats, axis=None, name=None):\n     if axis is None:\n         x = paddle.flatten(x)\n         axis = 0\n-\n     if in_dynamic_mode():\n         if isinstance(repeats, Variable):\n             return _C_ops.repeat_interleave_with_tensor_index(x, repeats, axis)"
+        }
+    ],
+    "commitTime": "2023-08-02 07:08:19"
+}

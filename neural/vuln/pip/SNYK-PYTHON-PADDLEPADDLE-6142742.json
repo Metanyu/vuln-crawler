@@ -1,0 +1,75 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Tong Liu"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 8.2,
+    "disclosureTime": "2024-01-03 09:45:06",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-PADDLEPADDLE-6142742",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52307"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2024-01-03 14:41:47",
+    "remediation": "Upgrade paddlepaddle to version 2.6.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Buffer Copy without Checking Size of Input ('Classic Buffer Overflow')",
+    "vulnDescription": {
+        "Overview": "paddlepaddle is a Parallel Distributed Deep Learning Affected versions of this package are vulnerable to Buffer Copy without Checking Size of Input ('Classic Buffer Overflow') via the paddle.linalg.lu_unpack function. An attacker can cause a denial of service or potentially execute arbitrary code by providing specially crafted input to trigger this vulnerability. ",
+        "PoC": "import paddle import numpy as np x = paddle.to_tensor(np.random.uniform(-6666666, 100000000, [1, 6, 4, 8, 2]).astype(np.float32)) y = paddle.to_tensor(np.random.uniform(-2147483648, 2147483647, []).astype(np.int32)) paddle.linalg.lu_unpack(x, y, True, True) "
+    },
+    "source_code": [
+        {
+            "filename": "paddle/phi/kernels/impl/lu_kernel_impl.h",
+            "diff": "@@ -15,6 +15,7 @@\n #pragma once\n \n #include \"paddle/phi/core/dense_tensor.h\"\n+#include \"paddle/phi/core/enforce.h\"\n #include \"paddle/phi/kernels/elementwise_add_kernel.h\"\n #include \"paddle/phi/kernels/elementwise_subtract_kernel.h\"\n #include \"paddle/phi/kernels/funcs/complex_functors.h\"\n@@ -500,6 +501,16 @@ void Unpack_Pivot(const Context& dev_ctx,\n     arange<Context>(dev_ctx, &idt, h);\n     auto idlst = idt.data<int32_t>();\n     for (int j = 0; j < Pnum; j++) {\n+      PADDLE_ENFORCE_EQ(\n+          (pdataptr[i * Pnum + j] > 0) && (pdataptr[i * Pnum + j] <= h),\n+          true,\n+          phi::errors::InvalidArgument(\n+              \"The data in Pivot must be between (1, x.shape[-2]],\"\n+              \"but got %d in Pivot while the x.shape[-2] is %d.\"\n+              \"Please make sure that the inputs(x and Pivot) is the output of \"\n+              \"paddle.linalg.lu.\",\n+              pdataptr[i * Pnum + j],\n+              h));\n       if (idlst[pdataptr[i * Pnum + j] - 1] == idlst[j]) continue;\n       auto temp = idlst[j];\n       idlst[j] = idlst[pdataptr[i * Pnum + j] - 1];"
+        },
+        {
+            "filename": "python/paddle/tensor/linalg.py",
+            "diff": "@@ -2433,7 +2433,14 @@ def lu_unpack(x, y, unpack_ludata=True, unpack_pivots=True, name=None):\n \n             # one can verify : X = P @ L @ U ;\n     \"\"\"\n-\n+    if x.ndim < 2:\n+        raise ValueError(\n+            f\"The shape of x should be (*, M, N), but received ndim is [{x.ndim} < 2]\"\n+        )\n+    if y.ndim < 1:\n+        raise ValueError(\n+            f\"The shape of Pivots should be (*, K), but received ndim is [{y.ndim} < 1]\"\n+        )\n     if in_dynamic_mode():\n         P, L, U = _C_ops.lu_unpack(x, y, unpack_ludata, unpack_pivots)\n         return P, L, U"
+        },
+        {
+            "filename": "test/legacy_test/test_lu_unpack_op.py",
+            "diff": "@@ -315,6 +315,68 @@ def run_lu_static(shape, dtype):\n             run_lu_static(tensor_shape, dtype)\n \n \n+class TestLU_UnpackAPIError(unittest.TestCase):\n+    def test_errors_1(self):\n+        with paddle.fluid.dygraph.guard():\n+            # The size of input in lu should not be 0.\n+            def test_x_size():\n+                x = paddle.to_tensor(\n+                    np.random.uniform(-6666666, 100000000, [2]).astype(\n+                        np.float32\n+                    )\n+                )\n+                y = paddle.to_tensor(\n+                    np.random.uniform(-2147483648, 2147483647, [2]).astype(\n+                        np.int32\n+                    )\n+                )\n+                unpack_ludata = True\n+                unpack_pivots = True\n+                paddle.linalg.lu_unpack(x, y, unpack_ludata, unpack_pivots)\n+\n+            self.assertRaises(ValueError, test_x_size)\n+\n+    def test_errors_2(self):\n+        with paddle.fluid.dygraph.guard():\n+            # The size of input in lu should not be 0.\n+            def test_y_size():\n+                x = paddle.to_tensor(\n+                    np.random.uniform(-6666666, 100000000, [8, 4, 2]).astype(\n+                        np.float32\n+                    )\n+                )\n+                y = paddle.to_tensor(\n+                    np.random.uniform(-2147483648, 2147483647, []).astype(\n+                        np.int32\n+                    )\n+                )\n+                unpack_ludata = True\n+                unpack_pivots = True\n+                paddle.linalg.lu_unpack(x, y, unpack_ludata, unpack_pivots)\n+\n+            self.assertRaises(ValueError, test_y_size)\n+\n+    def test_errors_3(self):\n+        with paddle.fluid.dygraph.guard():\n+            # The size of input in lu should not be 0.\n+            def test_y_data():\n+                x = paddle.to_tensor(\n+                    np.random.uniform(-6666666, 100000000, [8, 4, 2]).astype(\n+                        np.float32\n+                    )\n+                )\n+                y = paddle.to_tensor(\n+                    np.random.uniform(-2147483648, 2147483647, [8, 2]).astype(\n+                        np.int32\n+                    )\n+                )\n+                unpack_ludata = True\n+                unpack_pivots = True\n+                paddle.linalg.lu_unpack(x, y, unpack_ludata, unpack_pivots)\n+\n+            self.assertRaises(Exception, test_y_data)\n+\n+\n if __name__ == \"__main__\":\n     paddle.enable_static()\n     unittest.main()"
+        }
+    ],
+    "commitTime": "2023-08-17 01:22:25"
+}

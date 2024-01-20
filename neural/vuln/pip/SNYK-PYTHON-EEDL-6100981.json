@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 2.9,
+    "disclosureTime": "2023-12-01 06:30:44",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-EEDL-6100981",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-377"
+        ],
+        "PVE": [
+            "PVE-2023-62343"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 12:39:31",
+    "remediation": "Upgrade EEDL to version 0.2023.11.13 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Insecure Temporary File",
+    "vulnDescription": {
+        "Overview": "EEDL is a Code to export arbitrarily large areas of data from Earth Engine to local storage and optionally process data locally afterward Affected versions of this package are vulnerable to Insecure Temporary File through vrt_path in mosaic_rasters "
+    },
+    "source_code": []
+}

@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Budimir Markovic"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.8,
+    "disclosureTime": "2023-12-19 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05757",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6132373",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6931"
+        ],
+        "CWE": [
+            "CWE-787"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 14:31:15",
+    "remediation": "Upgrade torvalds/linux to version 6.7-rc5 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-bounds Write via the perf_read_group function. An attacker can achieve code execution or cause a denial of service by supplying crafted input that triggers a heap out-of-bounds write. "
+    },
+    "source_code": [
+        {
+            "filename": "kernel/events/core.c",
+            "diff": "@@ -1814,31 +1814,34 @@ static inline void perf_event__state_init(struct perf_event *event)\n \t\t\t\t\t      PERF_EVENT_STATE_INACTIVE;\n }\n \n-static void __perf_event_read_size(struct perf_event *event, int nr_siblings)\n+static int __perf_event_read_size(u64 read_format, int nr_siblings)\n {\n \tint entry = sizeof(u64); /* value */\n \tint size = 0;\n \tint nr = 1;\n \n-\tif (event->attr.read_format & PERF_FORMAT_TOTAL_TIME_ENABLED)\n+\tif (read_format & PERF_FORMAT_TOTAL_TIME_ENABLED)\n \t\tsize += sizeof(u64);\n \n-\tif (event->attr.read_format & PERF_FORMAT_TOTAL_TIME_RUNNING)\n+\tif (read_format & PERF_FORMAT_TOTAL_TIME_RUNNING)\n \t\tsize += sizeof(u64);\n \n-\tif (event->attr.read_format & PERF_FORMAT_ID)\n+\tif (read_format & PERF_FORMAT_ID)\n \t\tentry += sizeof(u64);\n \n-\tif (event->attr.read_format & PERF_FORMAT_LOST)\n+\tif (read_format & PERF_FORMAT_LOST)\n \t\tentry += sizeof(u64);\n \n-\tif (event->attr.read_format & PERF_FORMAT_GROUP) {\n+\tif (read_format & PERF_FORMAT_GROUP) {\n \t\tnr += nr_siblings;\n \t\tsize += sizeof(u64);\n \t}\n \n-\tsize += entry * nr;\n-\tevent->read_size = size;\n+\t/*\n+\t * Since perf_event_validate_size() limits this to 16k and inhibits\n+\t * adding more siblings, this will never overflow.\n+\t */\n+\treturn size + nr * entry;\n }\n \n static void __perf_event_header_size(struct perf_event *event, u64 sample_type)\n@@ -1888,8 +1891,9 @@ static void __perf_event_header_size(struct perf_event *event, u64 sample_type)\n  */\n static void perf_event__header_size(struct perf_event *event)\n {\n-\t__perf_event_read_size(event,\n-\t\t\t       event->group_leader->nr_siblings);\n+\tevent->read_size =\n+\t\t__perf_event_read_size(event->attr.read_format,\n+\t\t\t\t       event->group_leader->nr_siblings);\n \t__perf_event_header_size(event, event->attr.sample_type);\n }\n \n@@ -1920,24 +1924,35 @@ static void perf_event__id_header_size(struct perf_event *event)\n \tevent->id_header_size = size;\n }\n \n+/*\n+ * Check that adding an event to the group does not result in anybody\n+ * overflowing the 64k event limit imposed by the output buffer.\n+ *\n+ * Specifically, check that the read_size for the event does not exceed 16k,\n+ * read_size being the one term that grows with groups size. Since read_size\n+ * depends on per-event read_format, also (re)check the existing events.\n+ *\n+ * This leaves 48k for the constant size fields and things like callchains,\n+ * branch stacks and register sets.\n+ */\n static bool perf_event_validate_size(struct perf_event *event)\n {\n-\t/*\n-\t * The values computed here will be over-written when we actually\n-\t * attach the event.\n-\t */\n-\t__perf_event_read_size(event, event->group_leader->nr_siblings + 1);\n-\t__perf_event_header_size(event, event->attr.sample_type & ~PERF_SAMPLE_READ);\n-\tperf_event__id_header_size(event);\n+\tstruct perf_event *sibling, *group_leader = event->group_leader;\n \n-\t/*\n-\t * Sum the lot; should not exceed the 64k limit we have on records.\n-\t * Conservative limit to allow for callchains and other variable fields.\n-\t */\n-\tif (event->read_size + event->header_size +\n-\t    event->id_header_size + sizeof(struct perf_event_header) >= 16*1024)\n+\tif (__perf_event_read_size(event->attr.read_format,\n+\t\t\t\t   group_leader->nr_siblings + 1) > 16*1024)\n \t\treturn false;\n \n+\tif (__perf_event_read_size(group_leader->attr.read_format,\n+\t\t\t\t   group_leader->nr_siblings + 1) > 16*1024)\n+\t\treturn false;\n+\n+\tfor_each_sibling_event(sibling, group_leader) {\n+\t\tif (__perf_event_read_size(sibling->attr.read_format,\n+\t\t\t\t\t   group_leader->nr_siblings + 1) > 16*1024)\n+\t\t\treturn false;\n+\t}\n+\n \treturn true;\n }\n "
+        }
+    ],
+    "commitTime": "2023-11-29 14:43:50"
+}

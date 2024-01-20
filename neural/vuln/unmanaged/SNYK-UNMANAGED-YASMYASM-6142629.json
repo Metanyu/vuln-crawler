@@ -1,0 +1,49 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "vorfreuder"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7.5,
+    "disclosureTime": "2024-01-03 00:51:01",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-YASMYASM-6142629",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49557"
+        ],
+        "CWE": [
+            "CWE-119"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 17:04:36",
+    "remediation": "There is no fixed version for yasm/yasm . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Restriction of Operations",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Restriction of Operations via the yasm_section_bcs_first function in the libyasm/section.c component. An attacker can cause a disruption of service by sending a crafted input. "
+    },
+    "source_code": [
+        {
+            "filename": "libyasm/expr.c",
+            "diff": "@@ -1264,7 +1264,7 @@ yasm_expr_get_intnum(yasm_expr **ep, int calc_bc_dist)\n {\n     *ep = yasm_expr_simplify(*ep, calc_bc_dist);\n \n-    if ((*ep)->op == YASM_EXPR_IDENT && (*ep)->terms[0].type == YASM_EXPR_INT)\n+    if (*ep && (*ep)->op == YASM_EXPR_IDENT && (*ep)->terms[0].type == YASM_EXPR_INT)\n         return (*ep)->terms[0].data.intn;\n     else\n         return (yasm_intnum *)NULL;"
+        }
+    ],
+    "commitTime": "2023-09-22 05:21:20"
+}

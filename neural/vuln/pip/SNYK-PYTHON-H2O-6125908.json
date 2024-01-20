@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Dan McInerney"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.3,
+    "disclosureTime": "2023-12-14 13:45:10",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-H2O-6125908",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6569"
+        ],
+        "CWE": [
+            "CWE-73"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-14 15:14:16",
+    "remediation": "There is no fixed version for h2o . ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "External Control of File Name or Path",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to External Control of File Name or Path via the ImportFiles function due to improper input validation. An attacker can manipulate file paths to access or modify files outside of the intended directories by supplying crafted input. "
+    },
+    "source_code": []
+}

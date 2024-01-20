@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "lujiefsi"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-07 01:43:46",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06932",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-MICROWEBERMICROWEBER-6102490",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6566"
+        ],
+        "CWE": [
+            "CWE-841"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-07 08:38:20",
+    "remediation": "Upgrade microweber/microweber to version 2.0.0 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Improper Enforcement of Behavioral Workflow",
+    "vulnDescription": {
+        "Overview": "microweber/microweber is a new generation CMS with drag and drop. Affected versions of this package are vulnerable to Improper Enforcement of Behavioral Workflow due to improper handling of certain conditions in the application logic. An attacker may convince a user to check out a product after it has been unpublished or deleted by an admin and the checkout will succeed. "
+    },
+    "source_code": [
+        {
+            "filename": "src/MicroweberPackages/Cart/CartManager.php",
+            "diff": "@@ -243,7 +243,7 @@ public function get($params = false)\n             $params = $params2;\n         }\n \n-        $table =  'cart';\n+        $table = 'cart';\n         $params['table'] = $table;\n         $skip_sid = false;\n         if (!defined('MW_API_CALL')) {\n@@ -292,10 +292,36 @@ public function get($params = false)\n         if (is_array($get)) {\n             foreach ($get as $k => $item) {\n                 if (is_array($item)) {\n+\n+\n                     if (isset($item['rel_id']) and isset($item['rel_type']) and $item['rel_type'] == 'content') {\n                         $item['content_data'] = $this->app->content_manager->data($item['rel_id']);\n                         $item['url'] = $this->app->content_manager->link($item['rel_id']);\n                         $item['picture'] = $this->app->media_manager->get_picture($item['rel_id']);\n+\n+                        if (isset($params['for_checkout']) and $params['for_checkout']) {\n+                            // check if content is unpublished or deleted\n+                            $checkContent = get_content_by_id($item['rel_id']);\n+                            $removeFromCart = false;\n+                            if ($checkContent == false) {\n+                                $removeFromCart = true;\n+                            }\n+\n+                            if ($checkContent and isset($checkContent['is_deleted']) and $checkContent['is_deleted'] == 1) {\n+                                $removeFromCart = true;\n+                            }\n+                            if ($checkContent and isset($checkContent['is_active']) and $checkContent['is_active'] == 0) {\n+                                $removeFromCart = true;\n+                            }\n+\n+                            if ($removeFromCart) {\n+                                $this->remove_item($item['id']);\n+                                unset($get[$k]);\n+                                continue;\n+                            }\n+                        }\n+\n+\n                     }\n                     if (isset($item['custom_fields_data']) and $item['custom_fields_data'] != '') {\n                         $item = $this->app->format->render_item_custom_fields_data($item);\n@@ -330,7 +356,7 @@ public function get_by_order_id($order_id = false)\n             return;\n         }\n         $params = array();\n-        $table =  'cart';\n+        $table = 'cart';\n         $params['table'] = $table;\n         $params['order_id'] = $order_id;\n         $get = $this->app->database_manager->get($params);\n@@ -455,7 +481,7 @@ public function update_item_qty($data)\n             $cart_return = $check_cart;\n \n \n-            $table =  'cart';\n+            $table = 'cart';\n             $cart_data_to_save = array();\n             $cart_data_to_save['qty'] = $cart['qty'];\n             $cart_data_to_save['id'] = $cart['id'];\n@@ -477,7 +503,7 @@ public function update_item_qty($data)\n     public function empty_cart()\n     {\n         $sid = mw()->user_manager->session_id();\n-        $cart_table =  'cart';\n+        $cart_table = 'cart';\n \n         Cart::where('order_completed', 0)->where('session_id', $sid)->delete();\n         $this->no_cache = true;\n@@ -659,10 +685,10 @@ public function update_cart($data)\n                 $found = false;\n                 foreach ($content_custom_fields as $cf) {\n                     if (isset($cf['type']) and isset($cf['name']) and $cf['type'] != 'price') {\n-                        if(isset($data[$cf['name_key']])){\n+                        if (isset($data[$cf['name_key']])) {\n                             $cf['name'] = $data[$cf['name_key']];\n                         }\n-                   } elseif (isset($cf['type']) and $cf['type'] == 'price' and isset($cf['name']) and isset($cf['value'])) {\n+                    } elseif (isset($cf['type']) and $cf['type'] == 'price' and isset($cf['name']) and isset($cf['value'])) {\n                         if ($cf['value'] != '') {\n                             if (isset($product_prices[$cf['name']])) {\n                                 $prices[$cf['name']] = $product_prices[$cf['name']];\n@@ -737,7 +763,7 @@ public function update_cart($data)\n             ksort($add);\n             asort($add);\n             $add = mw()->format->clean_xss($add);\n-            $table =  'cart';\n+            $table = 'cart';\n \n \n             $cart = array();\n@@ -873,7 +899,7 @@ public function recover_cart($sid = false, $ord_id = false)\n \n             if ($cur_sid != false) {\n                 $c_id = $sid;\n-                $table =  'cart';\n+                $table = 'cart';\n                 $params = array();\n                 //   $params['order_completed'] = 0;\n                 $params['session_id'] = $c_id;\n@@ -942,7 +968,7 @@ public function recover_cart($sid = false, $ord_id = false)\n \n     public function table_name()\n     {\n-        return  'cart';\n+        return 'cart';\n     }\n \n "
+        },
+        {
+            "filename": "src/MicroweberPackages/Checkout/CheckoutManager.php",
+            "diff": "@@ -57,6 +57,7 @@ public function checkout($data)\n         $table_orders = 'cart_orders';\n         $cart['session_id'] = $sid;\n         $cart['order_completed'] = 0;\n+        $cart['for_checkout'] = true;\n         $cart['limit'] = 1;\n         $mw_process_payment = true;\n         $mw_process_payment_success = false;"
+        },
+        {
+            "filename": "src/MicroweberPackages/Shop/tests/CheckoutTest.php",
+            "diff": "@@ -242,4 +242,114 @@ public function testCheckoutQtyUpdate()\n     }\n \n \n+\n+\n+\n+    public function testCheckoutDeletedProduct()\n+    {\n+        mw()->database_manager->extended_save_set_permission(true);\n+\n+        $productPrice = rand(1, 9999);\n+        $title = 'test testCheckoutDeletedProduct prod ' . $productPrice;\n+        $params = array(\n+            'title' => $title,\n+            'content_type' => 'product',\n+            'subtype' => 'product',\n+            'custom_fields_advanced' => array(\n+                array('type' => 'dropdown', 'name' => 'Color', 'value' => array('Purple', 'Blue')),\n+                array('type' => 'price', 'name' => 'Price', 'value' => '9.99'),\n+\n+            ),\n+            'data_fields_qty' => 10,\n+            'is_deleted' => 1,\n+            'is_active' => 1,);\n+\n+\n+        $saved_id = save_content($params);\n+        $get = get_content_by_id($saved_id);\n+\n+\n+        $add_to_cart = array(\n+            'content_id' => $saved_id,\n+            'price' => $productPrice,\n+        );\n+        $cart_add = update_cart($add_to_cart);\n+\n+\n+        $checkoutDetails = array();\n+        $checkoutDetails['email'] = 'client@microweber.com';\n+        $checkoutDetails['is_paid'] = 1;\n+        $checkoutDetails['order_completed'] = 1;\n+\n+\n+        $checkoutStatus = app()->order_manager->place_order($checkoutDetails);\n+        $content_data_after_order = content_data($saved_id);\n+        $this->assertEquals(10, $content_data_after_order['qty']);\n+\n+        $productQuery = \\MicroweberPackages\\Product\\Models\\Product::query();\n+        $productQuery = $productQuery->whereHas('orders');\n+        $products = $productQuery->get();\n+        $this->assertTrue($products->isEmpty());\n+\n+        $order = get_order_by_id($checkoutStatus);\n+        $this->assertNotNull($order);\n+        $this->assertNull($order['amount']);\n+\n+    }\n+\n+\n+\n+\n+    public function testCheckoutUnpublishedProduct()\n+    {\n+        mw()->database_manager->extended_save_set_permission(true);\n+\n+        $productPrice = rand(1, 9999);\n+        $title = 'test testCheckoutUnpublishedProduct prod ' . $productPrice;\n+        $params = array(\n+            'title' => $title,\n+            'content_type' => 'product',\n+            'subtype' => 'product',\n+            'custom_fields_advanced' => array(\n+                array('type' => 'dropdown', 'name' => 'Color', 'value' => array('Purple', 'Blue')),\n+                array('type' => 'price', 'name' => 'Price', 'value' => '9.99'),\n+\n+            ),\n+            'data_fields_qty' => 11,\n+            'is_deleted' => 0,\n+            'is_active' => 0\n+        );\n+\n+\n+        $saved_id = save_content($params);\n+        $get = get_content_by_id($saved_id);\n+\n+\n+        $add_to_cart = array(\n+            'content_id' => $saved_id,\n+            'price' => $productPrice,\n+        );\n+        $cart_add = update_cart($add_to_cart);\n+\n+\n+        $checkoutDetails = array();\n+        $checkoutDetails['email'] = 'client@microweber.com';\n+        $checkoutDetails['is_paid'] = 1;\n+        $checkoutDetails['order_completed'] = 1;\n+\n+\n+        $checkoutStatus = app()->order_manager->place_order($checkoutDetails);\n+        $content_data_after_order = content_data($saved_id);\n+        $this->assertEquals(11, $content_data_after_order['qty']);\n+\n+        $productQuery = \\MicroweberPackages\\Product\\Models\\Product::query();\n+        $productQuery = $productQuery->whereHas('orders');\n+        $products = $productQuery->get();\n+        $this->assertTrue($products->isEmpty());\n+\n+        $order = get_order_by_id($checkoutStatus);\n+        $this->assertNotNull($order);\n+        $this->assertNull($order['amount']);\n+\n+    }\n }"
+        }
+    ],
+    "commitTime": "2023-06-07 13:47:46"
+}

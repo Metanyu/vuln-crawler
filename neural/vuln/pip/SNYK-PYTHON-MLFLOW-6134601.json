@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "ozelis"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-20 06:30:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06905",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-MLFLOW-6134601",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6976"
+        ],
+        "CWE": [
+            "CWE-22"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-21 08:49:07",
+    "remediation": "Upgrade mlflow to version 2.9.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Directory Traversal",
+    "vulnDescription": {
+        "Details": "A Directory Traversal attack (also known as path traversal) aims to access files and directories that are stored outside the intended folder. By manipulating files with \"dot-dot-slash (../)\" sequences and its variations, or by using absolute file paths, it may be possible to access arbitrary files and directories stored on file system, including application source code, configuration, and other critical system files. Directory Traversal vulnerabilities can be generally divided into two types: Information Disclosure : Allows the attacker to gain information about the folder structure or read the contents of sensitive files on the system. st is a module for serving static files on web pages, and contains a vulnerability of this type . In our example, we will serve files from the public route. If an attacker requests the following URL from our server, it will in turn leak the sensitive private key of the root user. curl http://localhost:8080/public/%2e%2e/%2e%2e/%2e%2e/%2e%2e/%2e%2e/root/.ssh/id_rsa Note %2e is the URL encoded version of . (dot). Writing arbitrary files : Allows the attacker to create or replace existing files. This type of vulnerability is also known as Zip-Slip . One way to achieve this is by using a malicious zip archive that holds path traversal filenames. When each filename in the zip archive gets concatenated to the target extraction folder, without validation, the final path ends up outside of the target folder. If an executable or a configuration file is overwritten with a file containing malicious code, the problem can turn into an arbitrary code execution issue quite easily. The following is an example of a zip archive with one benign file and one malicious file. Extracting the malicious file will result in traversing out of the target folder, ending up in /root/.ssh/ overwriting the authorized_keys file: 2018-04-15 22:04:29 ..... 19 19 good.txt 2018-04-15 22:04:42 ..... 20 20 ../../../../../../root/.ssh/authorized_keys ",
+        "Overview": "mlflow is a platform to streamline machine learning development, including tracking experiments, packaging code into reproducible runs, and sharing and deploying models. Affected versions of this package are vulnerable to Directory Traversal allowing arbitrary file writes on the server, by including a # in pathname to bypass the validate_path_is_safe() check. "
+    },
+    "source_code": [
+        {
+            "filename": "mlflow/server/handlers.py",
+            "diff": "@@ -548,7 +548,7 @@ def get_artifact_handler():\n     request_dict = parser.parse(query_string, normalized=True)\n     run_id = request_dict.get(\"run_id\") or request_dict.get(\"run_uuid\")\n     path = request_dict[\"path\"]\n-    validate_path_is_safe(path)\n+    path = validate_path_is_safe(path)\n     run = _get_tracking_store().get_run(run_id)\n \n     if _is_servable_proxied_run_artifact_root(run.info.artifact_uri):\n@@ -941,7 +941,7 @@ def _list_artifacts():\n     response_message = ListArtifacts.Response()\n     if request_message.HasField(\"path\"):\n         path = request_message.path\n-        validate_path_is_safe(path)\n+        path = validate_path_is_safe(path)\n     else:\n         path = None\n     run_id = request_message.run_id or request_message.run_uuid\n@@ -1236,7 +1236,7 @@ def upload_artifact_handler():\n             message=\"Request must specify path.\",\n             error_code=INVALID_PARAMETER_VALUE,\n         )\n-    validate_path_is_safe(path)\n+    path = validate_path_is_safe(path)\n \n     if request.content_length and request.content_length > 10 * 1024 * 1024:\n         raise MlflowException(\n@@ -1660,7 +1660,7 @@ def get_model_version_artifact_handler():\n     name = request_dict.get(\"name\")\n     version = request_dict.get(\"version\")\n     path = request_dict[\"path\"]\n-    validate_path_is_safe(path)\n+    path = validate_path_is_safe(path)\n     artifact_uri = _get_model_registry_store().get_model_version_download_uri(name, version)\n     if _is_servable_proxied_run_artifact_root(artifact_uri):\n         artifact_repo = _get_artifact_repo_mlflow_artifacts()\n@@ -1886,7 +1886,7 @@ def _download_artifact(artifact_path):\n     A request handler for `GET /mlflow-artifacts/artifacts/<artifact_path>` to download an artifact\n     from `artifact_path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n     tmp_dir = tempfile.TemporaryDirectory()\n     artifact_repo = _get_artifact_repo_mlflow_artifacts()\n     dst = artifact_repo.download_artifacts(artifact_path, tmp_dir.name)\n@@ -1911,7 +1911,7 @@ def _upload_artifact(artifact_path):\n     A request handler for `PUT /mlflow-artifacts/artifacts/<artifact_path>` to upload an artifact\n     to `artifact_path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n     head, tail = posixpath.split(artifact_path)\n     with tempfile.TemporaryDirectory() as tmp_dir:\n         tmp_path = os.path.join(tmp_dir, tail)\n@@ -1937,11 +1937,7 @@ def _list_artifacts_mlflow_artifacts():\n     (a relative path from the root artifact directory).\n     \"\"\"\n     request_message = _get_request_message(ListArtifactsMlflowArtifacts())\n-    if request_message.HasField(\"path\"):\n-        validate_path_is_safe(request_message.path)\n-        path = request_message.path\n-    else:\n-        path = None\n+    path = validate_path_is_safe(request_message.path) if request_message.HasField(\"path\") else None\n     artifact_repo = _get_artifact_repo_mlflow_artifacts()\n     files = []\n     for file_info in artifact_repo.list_artifacts(path):\n@@ -1962,7 +1958,7 @@ def _delete_artifact_mlflow_artifacts(artifact_path):\n     A request handler for `DELETE /mlflow-artifacts/artifacts?path=<value>` to delete artifacts in\n     `path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n     _get_request_message(DeleteArtifact())\n     artifact_repo = _get_artifact_repo_mlflow_artifacts()\n     artifact_repo.delete_artifacts(artifact_path)\n@@ -1984,7 +1980,7 @@ def _create_multipart_upload_artifact(artifact_path):\n     A request handler for `POST /mlflow-artifacts/mpu/create` to create a multipart upload\n     to `artifact_path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n \n     request_message = _get_request_message(\n         CreateMultipartUpload(),\n@@ -2017,7 +2013,7 @@ def _complete_multipart_upload_artifact(artifact_path):\n     A request handler for `POST /mlflow-artifacts/mpu/complete` to complete a multipart upload\n     to `artifact_path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n \n     request_message = _get_request_message(\n         CompleteMultipartUpload(),\n@@ -2050,7 +2046,7 @@ def _abort_multipart_upload_artifact(artifact_path):\n     A request handler for `POST /mlflow-artifacts/mpu/abort` to abort a multipart upload\n     to `artifact_path` (a relative path from the root artifact directory).\n     \"\"\"\n-    validate_path_is_safe(artifact_path)\n+    artifact_path = validate_path_is_safe(artifact_path)\n \n     request_message = _get_request_message(\n         AbortMultipartUpload(),"
+        },
+        {
+            "filename": "mlflow/store/artifact/http_artifact_repo.py",
+            "diff": "@@ -89,9 +89,9 @@ def list_artifacts(self, path=None):\n         augmented_raise_for_status(resp)\n         file_infos = []\n         for f in resp.json().get(\"files\", []):\n-            validate_path_is_safe(f[\"path\"])\n+            validated_path = validate_path_is_safe(f[\"path\"])\n             file_info = FileInfo(\n-                posixpath.join(path, f[\"path\"]) if path else f[\"path\"],\n+                posixpath.join(path, validated_path) if path else validated_path,\n                 f[\"is_dir\"],\n                 int(f[\"file_size\"]) if (\"file_size\" in f) else None,\n             )"
+        },
+        {
+            "filename": "mlflow/utils/uri.py",
+            "diff": "@@ -453,6 +453,8 @@ def validate_path_is_safe(path):\n     ):\n         raise exc\n \n+    return path\n+\n \n def validate_query_string(query):\n     query = _decode(query)"
+        }
+    ],
+    "commitTime": "2023-12-13 02:47:56"
+}

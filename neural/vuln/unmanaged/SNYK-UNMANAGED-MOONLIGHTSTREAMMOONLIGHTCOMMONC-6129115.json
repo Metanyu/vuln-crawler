@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.6,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.6,
+    "disclosureTime": "2023-12-14 18:46:05",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.26329",
+        "probability": "0.00064"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-MOONLIGHTSTREAMMOONLIGHTCOMMONC-6129115",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-42801"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 15:06:14",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Classic Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Classic Buffer Overflow if the appversion field in the server's /serverinfo response exceeds 127 characters. A malicious game streaming server could exploit a buffer overflow vulnerability to crash a moonlight client. "
+    },
+    "source_code": [
+        {
+            "filename": "src/Misc.c",
+            "diff": "@@ -80,32 +80,19 @@ int gracefullyDisconnectEnetPeer(ENetHost* host, ENetPeer* peer, enet_uint32 lin\n }\n \n int extractVersionQuadFromString(const char* string, int* quad) {\n-    char versionString[128];\n-    char* nextDot;\n-    char* nextNumber;\n-    int i;\n-    \n-    strcpy(versionString, string);\n-    nextNumber = versionString;\n-    \n-    for (i = 0; i < 4; i++) {\n-        if (i == 3) {\n-            nextDot = strchr(nextNumber, '\\0');\n-        }\n-        else {\n-            nextDot = strchr(nextNumber, '.');\n-        }\n-        if (nextDot == NULL) {\n-            return -1;\n+    const char* nextNumber = string;\n+    for (int i = 0; i < 4; i++) {\n+        // Parse the next component\n+        quad[i] = (int)strtol(nextNumber, (char**)&nextNumber, 10);\n+\n+        // Skip the dot if we still have version components left.\n+        //\n+        // We continue looping even when we're at the end of the\n+        // input string to ensure all subsequent version components\n+        // are zeroed.\n+        if (*nextNumber != 0) {\n+            nextNumber++;\n         }\n-        \n-        // Cut the string off at the next dot\n-        *nextDot = '\\0';\n-        \n-        quad[i] = atoi(nextNumber);\n-        \n-        // Move on to the next segment\n-        nextNumber = nextDot + 1;\n     }\n     \n     return 0;"
+        }
+    ],
+    "commitTime": "2023-10-06 23:09:15"
+}

@@ -1,0 +1,106 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Alejandro Colomar"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 3.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "low"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4.7,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2023-12-27 16:42:56",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12304",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-SHADOWMAINTSHADOW-6140326",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-4641"
+        ],
+        "CWE": [
+            "CWE-256"
+        ],
+        "RHSA": [
+            "RHSA-2023:6632",
+            "RHSA-2023:7112"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-28 12:22:41",
+    "remediation": "Upgrade shadow-maint/shadow to version 4.14.0-rc1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Plaintext Storage of a Password",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Plaintext Storage of a Password due to improper handling of password verification failures. An attacker with local access could potentially retrieve a password from memory if they can trigger a password verification failure. "
+    },
+    "source_code": [
+        {
+            "filename": "src/gpasswd.c",
+            "diff": "@@ -898,6 +898,7 @@ static void change_passwd (struct group *gr)\n \t\terase_pass (cp);\n \t\tcp = agetpass (_(\"Re-enter new password: \"));\n \t\tif (NULL == cp) {\n+\t\t\tmemzero (pass, sizeof pass);\n \t\t\texit (1);\n \t\t}\n "
+        }
+    ],
+    "commitTime": "2023-06-11 01:35:50"
+}

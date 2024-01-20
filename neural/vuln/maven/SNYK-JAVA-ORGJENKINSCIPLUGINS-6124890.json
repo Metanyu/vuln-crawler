@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Andrea Chiera"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.7,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGJENKINSCIPLUGINS-6124890",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50764"
+        ],
+        "CWE": [
+            "CWE-59"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 12:21:55",
+    "remediation": "Upgrade org.jenkins-ci.plugins:scriptler to version 344.v5a_ddb_5f9e685 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Link Resolution Before File Access ('Link Following')",
+    "vulnDescription": {
+        "Overview": "org.jenkins-ci.plugins:scriptler is a package that allows you to store/edit/execute Groovy scripts on any of the slaves/nodes - no need to copy paste Groovy code anymore. Besides administering your scripts, Scriptler also provides a way to share scripts between users via hosted script catalogs on the internet. Affected versions of this package are vulnerable to Improper Link Resolution Before File Access ('Link Following') due to insufficient validation of a file name query parameter in an HTTP endpoint. An attacker with Scriptler/Configure permission can delete arbitrary files on the Jenkins controller file system. "
+    },
+    "source_code": [
+        {
+            "filename": "src/main/java/org/jenkinsci/plugins/scriptler/ScriptlerManagement.java",
+            "diff": "@@ -332,7 +332,12 @@ public HttpResponse doRemoveScript(StaplerRequest res, StaplerResponse rsp, @Que\n         checkPermission(ScriptlerPermissions.CONFIGURE);\n \n         // remove the file\n-        File oldScript = new File(getScriptDirectory(), id);\n+        File scriptDirectory = getScriptDirectory();\n+        File oldScript = new File(scriptDirectory, id);\n+        if (!Util.isDescendant(scriptDirectory, oldScript)) {\n+            LOGGER.log(Level.WARNING, \"Folder traversal detected, file path received: {0}, after fixing: {1}\", new Object[]{id, oldScript});\n+            throw new Failure(\"Invalid file path received: \" + id);\n+        }\n         if(!oldScript.delete() && oldScript.exists()) {\n             throw new Failure(\"not able to delete \" + oldScript.getAbsolutePath());\n         }"
+        },
+        {
+            "filename": "src/test/java/org/jenkinsci/plugins/scriptler/restapi/ScriptlerRestApiTest.java",
+            "diff": "@@ -4,6 +4,10 @@\n import static org.junit.Assert.assertTrue;\n import static org.junit.Assert.fail;\n \n+import java.net.URL;\n+import java.util.Collections;\n+import org.htmlunit.HttpMethod;\n+import org.htmlunit.WebRequest;\n import org.htmlunit.html.*;\n //import org.htmlunit.javascript.host.URL;\n import hudson.ExtensionList;\n@@ -18,9 +22,11 @@\n import java.util.List;\n \n import org.apache.commons.fileupload.FileItem;\n+import org.htmlunit.util.NameValuePair;\n import org.jenkinsci.plugins.scriptler.ScriptlerManagementHelper;\n import org.jenkinsci.plugins.scriptler.ScriptlerManagement;\n import org.jenkinsci.plugins.scriptler.config.Parameter;\n+import org.jenkinsci.plugins.scriptler.config.ScriptlerConfiguration;\n import org.junit.*;\n import org.jvnet.hudson.test.BuildWatcher;\n import org.jvnet.hudson.test.Issue;\n@@ -127,4 +133,29 @@ public void testUnknownScript() throws Exception {\n         JenkinsRule.WebClient webClient = j.createWebClient();\n         webClient.goTo(\"scriptler/runScript?id=unknown.groovy\");\n     }\n+\n+    @Test\n+    @Issue(\"SECURITY-3205\")\n+    public void fixFolderTraversalThroughDeleteScript() throws Exception {\n+        File configurationFile = ScriptlerConfiguration.getXmlFile().getFile();\n+        String path = \"../\" + configurationFile.getName();\n+\n+        try (JenkinsRule.WebClient webClient = j.createWebClient()) {\n+            URL rootUrl = new URL(webClient.getContextPath() + \"scriptler/removeScript\");\n+            WebRequest req = new WebRequest(rootUrl, HttpMethod.POST);\n+            req.setRequestParameters(Collections.singletonList(new NameValuePair(\"id\", path)));\n+            webClient.addCrumb(req);\n+            webClient.getPage(req);\n+            fail();\n+        } catch (FailingHttpStatusCodeException e) {\n+            if (e.getStatusCode() != 400) {\n+                // some other kind of error that we're not checking for\n+                throw e;\n+            }\n+            if (!configurationFile.exists()) {\n+                fail(\"The configuration file was deleted\");\n+            }\n+            assert(e.getResponse().getContentAsString().contains(\"Invalid file path received: \" + path));\n+        }\n+    }\n }"
+        }
+    ],
+    "commitTime": "2023-12-12 14:28:34"
+}

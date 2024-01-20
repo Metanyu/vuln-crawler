@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Claudio Villella"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.4,
+    "disclosureTime": "2023-12-13 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.23912",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGAPACHESHIRO-6125619",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46750"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 13:50:01",
+    "remediation": "Upgrade org.apache.shiro:shiro-web to version 1.13.0, 2.0.0-alpha-4 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "URL Redirection to Untrusted Site ('Open Redirect')",
+    "vulnDescription": {
+        "Overview": "org.apache.shiro:shiro-web is a powerful and easy-to-use Java security framework that performs authentication, authorization, cryptography, and session management. Affected versions of this package are vulnerable to URL Redirection to Untrusted Site ('Open Redirect') via the FORM authentication feature. An attacker can redirect users to an untrusted site by manipulating the URL parameters. "
+    },
+    "source_code": [
+        {
+            "filename": "web/src/main/java/org/apache/shiro/web/filter/InvalidRequestFilter.java",
+            "diff": "@@ -28,6 +28,7 @@\n import java.util.Arrays;\n import java.util.Collections;\n import java.util.List;\n+import java.util.stream.Stream;\n \n /**\n  * A request filter that blocks malicious requests. Invalid request will respond with a 400 response code.\n@@ -61,6 +62,12 @@ public class InvalidRequestFilter extends AccessControlFilter {\n \n     private boolean blockTraversal = true;\n \n+    private boolean blockEncodedPeriod = true;\n+\n+    private boolean blockEncodedForwardSlash = true;\n+\n+    private boolean blockRewriteTraversal = true;\n+\n     @Override\n     protected boolean isAccessAllowed(ServletRequest req, ServletResponse response, Object mappedValue) throws Exception {\n         HttpServletRequest request = WebUtils.toHttp(req);\n@@ -74,8 +81,10 @@ private boolean isValid(String uri) {\n         return !StringUtils.hasText(uri)\n                || ( !containsSemicolon(uri)\n                  && !containsBackslash(uri)\n-                 && !containsNonAsciiCharacters(uri))\n-                 && !containsTraversal(uri);\n+                 && !containsNonAsciiCharacters(uri)\n+                 && !containsTraversal(uri)\n+                 && !containsEncodedPeriods(uri)\n+                 && !containsEncodedForwardSlash(uri));\n     }\n \n     @Override\n@@ -118,9 +127,22 @@ private static boolean containsOnlyPrintableAsciiCharacters(String uri) {\n \n     private boolean containsTraversal(String uri) {\n         if (isBlockTraversal()) {\n-            return !(isNormalized(uri)\n-                    && PERIOD.stream().noneMatch(uri::contains)\n-                    && FORWARDSLASH.stream().noneMatch(uri::contains));\n+            return !isNormalized(uri)\n+                || (isBlockRewriteTraversal() && Stream.of(\"/..;\", \"/.;\").anyMatch(uri::contains));\n+        }\n+        return false;\n+    }\n+\n+    private boolean containsEncodedPeriods(String uri) {\n+        if (isBlockEncodedPeriod()) {\n+            return PERIOD.stream().anyMatch(uri::contains);\n+        }\n+        return false;\n+    }\n+\n+    private boolean containsEncodedForwardSlash(String uri) {\n+        if (isBlockEncodedForwardSlash()) {\n+            return FORWARDSLASH.stream().anyMatch(uri::contains);\n         }\n         return false;\n     }\n@@ -180,4 +202,28 @@ public boolean isBlockTraversal() {\n     public void setBlockTraversal(boolean blockTraversal) {\n         this.blockTraversal = blockTraversal;\n     }\n+\n+    public boolean isBlockEncodedPeriod() {\n+        return blockEncodedPeriod;\n+    }\n+\n+    public void setBlockEncodedPeriod(boolean blockEncodedPeriod) {\n+        this.blockEncodedPeriod = blockEncodedPeriod;\n+    }\n+\n+    public boolean isBlockEncodedForwardSlash() {\n+        return blockEncodedForwardSlash;\n+    }\n+\n+    public void setBlockEncodedForwardSlash(boolean blockEncodedForwardSlash) {\n+        this.blockEncodedForwardSlash = blockEncodedForwardSlash;\n+    }\n+\n+    public boolean isBlockRewriteTraversal() {\n+        return blockRewriteTraversal;\n+    }\n+\n+    public void setBlockRewriteTraversal(boolean blockRewriteTraversal) {\n+        this.blockRewriteTraversal = blockRewriteTraversal;\n+    }\n }"
+        },
+        {
+            "filename": "web/src/test/groovy/org/apache/shiro/web/filter/InvalidRequestFilterTest.groovy",
+            "diff": "@@ -38,6 +38,9 @@ class InvalidRequestFilterTest {\n         assertThat \"filter.blockNonAscii expected to be true\", filter.isBlockNonAscii()\n         assertThat \"filter.blockSemicolon expected to be true\", filter.isBlockSemicolon()\n         assertThat \"filter.blockTraversal expected to be true\", filter.isBlockTraversal()\n+        assertThat \"filter.blockRewriteTraversal expected to be true\", filter.isBlockRewriteTraversal()\n+        assertThat \"filter.blockEncodedPeriod expected to be true\", filter.isBlockEncodedPeriod()\n+        assertThat \"filter.blockEncodedForwardSlash expected to be true\", filter.isBlockEncodedForwardSlash()\n     }\n \n     @Test\n@@ -58,7 +61,6 @@ class InvalidRequestFilterTest {\n         }\n     }\n \n-\n     @Test\n     void testFilterBlocks() {\n         InvalidRequestFilter filter = new InvalidRequestFilter()\n@@ -72,6 +74,7 @@ class InvalidRequestFilterTest {\n \n         assertPathBlocked(filter, \"/something\", \"/;something\")\n         assertPathBlocked(filter, \"/something\", \"/something\", \"/;\")\n+        assertPathBlocked(filter, \"/something\", \"/something\", \"/.;\")\n     }\n \n     @Test\n@@ -80,23 +83,81 @@ class InvalidRequestFilterTest {\n         assertPathBlocked(filter, \"/something/../\")\n         assertPathBlocked(filter, \"/something/../bar\")\n         assertPathBlocked(filter, \"/something/../bar/\")\n-        assertPathBlocked(filter, \"/something/%2e%2E/bar/\")\n         assertPathBlocked(filter, \"/something/..\")\n         assertPathBlocked(filter, \"/..\")\n         assertPathBlocked(filter, \"..\")\n         assertPathBlocked(filter, \"../\")\n-        assertPathBlocked(filter, \"%2E./\")\n         assertPathBlocked(filter, \"%2F./\")\n         assertPathBlocked(filter, \"/something/./\")\n         assertPathBlocked(filter, \"/something/./bar\")\n         assertPathBlocked(filter, \"/something/\\u002e/bar\")\n         assertPathBlocked(filter, \"/something/./bar/\")\n-        assertPathBlocked(filter, \"/something/%2e/bar/\")\n-        assertPathBlocked(filter, \"/something/%2f/bar/\")\n         assertPathBlocked(filter, \"/something/.\")\n         assertPathBlocked(filter, \"/.\")\n         assertPathBlocked(filter, \"/something/../something/.\")\n         assertPathBlocked(filter, \"/something/../something/.\")\n+        assertPathBlocked(filter, \"/something/.;\")\n+        assertPathBlocked(filter, \"/something/%2e%3b\")\n+\n+        assertPathAllowed(filter, \"/something/.bar\")\n+        assertPathAllowed(filter, \"/.something\")\n+        assertPathAllowed(filter, \".something\")\n+    }\n+\n+    @Test\n+    void testBlocksEncodedPeriod() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        assertPathBlocked(filter, \"/%2esomething\")\n+        assertPathBlocked(filter, \"%2esomething\")\n+        assertPathBlocked(filter, \"%2E./\")\n+        assertPathBlocked(filter, \"%2F./\")\n+        assertPathBlocked(filter, \"/something/%2e;\")\n+        assertPathBlocked(filter, \"/something/%2e%3b\")\n+        assertPathBlocked(filter, \"/something/%2e%2E/bar/\")\n+        assertPathBlocked(filter, \"/something/%2e/bar/\")\n+    }\n+\n+    @Test\n+    void testAllowsEncodedPeriod() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        filter.setBlockEncodedPeriod(false)\n+        assertPathAllowed(filter, \"/%2esomething\")\n+        assertPathAllowed(filter, \"%2esomething\")\n+        assertPathAllowed(filter, \"%2E./\")\n+        assertPathAllowed(filter, \"/something/%2e%2E/bar/\")\n+        assertPathAllowed(filter, \"/something/%2e/bar/\")\n+    }\n+\n+    @Test\n+    void testBlocksEncodedForwardSlash() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        assertPathBlocked(filter, \"%2F./\")\n+        assertPathBlocked(filter, \"/something/%2f/bar/\")\n+    }\n+\n+    @Test\n+    void testAllowsEncodedForwardSlash() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        filter.setBlockEncodedForwardSlash(false)\n+        assertPathAllowed(filter, \"%2F./\")\n+        assertPathAllowed(filter, \"/something/%2f/bar/\")\n+    }\n+\n+    @Test\n+    void testBlocksRewriteTraversal() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        filter.setBlockSemicolon(false)\n+        assertPathBlocked(filter, \"/something/..;jsessionid=foobar\")\n+        assertPathBlocked(filter, \"/something/.;jsessionid=foobar\")\n+    }\n+\n+    @Test\n+    void testAllowRewriteTraversal() {\n+        InvalidRequestFilter filter = new InvalidRequestFilter()\n+        filter.setBlockSemicolon(false)\n+        filter.setBlockRewriteTraversal(false)\n+        assertPathAllowed(filter, \"/something/..;jsessionid=foobar\")\n+        assertPathAllowed(filter, \"/something/.;jsessionid=foobar\")\n     }\n \n     @Test\n@@ -158,15 +219,11 @@ class InvalidRequestFilterTest {\n         assertPathAllowed(filter, \"/..\")\n         assertPathAllowed(filter, \"..\")\n         assertPathAllowed(filter, \"../\")\n-        assertPathAllowed(filter, \"%2E./\")\n-        assertPathAllowed(filter, \"%2F./\")\n         assertPathAllowed(filter, \"/something/./\")\n         assertPathAllowed(filter, \"/something/./bar\")\n         assertPathAllowed(filter, \"/something/\\u002e/bar\")\n         assertPathAllowed(filter, \"/something\\u002fbar\")\n         assertPathAllowed(filter, \"/something/./bar/\")\n-        assertPathAllowed(filter, \"/something/%2e/bar/\")\n-        assertPathAllowed(filter, \"/something/%2f/bar/\")\n         assertPathAllowed(filter, \"/something/.\")\n         assertPathAllowed(filter, \"/.\")\n         assertPathAllowed(filter, \"/something/../something/.\")"
+        }
+    ],
+    "commitTime": "2023-10-30 09:54:56"
+}

@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Ketec"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "CHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.1,
+    "disclosureTime": "2023-12-14 00:00:00",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGKEYCLOAK-6128850",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6291"
+        ],
+        "CWE": [
+            "CWE-601"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-15 12:31:41",
+    "remediation": "Upgrade org.keycloak:keycloak-services to version 23.0.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Open Redirect",
+    "vulnDescription": {
+        "Overview": "org.keycloak:keycloak-services is an open source identity and access management solution for modern applications and services. Affected versions of this package are vulnerable to Open Redirect due to a flaw in the redirect_uri validation logic. An attacker can steal an access token and impersonate other users by bypassing the validation of explicitly allowed hosts. ",
+        "PoC": "redirect_uri=com.someapp.App://oauth2redirect "
+    },
+    "source_code": [
+        {
+            "filename": "services/src/main/java/org/keycloak/protocol/oidc/utils/RedirectUtils.java",
+            "diff": "@@ -72,10 +72,8 @@ public static Set<String> resolveValidRedirects(KeycloakSession session, String\n             if (validRedirect.startsWith(\"/\")) {\n                 validRedirect = relativeToAbsoluteURI(session, rootUrl, validRedirect);\n                 logger.debugv(\"replacing relative valid redirect with: {0}\", validRedirect);\n-                resolveValidRedirects.add(validRedirect);\n-            } else {\n-                resolveValidRedirects.add(validRedirect);\n             }\n+            resolveValidRedirects.add(lowerCaseHostname(validRedirect));\n         }\n         return resolveValidRedirects;\n     }\n@@ -116,7 +114,7 @@ public static String verifyRedirectUri(KeycloakSession session, String rootUrl,\n             // Make the validations against fully decoded and normalized redirect-url. This also allows wildcards (case when client configured \"Valid redirect-urls\" contain wildcards)\n             String decodedRedirectUri = decodeRedirectUri(redirectUri);\n             URI decodedRedirect = toUri(decodedRedirectUri);\n-            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect);\n+            decodedRedirectUri = getNormalizedRedirectUri(decodedRedirect, true);\n             if (decodedRedirectUri == null) return null;\n \n             String r = decodedRedirectUri;\n@@ -141,21 +139,25 @@ public static String verifyRedirectUri(KeycloakSession session, String rootUrl,\n             }\n \n             // Return the original redirectUri, which can be partially encoded - for example http://localhost:8280/foo/bar%20bar%2092%2F72/3 . Just make sure it is normalized\n-            redirectUri = getNormalizedRedirectUri(originalRedirect);\n+            redirectUri = getNormalizedRedirectUri(originalRedirect, false);\n \n             // We try to check validity also for original (encoded) redirectUrl, but just in case it exactly matches some \"Valid Redirect URL\" specified for client (not wildcards allowed)\n             if (valid == null) {\n                 valid = matchesRedirects(resolveValidRedirects, redirectUri, false);\n             }\n \n-            if (valid != null && redirectUri.startsWith(\"/\")) {\n+            if (valid != null && !originalRedirect.isAbsolute()) {\n+                // return absolute if the original URI is relative\n+                if (!redirectUri.startsWith(\"/\")) {\n+                    redirectUri = \"/\" + redirectUri;\n+                }\n                 redirectUri = relativeToAbsoluteURI(session, rootUrl, redirectUri);\n             }\n \n             String scheme = decodedRedirect.getScheme();\n             if (valid != null && scheme != null) {\n                 // check the scheme is valid, it should be http(s) or explicitly allowed by the validation\n-                if (!valid.startsWith(scheme + \":\") && !\"http\".equalsIgnoreCase(scheme) && !\"https\".equalsIgnoreCase(scheme)) {\n+                if (!valid.startsWith(scheme.toLowerCase() + \":\") && !\"http\".equalsIgnoreCase(scheme) && !\"https\".equalsIgnoreCase(scheme)) {\n                     logger.debugf(\"Invalid URI because scheme is not allowed: %s\", redirectUri);\n                     valid = null;\n                 }\n@@ -174,7 +176,7 @@ public static String verifyRedirectUri(KeycloakSession session, String rootUrl,\n     private static URI toUri(String redirectUri) {\n         URI uri = null;\n         if (redirectUri != null) {\n-        try {\n+            try {\n                 uri = URI.create(redirectUri);\n             } catch (IllegalArgumentException cause) {\n                 logger.debug(\"Invalid redirect uri\", cause);\n@@ -185,11 +187,13 @@ private static URI toUri(String redirectUri) {\n         return uri;\n     }\n \n-    private static String getNormalizedRedirectUri(URI uri) {\n+    private static String getNormalizedRedirectUri(URI uri, boolean lower) {\n         String redirectUri = null;\n         if (uri != null) {\n             redirectUri = uri.normalize().toString();\n-            redirectUri = lowerCaseHostname(redirectUri);\n+            if (lower) {\n+                redirectUri = lowerCaseHostname(redirectUri);\n+            }\n         }\n         return redirectUri;\n     }\n@@ -204,9 +208,11 @@ private static String decodeRedirectUri(String redirectUri) {\n             KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();\n             String origQuery = uriBuilder.getQuery();\n             String origFragment = uriBuilder.getFragment();\n+            String origUserInfo = uriBuilder.getUserInfo();\n             String encodedRedirectUri = uriBuilder\n                     .replaceQuery(null)\n                     .fragment(null)\n+                    .userInfo(null)\n                     .buildAsString();\n             String decodedRedirectUri = null;\n \n@@ -217,6 +223,7 @@ private static String decodeRedirectUri(String redirectUri) {\n                     return KeycloakUriBuilder.fromUri(decodedRedirectUri, false).preserveDefaultPort()\n                             .replaceQuery(origQuery)\n                             .fragment(origFragment)\n+                            .userInfo(origUserInfo)\n                             .buildAsString();\n                 } else {\n                     // Next attempt\n@@ -231,12 +238,15 @@ private static String decodeRedirectUri(String redirectUri) {\n     }\n \n     private static String lowerCaseHostname(String redirectUri) {\n-        int n = redirectUri.indexOf('/', 7);\n-        if (n == -1) {\n-            return redirectUri.toLowerCase();\n-        } else {\n-            return redirectUri.substring(0, n).toLowerCase() + redirectUri.substring(n);\n+        // lower case host and scheme which are case-insensitive by spec\n+        KeycloakUriBuilder uriBuilder = KeycloakUriBuilder.fromUri(redirectUri, false).preserveDefaultPort();\n+        if (uriBuilder.getScheme() != null) {\n+            uriBuilder.scheme(uriBuilder.getScheme().toLowerCase());\n+        }\n+        if (uriBuilder.getHost() != null) {\n+            uriBuilder.host(uriBuilder.getHost().toLowerCase());\n         }\n+        return uriBuilder.buildAsString();\n     }\n \n     private static String relativeToAbsoluteURI(KeycloakSession session, String rootUrl, String relative) {"
+        },
+        {
+            "filename": "services/src/test/java/org/keycloak/protocol/oidc/utils/RedirectUtilsTest.java",
+            "diff": "@@ -142,4 +142,36 @@ public void testverifyInvalidRedirectUri() {\n         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, \"https://keycloak.org/path<less/\", set, false));\n         Assert.assertNull(RedirectUtils.verifyRedirectUri(session, null, \"https://keycloak.org/path/index.jsp?param=v1 v2\", set, false));\n     }\n+\n+    @Test\n+    public void testRelativeRedirectUri() {\n+        Set<String> set = Stream.of(\n+                \"*\"\n+        ).collect(Collectors.toSet());\n+\n+        Assert.assertEquals(\"https://keycloak.org/path\", RedirectUtils.verifyRedirectUri(session, \"https://keycloak.org\", \"/path\", set, false));\n+        Assert.assertEquals(\"https://keycloak.org/path\", RedirectUtils.verifyRedirectUri(session, \"https://keycloak.org\", \"path\", set, false));\n+    }\n+\n+    @Test\n+    public void testVerifyDifferentCase() {\n+        Set<String> set = Stream.of(\n+                \"no.host.Name.App://TEST\",\n+                \"no.host.Name.App:/Path/*\",\n+                \"HTTPS://KeyCloak.org/*\",\n+                \"HTTP://KeyCloak.org/with%20space/*\",\n+                \"HTTP://KeyCloak.org/\u00e1\u00e9\u00ed\u00f3\u00fa\",\n+                \"custom:*\"\n+        ).collect(Collectors.toSet());\n+\n+        Assert.assertEquals(\"no.host.Name.App://test\", RedirectUtils.verifyRedirectUri(session, null, \"no.host.Name.App://test\", set, false));\n+        Assert.assertEquals(\"no.host.name.app://Test\", RedirectUtils.verifyRedirectUri(session, null, \"no.host.name.app://Test\", set, false));\n+        Assert.assertEquals(\"no.host.name.app:/Path\", RedirectUtils.verifyRedirectUri(session, null, \"no.host.name.app:/Path\", set, false));\n+        Assert.assertEquals(\"https://KEYCLOAK.ORG/Test\", RedirectUtils.verifyRedirectUri(session, null, \"https://KEYCLOAK.ORG/Test\", set, false));\n+        Assert.assertEquals(\"https://KEYCLOAK.ORG\", RedirectUtils.verifyRedirectUri(session, null, \"https://KEYCLOAK.ORG\", set, false));\n+        Assert.assertEquals(\"CUSTOM:test\", RedirectUtils.verifyRedirectUri(session, null, \"CUSTOM:test\", set, false));\n+        Assert.assertEquals(\"Custom://userInfo@KeyCLOAK.org/Path\", RedirectUtils.verifyRedirectUri(session, null, \"Custom://userInfo@KeyCLOAK.org/Path\", set, false));\n+        Assert.assertEquals(\"Custom://user%20Info@keycloak.ORG\", RedirectUtils.verifyRedirectUri(session, null, \"Custom://user%20Info@keycloak.ORG\", set, false));\n+        Assert.assertEquals(\"http://keycloak.org/\u00e1\u00e9\u00ed\u00f3\u00fa\", RedirectUtils.verifyRedirectUri(session, null, \"http://keycloak.org/\u00e1\u00e9\u00ed\u00f3\u00fa\", set, false));\n+    }\n }"
+        }
+    ],
+    "commitTime": "2023-11-20 09:00:50"
+}

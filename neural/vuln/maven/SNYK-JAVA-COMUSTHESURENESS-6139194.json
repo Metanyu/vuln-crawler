@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.3,
+    "disclosureTime": "2023-12-22 16:49:29",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12556",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMUSTHESURENESS-6139194",
+    "identifiers": {
+        "CVE": [
+            "CVE-2022-39337"
+        ],
+        "CWE": [
+            "CWE-287"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-24 09:11:13",
+    "remediation": "Upgrade com.usthe.sureness:sureness-core to version 1.0.8 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Authentication Bypass",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authentication Bypass when handling a special request URI. An attacker can bypass system authentication and invoke interfaces without proper authorization. "
+    },
+    "source_code": [
+        {
+            "filename": "manager/pom.xml",
+            "diff": "@@ -118,7 +118,7 @@\n         <dependency>\n             <groupId>com.usthe.sureness</groupId>\n             <artifactId>spring-boot-starter-sureness</artifactId>\n-            <version>1.0.7</version>\n+            <version>1.0.8</version>\n         </dependency>\n         <!-- h2 database-->\n         <dependency>"
+        },
+        {
+            "filename": "manager/src/main/resources/application.yml",
+            "diff": "@@ -40,6 +40,11 @@ sureness:\n     - digest\n     - basic\n     - jwt\n+  jwt:\n+    secret: 'CyaFv0bwq2Eik0jdrKUtsA6bx3sDJeFV643R\n+             LnfKefTjsIfJLBa2YkhEqEGtcHDTNe4CU6+9\n+             8tVt4bisXQ13rbN0oxhUZR73M6EByXIO+SV5\n+             dKhaX0csgOCTlCxq20yhmUea6H6JIpSE2Rwp'\n \n ---\n spring:"
+        }
+    ],
+    "commitTime": "2022-10-23 14:04:35"
+}

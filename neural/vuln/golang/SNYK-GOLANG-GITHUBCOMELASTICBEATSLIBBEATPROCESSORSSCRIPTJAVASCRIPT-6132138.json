@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.8,
+    "disclosureTime": "2023-12-12 21:31:12",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06909",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMELASTICBEATSLIBBEATPROCESSORSSCRIPTJAVASCRIPT-6132138",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49922"
+        ],
+        "CWE": [
+            "CWE-532"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-20 09:20:58",
+    "remediation": "Upgrade github.com/elastic/beats/libbeat/processors/script/javascript to version 8.11.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Insertion of Sensitive Information into Log File",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Insertion of Sensitive Information into Log File due to improper logging of sensitive information when handling failed event ingestions to Elasticsearch with certain HTTP status codes. An attacker can gain access to sensitive or private information by inducing the application to log events at the WARN or ERROR level. ",
+        "Workaround": "This log line is logged at the WARN level; changing the log level to ERROR will suppress these logs. For Beats and standalone Elastic Agent the log level can be changed in the configuration file, see: https://www.elastic.co/guide/en/beats/filebeat/current/configuration-logging.html#level https://www.elastic.co/guide/en/fleet/current/elastic-agent-standalone-logging-config.html "
+    },
+    "source_code": [
+        {
+            "filename": "libbeat/processors/script/javascript/session.go",
+            "diff": "@@ -210,7 +210,6 @@ func (s *session) runProcessFunc(b *beat.Event) (out *beat.Event, err error) {\n \t\tif r := recover(); r != nil {\n \t\t\ts.log.Errorw(\"The javascript processor caused an unexpected panic \"+\n \t\t\t\t\"while processing an event. Recovering, but please report this.\",\n-\t\t\t\t\"event\", mapstr.M{\"original\": b.Fields.String()},\n \t\t\t\t\"panic\", r,\n \t\t\t\tzap.Stack(\"stack\"))\n \t\t\tif !s.evt.IsCancelled() {"
+        }
+    ],
+    "commitTime": "2023-12-07 19:59:54"
+}

@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Sim4n6"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-28 16:43:07",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06913",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMEWENLBHFFCSS-6140433",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52081"
+        ],
+        "CWE": [
+            "CWE-176"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-31 14:06:13",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Unicode Encoding",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Handling of Unicode Encoding in the lookupPreprocess function. An attacker can bypass input validation and reintroduce characters that are supposed to be disabled by the function, leading to credentials leakage. "
+    },
+    "source_code": [
+        {
+            "filename": "catalog.go",
+            "diff": "@@ -42,7 +42,7 @@ func (store Catalog) Lookup(query string) (Theme, error) {\n // to search for something.\n // For example, it is used by (ThemeStore).Lookup\n func lookupPreprocess(s string) string {\n-\treturn strings.ToLower(norm.NFKD.String(regexp.MustCompile(`[-_ .]`).ReplaceAllString(s, \"\")))\n+\treturn strings.ToLower(regexp.MustCompile(`[-_ .]`).ReplaceAllString(norm.NFKD.String(s), \"\"))\n }\n \n // LoadCatalog loads a directory of theme manifests."
+        }
+    ],
+    "commitTime": "2023-10-17 20:20:45"
+}

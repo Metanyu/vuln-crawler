@@ -1,0 +1,43 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.4,
+    "disclosureTime": "2023-10-01 06:35:36",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-NESTDESKTOP-6139951",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-285"
+        ],
+        "PVE": [
+            "PVE-2023-61483"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-27 13:39:39",
+    "remediation": "Upgrade nest-desktop to version 3.3.0b1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Authorization",
+    "vulnDescription": {
+        "Overview": "nest-desktop is an A web-based GUI application for NEST Simulator Affected versions of this package are vulnerable to Improper Authorization. Anyone who has access to the login node and who knows the port number which a nest-desktop of any other user is using, can access nest-desktop and use it. "
+    },
+    "source_code": []
+}

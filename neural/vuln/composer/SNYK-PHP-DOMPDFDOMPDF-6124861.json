@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "cod3beat"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-13 21:43:49",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.15284",
+        "probability": "0.00049"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-DOMPDFDOMPDF-6124861",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50262"
+        ],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-14 09:06:18",
+    "remediation": "Upgrade dompdf/dompdf to version 2.0.4 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Input Validation via the SVG image parsing process. An attacker can send multiple requests that trigger infinite recursion through chained references between two or more SVG images, leading to memory exhaustion and potential system unresponsiveness. ",
+        "PoC": "recurse.html <img src=\"one.svg\"> one.svg <svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\"> <image href=\"two.svg\" /> </svg> two.svg <svg width=\"200\" height=\"200\" xmlns=\"http://www.w3.org/2000/svg\"> <image href=\"one.svg\" /> </svg> "
+    },
+    "source_code": [
+        {
+            "filename": "src/Image/Cache.php",
+            "diff": "@@ -31,6 +31,14 @@ class Cache\n      */\n     protected static $tempImages = [];\n \n+    /**\n+     * Array of image references from an SVG document.\n+     * Used to detect circular references across SVG documents.\n+     *\n+     * @var array\n+     */\n+    protected static $svgRefs = [];\n+\n     /**\n      * The url to the \"broken image\" used when images can't be loaded\n      *\n@@ -134,20 +142,28 @@ static function resolve_url($url, $protocol, $host, $base_path, Options $options\n                     $parser,\n                     function ($parser, $name, $attributes) use ($options, $parsed_url, $full_url) {\n                         if (strtolower($name) === \"image\") {\n+                            if (!\\array_key_exists($full_url, self::$svgRefs)) {\n+                                self::$svgRefs[$full_url] = [];\n+                            }\n                             $attributes = array_change_key_case($attributes, CASE_LOWER);\n                             $urls = [];\n                             $urls[] = $attributes[\"xlink:href\"] ?? \"\";\n                             $urls[] = $attributes[\"href\"] ?? \"\";\n                             foreach ($urls as $url) {\n-                                if (!empty($url)) {\n-                                    $inner_full_url = Helpers::build_url($parsed_url[\"protocol\"], $parsed_url[\"host\"], $parsed_url[\"path\"], $url);\n-                                    if ($inner_full_url === $full_url) {\n-                                        throw new ImageException(\"SVG self-reference is not allowed\", E_WARNING);\n-                                    }\n-                                    [$resolved_url, $type, $message] = self::resolve_url($url, $parsed_url[\"protocol\"], $parsed_url[\"host\"], $parsed_url[\"path\"], $options);\n-                                    if (!empty($message)) {\n-                                        throw new ImageException(\"This SVG document references a restricted resource. $message\", E_WARNING);\n-                                    }\n+                                if (empty($url)) {\n+                                    continue;\n+                                }\n+\n+                                $inner_full_url = Helpers::build_url($parsed_url[\"protocol\"], $parsed_url[\"host\"], $parsed_url[\"path\"], $url);\n+                                if (empty($inner_full_url)) {\n+                                    continue;\n+                                }\n+                                \n+                                self::detectCircularRef($full_url, $inner_full_url);\n+                                self::$svgRefs[$full_url][] = $inner_full_url;\n+                                [$resolved_url, $type, $message] = self::resolve_url($url, $parsed_url[\"protocol\"], $parsed_url[\"host\"], $parsed_url[\"path\"], $options);\n+                                if (!empty($message)) {\n+                                    throw new ImageException(\"This SVG document references a restricted resource. $message\", E_WARNING);\n                                 }\n                             }\n                         }\n@@ -178,6 +194,19 @@ function ($parser, $name, $attributes) use ($options, $parsed_url, $full_url) {\n         return [$resolved_url, $type, $message];\n     }\n \n+    static function detectCircularRef(string $src, string $target)\n+    {\n+        if (!\\array_key_exists($target, self::$svgRefs)) {\n+            return;\n+        }\n+        foreach (self::$svgRefs[$target] as $ref) {\n+            if ($ref === $src) {\n+                throw new ImageException(\"Circular external SVG image reference detected.\", E_WARNING);\n+            }\n+            self::detectCircularRef($src, $ref);\n+        }\n+    }\n+\n     /**\n      * Register a temp file for the given original image file.\n      *\n@@ -239,6 +268,7 @@ static function clear(bool $debugPng = false)\n \n         self::$_cache = [];\n         self::$tempImages = [];\n+        self::$svgRefs = [];\n     }\n \n     static function detect_type($file, $context = null)"
+        }
+    ],
+    "commitTime": "2023-12-12 20:17:01"
+}

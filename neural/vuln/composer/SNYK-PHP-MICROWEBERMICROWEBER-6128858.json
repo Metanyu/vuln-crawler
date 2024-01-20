@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "F",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "LOW"
+    },
+    "credit": [
+        "lujiefsi"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6,
+    "disclosureTime": "2023-12-15 01:46:56",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Functional",
+    "id": "SNYK-PHP-MICROWEBERMICROWEBER-6128858",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6832"
+        ],
+        "CWE": [
+            "CWE-840"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-15 13:37:33",
+    "remediation": "Upgrade microweber/microweber to version 2.0.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Business Logic Errors",
+    "vulnDescription": {
+        "Overview": "microweber/microweber is a new generation CMS with drag and drop. Affected versions of this package are vulnerable to Business Logic Errors due to improper handling of certain conditions within the coupon code application logic. An user can send requests to the API that handles the coupon code, obtaining items at a lower price. Note: This is only exploitable if the admin disables the use of the coupon code functionality. "
+    },
+    "source_code": [
+        {
+            "filename": "src/MicroweberPackages/Checkout/CheckoutManager.php",
+            "diff": "@@ -408,10 +408,10 @@ public function checkout($data)\n                     $posted_fields[$value] = $data[$value];\n                 }\n             }\n-\n+            $canUseCoupons = $this->app->option_manager->get('enable_coupons', 'shop') == 1;\n \n             // Discount details save\n-            if ($coupon_code) {\n+            if ($canUseCoupons and $coupon_code) {\n                 $place_order['promo_code'] = $coupon_code;\n                 $place_order['coupon_id'] = $coupon_id;\n                 $place_order['discount_type'] = $discount_type;"
+        },
+        {
+            "filename": "userfiles/modules/shop/coupons/admin.php",
+            "diff": "@@ -84,7 +84,7 @@ function reload_coupon_after_save() {\n             if ($coupon_get_count > 0) {\n                 ?>\n                 <label class=\"form-check form-check-single form-switch ps-0 mb-4\" style=\"width: unset;\">\n-                    <input type=\"checkbox\" name=\"enable_coupons\" class=\"mw_option_field form-check-input\" id=\"enable_coupons\" data-option-group=\"shop\" data-value-checked=\"y\" data-value-unchecked=\"n\" <?php if (get_option('enable_coupons', 'shop') == 1): ?>checked<?php endif; ?> />\n+                    <input type=\"checkbox\" name=\"enable_coupons\" class=\"mw_option_field form-check-input\" id=\"enable_coupons\" data-option-group=\"shop\" data-value-checked=\"1\" data-value-unchecked=\"0\" <?php if (get_option('enable_coupons', 'shop') == 1): ?>checked<?php endif; ?> />\n                     &nbsp; <?php _e('Enable'); ?>\n                 </label>\n             <?php"
+        },
+        {
+            "filename": "userfiles/modules/shop/coupons/functions.php",
+            "diff": "@@ -21,6 +21,11 @@ function coupon_apply($params = array())\n     $coupon_code = $params['coupon_code'];\n     $coupon_code = xss_clean($coupon_code);\n \n+    if (get_option('enable_coupons', 'shop') == 0){\n+        $json['error_message'] = _e('The coupon code usage is disabled.', true);\n+        return $json;\n+    }\n+\n     $coupon = coupon_get_by_code($coupon_code);\n     if (empty($coupon)) {\n         $json['error_message'] = _e('The coupon code is not valid.', true);"
+        }
+    ],
+    "commitTime": "2023-06-09 09:23:44"
+}

@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Cassidy Kim"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.1,
+    "disclosureTime": "2023-12-06 02:44:29",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.47213",
+        "probability": "0.00127"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGWEBJARSNPM-6105392",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6508"
+        ],
+        "CWE": [
+            "CWE-416"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-22 07:39:38",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Use After Free",
+    "vulnDescription": {
+        "Overview": "org.webjars.npm:electron is a framework which lets you write cross-platform desktop applications using JavaScript, HTML and CSS. Affected versions of this package are vulnerable to Use After Free via the Media Stream process. An attacker can potentially exploit heap corruption by crafting a malicious HTML page. "
+    },
+    "source_code": [
+        {
+            "filename": "patches/chromium/.patches",
+            "diff": "@@ -136,3 +136,4 @@ crash_gpu_process_and_clear_shader_cache_when_skia_reports.patch\n scale_rects_properly_in_syncgetfirstrectforrange.patch\n fix_restore_original_resize_performance_on_macos.patch\n fix_font_flooding_in_dev_tools.patch\n+cherry-pick-5fde415e06f9.patch"
+        },
+        {
+            "filename": "patches/chromium/cherry-pick-5fde415e06f9.patch",
+            "diff": "@@ -0,0 +1,73 @@\n+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001\n+From: Guido Urdaneta <guidou@chromium.org>\n+Date: Fri, 10 Nov 2023 20:46:57 +0000\n+Subject: Use KeepAlive to prevent lifetime race with audio delivery\n+\n+(cherry picked from commit 186dad16ae69183f02730fb26d84e1d53f9f1b04)\n+\n+Bug: 1497984\n+Change-Id: Ic22729b2ef9690203bbb09555d32238959e93a0f\n+Reviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/5009864\n+Reviewed-by: Michael Lippautz <mlippautz@chromium.org>\n+Commit-Queue: Guido Urdaneta <guidou@chromium.org>\n+Cr-Original-Commit-Position: refs/heads/main@{#1221614}\n+Reviewed-on: https://chromium-review.googlesource.com/c/chromium/src/+/5018212\n+Bot-Commit: Rubber Stamper <rubber-stamper@appspot.gserviceaccount.com>\n+Cr-Commit-Position: refs/branch-heads/6099@{#500}\n+Cr-Branched-From: e6ee4500f7d6549a9ac1354f8d056da49ef406be-refs/heads/main@{#1217362}\n+\n+diff --git a/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.cc b/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.cc\n+index f68c265271b48f92ff67a752cf2bedac183bd2fc..a53053b12925b6aaa4fb201e7de2c00d4203bb2a 100644\n+--- a/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.cc\n++++ b/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.cc\n+@@ -142,12 +142,12 @@ bool MediaStreamAudioTrackUnderlyingSource::StartFrameDelivery() {\n+     return false;\n+   }\n+ \n+-  if (added_to_track_) {\n++  if (is_connected_to_track_) {\n+     return true;\n+   }\n+ \n+   WebMediaStreamAudioSink::AddToAudioTrack(this, WebMediaStreamTrack(track_));\n+-  added_to_track_ = true;\n++  is_connected_to_track_ = this;\n+   return true;\n+ }\n+ \n+@@ -159,7 +159,7 @@ void MediaStreamAudioTrackUnderlyingSource::DisconnectFromTrack() {\n+ \n+   WebMediaStreamAudioSink::RemoveFromAudioTrack(this,\n+                                                 WebMediaStreamTrack(track_));\n+-  added_to_track_ = false;\n++  is_connected_to_track_.Clear();\n+   track_.Clear();\n+ }\n+ \n+diff --git a/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.h b/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.h\n+index 334da29c2b210f92e9ee191275651406487601c3..4e7d22959dc8947c12d9ee2bb7acd814cc4db6b3 100644\n+--- a/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.h\n++++ b/third_party/blink/renderer/modules/breakout_box/media_stream_audio_track_underlying_source.h\n+@@ -13,6 +13,7 @@\n+ #include \"third_party/blink/renderer/modules/breakout_box/transferred_frame_queue_underlying_source.h\"\n+ #include \"third_party/blink/renderer/modules/modules_export.h\"\n+ #include \"third_party/blink/renderer/platform/heap/prefinalizer.h\"\n++#include \"third_party/blink/renderer/platform/heap/self_keep_alive.h\"\n+ \n+ namespace blink {\n+ \n+@@ -80,10 +81,13 @@ class MODULES_EXPORT MediaStreamAudioTrackUnderlyingSource\n+   const Member<ScriptWrappable> media_stream_track_processor_;\n+ \n+   Member<MediaStreamComponent> track_;\n+-  bool added_to_track_ = false;\n+ \n+   std::unique_ptr<AudioBufferPool> buffer_pool_;\n+ \n++  // This prevents collection of this object while it is still connected to a\n++  // platform MediaStreamTrack.\n++  SelfKeepAlive<MediaStreamAudioTrackUnderlyingSource> is_connected_to_track_;\n++\n+   SEQUENCE_CHECKER(sequence_checker_);\n+ };\n+ "
+        }
+    ],
+    "commitTime": "2023-12-13 03:46:02"
+}

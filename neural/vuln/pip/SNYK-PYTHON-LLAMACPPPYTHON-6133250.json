@@ -1,0 +1,44 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "mtasic85"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 7,
+    "disclosureTime": "2023-12-01 06:34:04",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PYTHON-LLAMACPPPYTHON-6133250",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-94"
+        ],
+        "PVE": [
+            "PVE-2023-62135"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-20 15:12:57",
+    "remediation": "Upgrade llama-cpp-python to version 0.2.12 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Arbitrary Code Execution",
+    "vulnDescription": {
+        "Overview": "llama-cpp-python is a Python bindings for the llama.cpp library Affected versions of this package are vulnerable to Arbitrary Code Execution due to improper Llama._create_completion suffix parameter check, allows an attacker to send string-like object which could actually lead to exploitation of this vulnerability. "
+    },
+    "source_code": []
+}

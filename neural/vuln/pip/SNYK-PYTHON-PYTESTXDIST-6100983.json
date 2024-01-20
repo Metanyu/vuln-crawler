@@ -1,0 +1,57 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Ralf Schmitt"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-01 06:37:05",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-PYTESTXDIST-6100983",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-62250"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-06 12:46:51",
+    "remediation": "Upgrade pytest-xdist to version 1.6 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "pytest-xdist is a pytest xdist plugin for distributed testing, most importantly across multiple CPUs Affected versions of this package are vulnerable to Race Condition in the looponfail mode where a concurrent file removal could cause a crash. "
+    },
+    "source_code": [
+        {
+            "filename": "CHANGELOG",
+            "diff": "@@ -5,6 +5,9 @@\n \n - fix issue34 - distributed testing with -p plugin now works correctly\n \n+- fix race condition in looponfail mode where a concurrent file removal\n+  could cause a crash\n+\n 1.5\n -------------------------\n "
+        },
+        {
+            "filename": "testing/test_looponfail.py",
+            "diff": "@@ -14,11 +14,11 @@ def test_filechange(self, tmpdir):\n         changed = sd.check()\n         assert changed\n \n-        tmp.ensure(\"new.py\")\n+        p = tmp.ensure(\"new.py\")\n         changed = sd.check()\n         assert changed\n \n-        tmp.join(\"new.py\").remove()\n+        p.remove()\n         changed = sd.check()\n         assert changed\n \n@@ -36,6 +36,24 @@ def test_filechange(self, tmpdir):\n         changed = sd.check()\n         assert changed\n \n+    def test_filechange_deletion_race(self, tmpdir, monkeypatch):\n+        tmp = tmpdir\n+        sd = StatRecorder([tmp])\n+        changed = sd.check()\n+        assert not changed\n+\n+        p = tmp.ensure(\"new.py\")\n+        changed = sd.check()\n+        assert changed\n+\n+        p.remove()\n+        # make check()'s visit() call return our just removed\n+        # path as if we were in a race condition\n+        monkeypatch.setattr(tmp, 'visit', lambda *args: [p])\n+\n+        changed = sd.check()\n+        assert changed\n+\n     def test_pycremoval(self, tmpdir):\n         tmp = tmpdir\n         hello = tmp.ensure(\"hello.py\")"
+        },
+        {
+            "filename": "xdist/looponfail.py",
+            "diff": "@@ -201,14 +201,11 @@ def check(self, removepycfiles=True):\n         newstat = {}\n         for rootdir in self.rootdirlist:\n             for path in rootdir.visit(self.fil, self.rec):\n-                oldstat = statcache.get(path, None)\n-                if oldstat is not None:\n-                    del statcache[path]\n+                oldstat = statcache.pop(path, None)\n                 try:\n                     newstat[path] = curstat = path.stat()\n                 except py.error.ENOENT:\n                     if oldstat:\n-                        del statcache[path]\n                         changed = True\n                 else:\n                     if oldstat:"
+        }
+    ],
+    "commitTime": "2011-04-14 19:35:27"
+}

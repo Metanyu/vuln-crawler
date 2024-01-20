@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.8,
+    "disclosureTime": "2021-06-18 20:15:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.63006",
+        "probability": "0.00252"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-CONTIKINGCONTIKING-6137929",
+    "identifiers": {
+        "CVE": [
+            "CVE-2021-21282"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-22 08:46:37",
+    "remediation": "Upgrade contiki-ng/contiki-ng to version 4.5 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow. Contiki-NG is an open-source, cross-platform operating system for internet of things devices. In versions prior to 4.5, buffer overflow can be triggered by an input packet when using either of Contiki-NG's two RPL implementations in source-routing mode. The problem has been patched in Contiki-NG 4.5. Users can apply the patch for this vulnerability out-of-band as a workaround. "
+    },
+    "source_code": [
+        {
+            "filename": "os/net/routing/rpl-classic/rpl-ext-header.c",
+            "diff": "@@ -233,6 +233,11 @@ rpl_ext_header_srh_update(void)\n \n     if(segments_left == 0) {\n       /* We are the final destination, do nothing */\n+    } else if(segments_left > path_len) {\n+      /* Discard the packet because of a parameter problem. */\n+      LOG_ERR(\"SRH with too many segments left (%u > %u)\\n\",\n+              segments_left, path_len);\n+      return 0;\n     } else {\n       uint8_t i = path_len - segments_left; /* The index of the next address to be visited */\n       uint8_t *addr_ptr = ((uint8_t *)rh_header) + RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));"
+        },
+        {
+            "filename": "os/net/routing/rpl-lite/rpl-ext-header.c",
+            "diff": "@@ -123,6 +123,11 @@ rpl_ext_header_srh_update(void)\n   /* Update SRH in-place */\n   if(segments_left == 0) {\n     /* We are the final destination, do nothing */\n+  } else if(segments_left > path_len) {\n+    /* Discard the packet because of a parameter problem. */\n+    LOG_ERR(\"SRH with too many segments left (%u > %u)\\n\",\n+            segments_left, path_len);\n+    return 0;\n   } else {\n     uint8_t i = path_len - segments_left; /* The index of the next address to be visited */\n     uint8_t *addr_ptr = ((uint8_t *)rh_header) + RPL_RH_LEN + RPL_SRH_LEN + (i * (16 - cmpri));"
+        }
+    ],
+    "commitTime": "2020-03-06 19:25:56"
+}

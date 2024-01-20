@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-18 19:46:20",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.51767",
+        "probability": "0.00155"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-OPENSSHPORTABLE-6132367",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-51385"
+        ],
+        "CWE": [
+            "CWE-78"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-20 14:31:44",
+    "remediation": "Upgrade openssh-portable to version 9.6-p1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "OS Command Injection",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to OS Command Injection due to improper handling of user names or host names containing shell metacharacters. A remote attacker may be able to execute arbitrary OS commands by using expansion tokens (e.g., %u , %h ) with such user names or host names. "
+    },
+    "source_code": [
+        {
+            "filename": "ssh.c",
+            "diff": "@@ -1,4 +1,4 @@\n-/* $OpenBSD: ssh.c,v 1.598 2023/10/12 02:48:43 djm Exp $ */\n+/* $OpenBSD: ssh.c,v 1.599 2023/12/18 14:47:44 djm Exp $ */\n /*\n  * Author: Tatu Ylonen <ylo@cs.hut.fi>\n  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland\n@@ -626,6 +626,41 @@ ssh_conn_info_free(struct ssh_conn_info *cinfo)\n \tfree(cinfo);\n }\n \n+static int\n+valid_hostname(const char *s)\n+{\n+\tsize_t i;\n+\n+\tif (*s == '-')\n+\t\treturn 0;\n+\tfor (i = 0; s[i] != 0; i++) {\n+\t\tif (strchr(\"'`\\\"$\\\\;&<>|(){}\", s[i]) != NULL ||\n+\t\t    isspace((u_char)s[i]) || iscntrl((u_char)s[i]))\n+\t\t\treturn 0;\n+\t}\n+\treturn 1;\n+}\n+\n+static int\n+valid_ruser(const char *s)\n+{\n+\tsize_t i;\n+\n+\tif (*s == '-')\n+\t\treturn 0;\n+\tfor (i = 0; s[i] != 0; i++) {\n+\t\tif (strchr(\"'`\\\";&<>|(){}\", s[i]) != NULL)\n+\t\t\treturn 0;\n+\t\t/* Disallow '-' after whitespace */\n+\t\tif (isspace((u_char)s[i]) && s[i + 1] == '-')\n+\t\t\treturn 0;\n+\t\t/* Disallow \\ in last position */\n+\t\tif (s[i] == '\\\\' && s[i + 1] == '\\0')\n+\t\t\treturn 0;\n+\t}\n+\treturn 1;\n+}\n+\n /*\n  * Main program for the ssh client.\n  */\n@@ -1118,6 +1153,10 @@ main(int ac, char **av)\n \tif (!host)\n \t\tusage();\n \n+\tif (!valid_hostname(host))\n+\t\tfatal(\"hostname contains invalid characters\");\n+\tif (options.user != NULL && !valid_ruser(options.user))\n+\t\tfatal(\"remote username contains invalid characters\");\n \toptions.host_arg = xstrdup(host);\n \n \t/* Initialize the command to execute on remote host. */"
+        }
+    ],
+    "commitTime": "2023-12-18 14:53:40"
+}

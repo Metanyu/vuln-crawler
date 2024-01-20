@@ -1,0 +1,64 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "AdamKorcz"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.3,
+    "disclosureTime": "2024-01-03 16:13:33",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCUBEFSCUBEFSOBJECTNODE-6143562",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46738"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-04 14:55:49",
+    "remediation": "Upgrade github.com/cubefs/cubefs/objectnode to version 3.3.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Resource Exhaustion",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Resource Exhaustion due to improper handling of incoming HTTP requests. Authenticated users could send maliciously-crafted requests that would crash the ObjectNode and deny other users from using it. Notes: The attacker would need to know the names of existing buckets of the CubeFS deployment - otherwise the request would be rejected before it reached the vulnerable code. The most likely attacker is an inside user or an attacker that has breached the account of an existing user in the cluster. "
+    },
+    "source_code": [
+        {
+            "filename": "objectnode/api_handler_bucket.go",
+            "diff": "@@ -23,7 +23,6 @@ import (\n \t\"io/ioutil\"\n \t\"net/http\"\n \t\"regexp\"\n-\t\"strconv\"\n \t\"strings\"\n \n \t\"github.com/cubefs/cubefs/proto\"\n@@ -86,30 +85,29 @@ func (o *ObjectNode) createBucketHandler(w http.ResponseWriter, r *http.Request)\n \t}\n \tdefer rateLimit.ReleaseLimitResource(userInfo.UserID, param.apiName)\n \n-\t// get LocationConstraint if any\n-\tcontentLenStr := r.Header.Get(ContentLength)\n-\tif contentLen, errConv := strconv.Atoi(contentLenStr); errConv == nil && contentLen > 0 {\n-\t\tvar requestBytes []byte\n-\t\trequestBytes, err = ioutil.ReadAll(r.Body)\n-\t\tif err != nil && err != io.EOF {\n-\t\t\tlog.LogErrorf(\"createBucketHandler: read request body fail: requestID(%v) err(%v)\", GetRequestID(r), err)\n-\t\t\treturn\n-\t\t}\n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n+\trequestBytes, err := ioutil.ReadAll(r.Body)\n+\tif err != nil && err != io.EOF {\n+\t\tlog.LogErrorf(\"createBucketHandler: read request body fail: requestID(%v) err(%v)\", GetRequestID(r), err)\n+\t\treturn\n+\t}\n \n-\t\tcreateBucketRequest := &CreateBucketRequest{}\n-\t\terr = UnmarshalXMLEntity(requestBytes, createBucketRequest)\n-\t\tif err != nil {\n-\t\t\tlog.LogErrorf(\"createBucketHandler: unmarshal xml fail: requestID(%v) err(%v)\",\n-\t\t\t\tGetRequestID(r), err)\n-\t\t\terrorCode = InvalidArgument\n-\t\t\treturn\n-\t\t}\n-\t\tif createBucketRequest.LocationConstraint != o.region {\n-\t\t\tlog.LogErrorf(\"createBucketHandler: location constraint not match the service: requestID(%v) LocationConstraint(%v) region(%v)\",\n-\t\t\t\tGetRequestID(r), createBucketRequest.LocationConstraint, o.region)\n-\t\t\terrorCode = InvalidLocationConstraint\n-\t\t\treturn\n-\t\t}\n+\tcreateBucketRequest := &CreateBucketRequest{}\n+\terr = UnmarshalXMLEntity(requestBytes, createBucketRequest)\n+\tif err != nil {\n+\t\tlog.LogErrorf(\"createBucketHandler: unmarshal xml fail: requestID(%v) err(%v)\",\n+\t\t\tGetRequestID(r), err)\n+\t\terrorCode = InvalidArgument\n+\t\treturn\n+\t}\n+\tif createBucketRequest.LocationConstraint != o.region {\n+\t\tlog.LogErrorf(\"createBucketHandler: location constraint not match the service: requestID(%v) LocationConstraint(%v) region(%v)\",\n+\t\t\tGetRequestID(r), createBucketRequest.LocationConstraint, o.region)\n+\t\terrorCode = InvalidLocationConstraint\n+\t\treturn\n \t}\n \n \tvar acl *AccessControlPolicy\n@@ -397,6 +395,10 @@ func (o *ObjectNode) putBucketTaggingHandler(w http.ResponseWriter, r *http.Requ\n \t}\n \tdefer rateLimit.ReleaseLimitResource(vol.owner, param.apiName)\n \n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n \tvar body []byte\n \tif body, err = ioutil.ReadAll(r.Body); err != nil {\n \t\tlog.LogErrorf(\"putBucketTaggingHandler: read request body data fail: requestID(%v) err(%v)\","
+        },
+        {
+            "filename": "objectnode/api_handler_multipart.go",
+            "diff": "@@ -651,8 +651,11 @@ func (o *ObjectNode) completeMultipartUploadHandler(w http.ResponseWriter, r *ht\n \tdefer rateLimit.ReleaseLimitResource(vol.owner, param.apiName)\n \n \t// get uploaded part info in request\n-\tvar requestBytes []byte\n-\trequestBytes, err = ioutil.ReadAll(r.Body)\n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n+\trequestBytes, err := ioutil.ReadAll(r.Body)\n \tif err != nil && err != io.EOF {\n \t\tlog.LogErrorf(\"completeMultipartUploadHandler: read request body fail: requestID(%v) err(%v)\",\n \t\t\tGetRequestID(r), err)"
+        },
+        {
+            "filename": "objectnode/api_handler_object.go",
+            "diff": "@@ -557,8 +557,11 @@ func (o *ObjectNode) deleteObjectsHandler(w http.ResponseWriter, r *http.Request\n \t\treturn\n \t}\n \n-\tvar bytes []byte\n-\tbytes, err = ioutil.ReadAll(r.Body)\n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n+\tbytes, err := ioutil.ReadAll(r.Body)\n \tif err != nil {\n \t\tlog.LogErrorf(\"deleteObjectsHandler: read request body fail: requestID(%v) volume(%v) err(%v)\",\n \t\t\tGetRequestID(r), param.Bucket(), err)\n@@ -1552,6 +1555,10 @@ func (o *ObjectNode) putObjectTaggingHandler(w http.ResponseWriter, r *http.Requ\n \t}\n \tdefer rateLimit.ReleaseLimitResource(vol.owner, param.apiName)\n \n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n \tvar requestBody []byte\n \tif requestBody, err = ioutil.ReadAll(r.Body); err != nil {\n \t\tlog.LogErrorf(\"putObjectTaggingHandler: read request body data fail: requestID(%v) err(%v)\",\n@@ -1660,6 +1667,10 @@ func (o *ObjectNode) putObjectXAttrHandler(w http.ResponseWriter, r *http.Reques\n \t}\n \tdefer rateLimit.ReleaseLimitResource(vol.owner, param.apiName)\n \n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n \tvar requestBody []byte\n \tif requestBody, err = ioutil.ReadAll(r.Body); err != nil {\n \t\terrorCode = &ErrorCode{\n@@ -1962,3 +1973,21 @@ func GetContentLength(r *http.Request) int64 {\n \t}\n \treturn r.ContentLength\n }\n+\n+func VerifyContentLength(r *http.Request, bodyLimit int64) (int64, *ErrorCode) {\n+\tdcl := r.Header.Get(HeaderNameXAmzDecodedContentLength)\n+\tvar length = r.ContentLength\n+\tif dcl != \"\" {\n+\t\tl, err := strconv.ParseInt(dcl, 10, 64)\n+\t\tif err == nil {\n+\t\t\tlength = l\n+\t\t}\n+\t}\n+\tif length > bodyLimit {\n+\t\treturn 0, EntityTooLarge\n+\t}\n+\tif length <= 0 {\n+\t\treturn 0, MissingContentLength\n+\t}\n+\treturn length, nil\n+}"
+        },
+        {
+            "filename": "objectnode/const.go",
+            "diff": "@@ -133,6 +133,7 @@ const (\n \tMaxParts       = 1000\n \tMaxUploads     = 1000\n \tSinglePutLimit = 5 * 1 << 30 // 5G\n+\tBodyLimit      = 1 << 20\n )\n \n const ("
+        },
+        {
+            "filename": "objectnode/lifecycle_handler.go",
+            "diff": "@@ -106,6 +106,10 @@ func (o *ObjectNode) putBucketLifecycleConfigurationHandler(w http.ResponseWrite\n \t\treturn\n \t}\n \n+\t_, errorCode = VerifyContentLength(r, BodyLimit)\n+\tif errorCode != nil {\n+\t\treturn\n+\t}\n \tvar requestBody []byte\n \tif requestBody, err = ioutil.ReadAll(r.Body); err != nil && err != io.EOF {\n \t\tlog.LogErrorf(\"putBucketLifecycle failed: read request body data err: requestID(%v) err(%v)\", GetRequestID(r), err)"
+        }
+    ],
+    "commitTime": "2023-10-20 09:06:26"
+}

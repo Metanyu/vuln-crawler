@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "thorge"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.5,
+    "disclosureTime": "2023-12-13 23:08:35",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-CKAN-6124881",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50248"
+        ],
+        "CWE": [
+            "CWE-130"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-14 10:32:26",
+    "remediation": "Upgrade ckan to version 2.9.10, 2.10.3 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Length Parameter Inconsistency",
+    "vulnDescription": {
+        "Overview": "ckan is a world\u2019s leading Open Source data portal platform. It powers dozens of Open Data portals around the world, including data.gov, open.canada.ca and europeandataportal.eu but also regional, research and community organizations. It makes easy to publish, share and find data online and is fully customizable via extensions and plugins. Affected versions of this package are vulnerable to Improper Handling of Length Parameter Inconsistency via the /dataset/new endpoint when submitting a POST request with a specially-crafted field. An attacker can create an out-of-memory error on the hosting server by submitting a malicious payload. Note: This is only exploitable if the user has permissions to create or edit datasets. "
+    },
+    "source_code": [
+        {
+            "filename": "ckan/logic/__init__.py",
+            "diff": "@@ -25,7 +25,8 @@\n from ckan.types import (\n     Action, ChainedAction,\n     ChainedAuthFunction, DataDict, ErrorDict, Context, FlattenDataDict,\n-    Schema, Validator, ValidatorFactory)\n+    FlattenKey, Schema, Validator, ValidatorFactory\n+)\n \n Decorated = TypeVar(\"Decorated\")\n \n@@ -255,7 +256,35 @@ def tuplize_dict(data_dict: dict[str, Any]) -> FlattenDataDict:\n                 except ValueError:\n                     raise df.DataError('Bad key')\n         tuplized_dict[tuple(key_list)] = value\n-    return tuplized_dict\n+\n+    # Sanitize key indexes to make sure they are sequential\n+    seq_tuplized_dict: FlattenDataDict = {}\n+    # sequential field indexes grouped by common prefix\n+    groups: dict[FlattenKey, dict[FlattenKey, int]] = defaultdict(dict)\n+    for key in sorted(tuplized_dict.keys()):\n+        new_key = key\n+\n+        # iterate over even(numeric) parts of the key\n+        for idx in range(1, len(key), 2):\n+            # narrow down scope by common prefix\n+            group = groups[key[:idx]]\n+\n+            # if the identifier(i.e `(extra, 123)`, `(resource, 9)`) is met for\n+            # the first time, generate for it next number in the index\n+            # sequence. Index of the latest added item is always equals to the\n+            # number of unique identifiers minus one(because list indexation\n+            # starts from 0 in Python). If identifier already present(i.e, we\n+            # process `(extra, 10, VALUE)` after processing `(extra, 10,\n+            # KEY)`), reuse sequential index of this identifier\n+            seq_index = group.setdefault(key[idx-1:idx+1], len(group))\n+\n+            # replace the currently processed key segment with computed\n+            # sequential index\n+            new_key = new_key[:idx] + (seq_index,) + new_key[idx+1:]\n+\n+        seq_tuplized_dict[new_key] = tuplized_dict[key]\n+\n+    return seq_tuplized_dict\n \n \n def untuplize_dict(tuplized_dict: FlattenDataDict) -> dict[str, Any]:"
+        },
+        {
+            "filename": "ckan/tests/logic/test_logic.py",
+            "diff": "@@ -3,6 +3,8 @@\n from unittest import mock\n import pytest\n from ckan import logic, model\n+import ckan.lib.navl.dictization_functions as df\n+\n from ckan.types import Context\n import ckan.tests.factories as factories\n \n@@ -100,3 +102,87 @@ def test_check_access_auth_user_for_different_objects():\n     with pytest.raises(logic.NotAuthorized):\n         for dataset in dataset3:\n             logic.check_access(\"package_show\", context, {'id': dataset[\"id\"]})\n+\n+\n+def test_tuplize_dict():\n+\n+    data_dict = {\n+        \"author\": \"Test Author\",\n+        \"extras__0__key\": \"extra1\",\n+        \"extras__0__value\": \"value1\",\n+        \"extras__1__key\": \"extra2\",\n+        \"extras__1__value\": \"value2\",\n+        \"extras__2__key\": \"extra3\",\n+        \"extras__2__value\": \"value3\",\n+        \"extras__3__key\": \"\",\n+        \"extras__3__value\": \"\",\n+        \"groups__0__id\": \"5a65eae8-ef2b-4a85-8022-d9e5a71ad074\",\n+        \"name\": \"test-title\",\n+        \"notes\": \"Test desc\",\n+        \"owner_org\": \"5a65eae8-ef2b-4a85-8022-d9e5a71ad074\",\n+        \"private\": \"True\",\n+        \"tag_string\": \"economy,climate\",\n+        \"title\": \"Test title\",\n+    }\n+\n+    expected = {\n+        (\"author\",): \"Test Author\",\n+        (\"extras\", 0, \"key\"): \"extra1\",\n+        (\"extras\", 0, \"value\"): \"value1\",\n+        (\"extras\", 1, \"key\"): \"extra2\",\n+        (\"extras\", 1, \"value\"): \"value2\",\n+        (\"extras\", 2, \"key\"): \"extra3\",\n+        (\"extras\", 2, \"value\"): \"value3\",\n+        (\"extras\", 3, \"key\"): \"\",\n+        (\"extras\", 3, \"value\"): \"\",\n+        (\"groups\", 0, \"id\"): \"5a65eae8-ef2b-4a85-8022-d9e5a71ad074\",\n+        (\"name\",): \"test-title\",\n+        (\"notes\",): \"Test desc\",\n+        (\"owner_org\",): \"5a65eae8-ef2b-4a85-8022-d9e5a71ad074\",\n+        (\"private\",): \"True\",\n+        (\"tag_string\",): \"economy,climate\",\n+        (\"title\",): \"Test title\",\n+    }\n+\n+    assert logic.tuplize_dict(data_dict) == expected\n+\n+\n+def test_tuplize_dict_random_indexes():\n+\n+    data_dict = {\n+        \"extras__22__key\": \"extra2\",\n+        \"extras__22__value\": \"value2\",\n+        \"extras__1__key\": \"extra1\",\n+        \"extras__1__value\": \"value1\",\n+        \"extras__245566546__key\": \"extra3\",\n+        \"extras__245566546__value\": \"value3\",\n+        \"groups__13__id\": \"group2\",\n+        \"groups__1__id\": \"group1\",\n+        \"groups__13__nested__7__name\": \"latter\",\n+        \"groups__13__nested__2__name\": \"former\",\n+\n+    }\n+\n+    expected = {\n+        (\"extras\", 0, \"key\"): \"extra1\",\n+        (\"extras\", 0, \"value\"): \"value1\",\n+        (\"extras\", 1, \"key\"): \"extra2\",\n+        (\"extras\", 1, \"value\"): \"value2\",\n+        (\"extras\", 2, \"key\"): \"extra3\",\n+        (\"extras\", 2, \"value\"): \"value3\",\n+        (\"groups\", 0, \"id\"): \"group1\",\n+        (\"groups\", 1, \"id\"): \"group2\",\n+        (\"groups\", 1, \"nested\", 0, \"name\"): \"former\",\n+        (\"groups\", 1, \"nested\", 1, \"name\"): \"latter\",\n+    }\n+\n+    assert logic.tuplize_dict(data_dict) == expected\n+\n+\n+def test_tuplize_dict_wrong_index():\n+\n+    with pytest.raises(df.DataError):\n+        data_dict = {\n+            \"extras__2a__key\": \"extra\",\n+        }\n+        logic.tuplize_dict(data_dict)"
+        }
+    ],
+    "commitTime": "2023-12-13 13:12:02"
+}

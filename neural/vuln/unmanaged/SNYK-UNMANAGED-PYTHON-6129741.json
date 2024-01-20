@@ -1,0 +1,77 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "HIGH",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "vain"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "HIGH",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.1,
+    "disclosureTime": "2023-12-08 19:45:24",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.18060",
+        "probability": "0.00052"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-PYTHON-6129741",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6507"
+        ],
+        "CWE": [
+            "CWE-269"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 13:36:14",
+    "remediation": "Upgrade python to version 3.12.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Privilege Management",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Privilege Management via the subprocess module on POSIX platforms when using the extra_groups= parameter with an empty list. An attacker can maintain the original process's groups before starting a new process by not calling setgroups(0, NULL) before exec() . Note: This is only exploitable if the CPython process is run with sufficient privilege to make the setgroups system call, typically as root . "
+    },
+    "source_code": [
+        {
+            "filename": "Lib/test/test_subprocess.py",
+            "diff": "@@ -2066,8 +2066,14 @@ def test_group_error(self):\n     def test_extra_groups(self):\n         gid = os.getegid()\n         group_list = [65534 if gid != 65534 else 65533]\n+        self._test_extra_groups_impl(gid=gid, group_list=group_list)\n+\n+    @unittest.skipUnless(hasattr(os, 'setgroups'), 'no setgroups() on platform')\n+    def test_extra_groups_empty_list(self):\n+        self._test_extra_groups_impl(gid=os.getegid(), group_list=[])\n+\n+    def _test_extra_groups_impl(self, *, gid, group_list):\n         name_group = _get_test_grp_name()\n-        perm_error = False\n \n         if grp is not None:\n             group_list.append(name_group)\n@@ -2077,11 +2083,8 @@ def test_extra_groups(self):\n                     [sys.executable, \"-c\",\n                      \"import os, sys, json; json.dump(os.getgroups(), sys.stdout)\"],\n                     extra_groups=group_list)\n-        except OSError as ex:\n-            if ex.errno != errno.EPERM:\n-                raise\n-            perm_error = True\n-\n+        except PermissionError:\n+            self.skipTest(\"setgroup() EPERM; this test may require root.\")\n         else:\n             parent_groups = os.getgroups()\n             child_groups = json.loads(output)\n@@ -2092,12 +2095,15 @@ def test_extra_groups(self):\n             else:\n                 desired_gids = group_list\n \n-            if perm_error:\n-                self.assertEqual(set(child_groups), set(parent_groups))\n-            else:\n-                self.assertEqual(set(desired_gids), set(child_groups))\n+            self.assertEqual(set(desired_gids), set(child_groups))\n \n-        # make sure we bomb on negative values\n+        if grp is None:\n+            with self.assertRaises(ValueError):\n+                subprocess.check_call(ZERO_RETURN_CMD,\n+                                      extra_groups=[name_group])\n+\n+    # No skip necessary, this test won't make it to a setgroup() call.\n+    def test_extra_groups_invalid_gid_t_values(self):\n         with self.assertRaises(ValueError):\n             subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[-1])\n \n@@ -2106,16 +2112,6 @@ def test_extra_groups(self):\n                                   cwd=os.curdir, env=os.environ,\n                                   extra_groups=[2**64])\n \n-        if grp is None:\n-            with self.assertRaises(ValueError):\n-                subprocess.check_call(ZERO_RETURN_CMD,\n-                                      extra_groups=[name_group])\n-\n-    @unittest.skipIf(hasattr(os, 'setgroups'), 'setgroups() available on platform')\n-    def test_extra_groups_error(self):\n-        with self.assertRaises(ValueError):\n-            subprocess.check_call(ZERO_RETURN_CMD, extra_groups=[])\n-\n     @unittest.skipIf(mswindows or not hasattr(os, 'umask'),\n                      'POSIX umask() is not available.')\n     def test_umask(self):"
+        },
+        {
+            "filename": "Misc/NEWS.d/next/Library/2023-12-01-21-05-46.gh-issue-112334.DmNXKh.rst",
+            "diff": "@@ -0,0 +1,11 @@\n+Fixed a performance regression in 3.12's :mod:`subprocess` on Linux where it\n+would no longer use the fast-path ``vfork()`` system call when it could have\n+due to a logic bug, instead falling back to the safe but slower ``fork()``.\n+\n+Also fixed a second 3.12.0 potential security bug.  If a value of\n+``extra_groups=[]`` was passed to :mod:`subprocess.Popen` or related APIs,\n+the underlying ``setgroups(0, NULL)`` system call to clear the groups list\n+would not be made in the child process prior to ``exec()``.\n+\n+This was identified via code inspection in the process of fixing the first\n+bug."
+        },
+        {
+            "filename": "Modules/_posixsubprocess.c",
+            "diff": "@@ -767,8 +767,10 @@ child_exec(char *const exec_array[],\n #endif\n \n #ifdef HAVE_SETGROUPS\n-    if (extra_group_size > 0)\n+    if (extra_group_size >= 0) {\n+        assert((extra_group_size == 0) == (extra_groups == NULL));\n         POSIX_CALL(setgroups(extra_group_size, extra_groups));\n+    }\n #endif /* HAVE_SETGROUPS */\n \n #ifdef HAVE_SETREGID\n@@ -1022,7 +1024,6 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,\n     pid_t pid = -1;\n     int need_to_reenable_gc = 0;\n     char *const *argv = NULL, *const *envp = NULL;\n-    Py_ssize_t extra_group_size = 0;\n     int need_after_fork = 0;\n     int saved_errno = 0;\n     int *c_fds_to_keep = NULL;\n@@ -1103,6 +1104,13 @@ subprocess_fork_exec_impl(PyObject *module, PyObject *process_args,\n         cwd = PyBytes_AsString(cwd_obj2);\n     }\n \n+    // Special initial value meaning that subprocess API was called with\n+    // extra_groups=None leading to _posixsubprocess.fork_exec(gids=None).\n+    // We use this to differentiate between code desiring a setgroups(0, NULL)\n+    // call vs no call at all.  The fast vfork() code path could be used when\n+    // there is no setgroups call.\n+    Py_ssize_t extra_group_size = -2;\n+\n     if (extra_groups_packed != Py_None) {\n #ifdef HAVE_SETGROUPS\n         if (!PyList_Check(extra_groups_packed)) {"
+        }
+    ],
+    "commitTime": "2023-12-04 23:08:19"
+}

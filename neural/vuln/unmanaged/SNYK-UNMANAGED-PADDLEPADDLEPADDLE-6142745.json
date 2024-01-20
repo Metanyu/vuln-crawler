@@ -1,0 +1,66 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Peng Zhou"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2024-01-03 09:45:10",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-PADDLEPADDLEPADDLE-6142745",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52312"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 17:04:33",
+    "remediation": "Upgrade paddlepaddle/paddle to version 2.6.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference via the paddle.crop function. An attacker can cause a denial of service. "
+    },
+    "source_code": [
+        {
+            "filename": "paddle/phi/infermeta/unary.cc",
+            "diff": "@@ -664,6 +664,16 @@ void CropInferMeta(const MetaTensor& x,\n                         shape_dims.size(),\n                         x_dim.size()));\n \n+  PADDLE_ENFORCE_EQ(\n+      offsets_vec.size(),\n+      x_dim.size(),\n+      errors::InvalidArgument(\n+          \"The number of elements (%d) of attribute 'offsets' for \"\n+          \"CropTensor must be equal to the number of \"\n+          \"dimensions (%d) of the input.\",\n+          offsets_vec.size(),\n+          x_dim.size()));\n+\n   if (config.is_runtime) {\n     out->share_lod(x);\n   }"
+        }
+    ],
+    "commitTime": "2023-12-14 01:25:56"
+}

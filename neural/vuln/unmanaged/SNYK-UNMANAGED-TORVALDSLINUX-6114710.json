@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Xingyuan Mo (IceSword Lab)"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "disclosureTime": "2023-12-08 18:46:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.05780",
+        "probability": "0.00042"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-TORVALDSLINUX-6114710",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6622"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-10 12:10:37",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference via the nft_dynset_init function in net/netfilter/nft_dynset.c in nf_tables . Note: This is exploitable only by an attacker with CAP_NET_ADMIN user privilege. ",
+        "Workaround": "This vulnerability can be mitigated by skipping the loading of the affected module netfilter onto the system until a fix is available. This can be done by using a blacklist mechanism to ensure the driver is not loaded at boot time. "
+    },
+    "source_code": [
+        {
+            "filename": "net/netfilter/nft_dynset.c",
+            "diff": "@@ -280,10 +280,15 @@ static int nft_dynset_init(const struct nft_ctx *ctx,\n \t\t\tpriv->expr_array[i] = dynset_expr;\n \t\t\tpriv->num_exprs++;\n \n-\t\t\tif (set->num_exprs &&\n-\t\t\t    dynset_expr->ops != set->exprs[i]->ops) {\n-\t\t\t\terr = -EOPNOTSUPP;\n-\t\t\t\tgoto err_expr_free;\n+\t\t\tif (set->num_exprs) {\n+\t\t\t\tif (i >= set->num_exprs) {\n+\t\t\t\t\terr = -EINVAL;\n+\t\t\t\t\tgoto err_expr_free;\n+\t\t\t\t}\n+\t\t\t\tif (dynset_expr->ops != set->exprs[i]->ops) {\n+\t\t\t\t\terr = -EOPNOTSUPP;\n+\t\t\t\t\tgoto err_expr_free;\n+\t\t\t\t}\n \t\t\t}\n \t\t\ti++;\n \t\t}"
+        }
+    ],
+    "commitTime": "2023-12-06 16:15:43"
+}

@@ -1,0 +1,109 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 9.1,
+    "disclosureTime": "2023-12-12 02:51:09",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.08199",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMSAPCLOUDSECURITYCLIENTGO-6117636",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50424"
+        ],
+        "CWE": [
+            "CWE-639"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-12 13:28:23",
+    "remediation": "Upgrade github.com/sap/cloud-security-client-go to version 0.17.0 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Authorization Bypass Through User-Controlled Key",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Authorization Bypass Through User-Controlled Key due to improper handling of user-controlled keys. An attacker can obtain arbitrary permissions within the application by exploiting the vulnerability to bypass authorization checks. "
+    },
+    "source_code": [
+        {
+            "filename": ".reuse/dep5",
+            "diff": "@@ -37,5 +37,6 @@ Files:\n     auth/testdata/**\n     httpclient/testdata/**\n     tokenclient/README.md\n+    sample/manifest.yaml\n Copyright: 2020-2021 SAP SE or an SAP affiliate company and Cloud Security Client Go contributors\n License: Apache-2.0\n\\ No newline at end of file"
+        },
+        {
+            "filename": "README.md",
+            "diff": "@@ -29,7 +29,7 @@ The client library works as a middleware and has to be instantiated with `NewMid\n To access service instance configurations from the application, Kubernetes secrets need to be provided as files in a volume mounted on application's container. Library will look up the configuration files on the `mountPath:\"/etc/secrets/sapbtp/identity/<YOUR IAS INSTANCE NAME>\"`.\n \n ### Usage Sample\n-[samples/middleware.go](samples/middleware.go)\n+[samples/middleware.go](sample/middleware.go)\n \n ### Testing\n The client library offers an OIDC Mock Server with means to create arbitrary tokens for testing purposes. Examples for the usage of the Mock Server in combination with the OIDC Token Builder can be found in [auth/middleware_test.go](auth/middleware_test.go) "
+        },
+        {
+            "filename": "auth/validator.go",
+            "diff": "@@ -7,7 +7,7 @@ package auth\n import (\n \t\"errors\"\n \t\"fmt\"\n-\t\"net/url\"\n+\t\"regexp\"\n \t\"strings\"\n \t\"time\"\n \n@@ -103,7 +103,7 @@ func (m *Middleware) validateClaims(t Token, ks *oidcclient.OIDCTenant) error {\n //\n // customIssuer represents the custom issuer of the incoming token if given (token.CustomIssuer())\n func (m *Middleware) getOIDCTenant(issuer, customIssuer string) (*oidcclient.OIDCTenant, error) {\n-\tissURI, err := m.verifyIssuer(issuer)\n+\tissHost, err := m.verifyIssuer(issuer)\n \tif err != nil {\n \t\treturn nil, err\n \t}\n@@ -117,7 +117,7 @@ func (m *Middleware) getOIDCTenant(issuer, customIssuer string) (*oidcclient.OID\n \t// redo discovery if not found, cache expired, or tokenIssuer is not the same as Issuer on providerJSON (e.g. custom domain config just changed for that tenant)\n \tif !found || time.Now().After(exp) || oidcTenant.(*oidcclient.OIDCTenant).ProviderJSON.Issuer != tokenIssuer {\n \t\tnewKeySet, err, _ := m.sf.Do(issuer, func() (i interface{}, err error) {\n-\t\t\tset, err := oidcclient.NewOIDCTenant(m.options.HTTPClient, issURI)\n+\t\t\tset, err := oidcclient.NewOIDCTenant(m.options.HTTPClient, issHost)\n \t\t\treturn set, err\n \t\t})\n \n@@ -130,23 +130,45 @@ func (m *Middleware) getOIDCTenant(issuer, customIssuer string) (*oidcclient.OID\n \treturn oidcTenant.(*oidcclient.OIDCTenant), nil\n }\n \n-func (m *Middleware) verifyIssuer(issuer string) (issURI *url.URL, err error) {\n-\tissURI, err = url.Parse(issuer)\n+func (m *Middleware) verifyIssuer(issuer string) (issuerHost string, err error) {\n+\t// issuer must be a host or https url\n+\tissuerHost = strings.TrimPrefix(issuer, \"https://\")\n+\n+\tdoesMatch, err := matchesDomain(issuerHost, m.identity.GetDomains())\n \tif err != nil {\n-\t\treturn nil, fmt.Errorf(\"unable to parse issuer URI: %s\", issuer)\n+\t\treturn \"\", fmt.Errorf(\"error matching domain: %v\", err)\n \t}\n-\n-\tif !matchesDomain(issURI.Host, m.identity.GetDomains()) {\n-\t\treturn nil, fmt.Errorf(\"token is unverifiable: unknown server (domain doesn't match)\")\n+\tif !doesMatch {\n+\t\treturn \"\", fmt.Errorf(\"token is unverifiable: unknown server (domain doesn't match)\")\n \t}\n-\treturn issURI, nil\n+\n+\treturn issuerHost, nil\n }\n \n-func matchesDomain(hostname string, domains []string) bool {\n+func matchesDomain(hostname string, domains []string) (bool, error) {\n \tfor _, domain := range domains {\n-\t\tif strings.HasSuffix(hostname, domain) {\n-\t\t\treturn true\n+\t\tif !strings.HasSuffix(hostname, domain) {\n+\t\t\tcontinue\n+\t\t}\n+\t\t// hostname matches exactly trusted domain\n+\t\tif hostname == domain {\n+\t\t\treturn true, nil\n+\t\t}\n+\t\tisValid, regexErr := isValidSubDomain(hostname, domain)\n+\t\tif regexErr != nil {\n+\t\t\treturn false, regexErr\n+\t\t}\n+\t\tif isValid {\n+\t\t\treturn true, nil\n \t\t}\n \t}\n-\treturn false\n+\treturn false, nil\n+}\n+\n+// isValidSubDomain additionally check subdomain because \"my-accounts400.ondemand.com\"\n+// does match Suffix, but should not be allowed\n+// additionally it returns false if hostname contains paths like /foo or ?test=true\n+func isValidSubDomain(hostname, domain string) (bool, error) {\n+\tvalidSubdomainPattern := fmt.Sprintf(\"^[a-zA-Z0-9-]{1,63}\\\\.\" + regexp.QuoteMeta(domain) + \"$\")\n+\treturn regexp.MatchString(validSubdomainPattern, hostname)\n }"
+        },
+        {
+            "filename": "auth/validator_test.go",
+            "diff": "@@ -5,12 +5,14 @@\n package auth\n \n import (\n+\t\"strings\"\n \t\"sync\"\n \t\"testing\"\n \t\"time\"\n \n \t\"github.com/sap/cloud-security-client-go/env\"\n \t\"github.com/sap/cloud-security-client-go/mocks\"\n+\t\"github.com/stretchr/testify/assert\"\n )\n \n func TestAdditionalDomain(t *testing.T) {\n@@ -89,6 +91,99 @@ func TestAuthMiddleware_getOIDCTenant(t *testing.T) {\n \t}\n }\n \n+func TestVerifyIssuerLocal(t *testing.T) {\n+\tm := NewMiddleware(env.DefaultIdentity{\n+\t\tDomains: []string{\"127.0.0.1:52421\"},\n+\t}, Options{})\n+\n+\t// trusted url\n+\t_, err := m.verifyIssuer(\"https://127.0.0.1:52421\")\n+\tassert.NoError(t, err)\n+}\n+\n+func TestVerifyIssuer(t *testing.T) {\n+\ttrustedDomain := \"accounts400.ondemand.com\"\n+\tm := NewMiddleware(env.DefaultIdentity{\n+\t\tDomains: []string{\"accounts400.cloud.sap\", trustedDomain},\n+\t}, Options{})\n+\n+\t// exact domain\n+\thost, err := m.verifyIssuer(\"https://\" + trustedDomain)\n+\tassert.NoError(t, err)\n+\tassert.Equal(t, host, trustedDomain)\n+\t// trusted url\n+\thost, err = m.verifyIssuer(\"https://test.\" + trustedDomain)\n+\tassert.NoError(t, err)\n+\tassert.Equal(t, host, \"test.\"+trustedDomain)\n+\t// trusted domain\n+\thost, err = m.verifyIssuer(\"test.\" + trustedDomain)\n+\tassert.NoError(t, err)\n+\tassert.Equal(t, host, \"test.\"+trustedDomain)\n+\n+\t// support domains with 1 - 63 characters only\n+\t_, err = m.verifyIssuer(strings.Repeat(\"a\", 1) + \".\" + trustedDomain)\n+\tassert.NoError(t, err)\n+\t_, err = m.verifyIssuer(strings.Repeat(\"a\", 63) + \".\" + trustedDomain)\n+\tassert.NoError(t, err)\n+\t_, err = m.verifyIssuer(strings.Repeat(\"a\", 64) + \".\" + trustedDomain)\n+\tassert.Error(t, err)\n+\n+\t// error when issuer contains tabs or new lines\n+\t_, err = m.verifyIssuer(\"te\\tnant.\" + trustedDomain)\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"tenant.accounts400.ond\\temand.com\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"te\\nnant.\" + trustedDomain)\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"tenant.accounts400.ond\\nemand.com\")\n+\tassert.Error(t, err)\n+\n+\t// error when issuer contains encoded characters\n+\t_, err = m.verifyIssuer(\"https://tenant%2e\" + trustedDomain) // %2e instead of .\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://tenant%2d0815.accounts400.ond\\nemand.com\")\n+\tassert.Error(t, err)\n+\n+\t// empty issuer\n+\t_, err = m.verifyIssuer(\"\")\n+\tassert.Error(t, err)\n+\t// illegal subdomain\n+\t_, err = m.verifyIssuer(\"https://my-\" + trustedDomain)\n+\tassert.Error(t, err)\n+\n+\t// invalid url\n+\t_, err = m.verifyIssuer(\"https://\")\n+\tassert.Error(t, err)\n+\n+\t// error if http protocol is used\n+\t_, err = m.verifyIssuer(\"http://\" + trustedDomain)\n+\tassert.Error(t, err)\n+\n+\t// error when issuer contains more than a valid subdomain of the trusted domains\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"a\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"%2f\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"%2fpath\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"&\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"%26\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"?\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"?foo\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + trustedDomain + \"#\")\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + \"user@\" + trustedDomain)\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + \"user%40\" + trustedDomain)\n+\tassert.Error(t, err)\n+\t_, err = m.verifyIssuer(\"https://\" + \"tenant!\" + trustedDomain)\n+\tassert.Error(t, err)\n+}\n+\n func waitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {\n \tc := make(chan struct{})\n \tgo func() {"
+        },
+        {
+            "filename": "httpclient/httpclient.go",
+            "diff": "@@ -4,16 +4,20 @@\n package httpclient\n \n import (\n+\t\"context\"\n \t\"crypto/tls\"\n \t\"crypto/x509\"\n \t\"errors\"\n \t\"fmt\"\n+\t\"io\"\n \t\"net/http\"\n \t\"time\"\n \n \t\"github.com/sap/cloud-security-client-go/env\"\n )\n \n+const UserAgent = \"go-sec-lib\"\n+\n // DefaultTLSConfig creates default tls.Config. Initializes SystemCertPool with cert/key from identity config.\n //\n // identity provides certificate and key\n@@ -59,3 +63,15 @@ func DefaultHTTPClient(tlsConfig *tls.Config) *http.Client {\n \t}\n \treturn client\n }\n+\n+// NewRequestWithUserAgent creates a request and sets the libs custom user agent\n+// it would be nicer to set this in the default http.client, but\n+// it's discouraged to manipulate the request in RoundTrip per official documentation\n+func NewRequestWithUserAgent(ctx context.Context, method, url string, body io.Reader) (*http.Request, error) {\n+\tr, err := http.NewRequestWithContext(ctx, method, url, body)\n+\tif err != nil {\n+\t\treturn nil, err\n+\t}\n+\tr.Header.Set(\"User-Agent\", UserAgent)\n+\treturn r, nil\n+}"
+        },
+        {
+            "filename": "mocks/mockServer.go",
+            "diff": "@@ -25,6 +25,7 @@ import (\n \t\"github.com/lestrrat-go/jwx/jwk\"\n \t\"github.com/lestrrat-go/jwx/jws\"\n \t\"github.com/lestrrat-go/jwx/jwt\"\n+\t\"github.com/sap/cloud-security-client-go/httpclient\"\n \n \t\"github.com/sap/cloud-security-client-go/oidcclient\"\n )\n@@ -92,6 +93,7 @@ func newOIDCMockServer(customIssuer string) (*MockServer, error) {\n \t\tCustomIssuer: customIssuer,\n \t}\n \n+\tr.Use(verifyUserAgent)\n \tr.HandleFunc(\"/.well-known/openid-configuration\", mockServer.WellKnownHandler).Methods(http.MethodGet)\n \tr.HandleFunc(\"/oauth2/certs\", mockServer.JWKsHandlerInvalidAppTID).Methods(http.MethodGet).Headers(\"x-app_tid\", InvalidAppTID)\n \tr.HandleFunc(\"/oauth2/certs\", mockServer.JWKsHandler).Methods(http.MethodGet)\n@@ -100,6 +102,16 @@ func newOIDCMockServer(customIssuer string) (*MockServer, error) {\n \treturn mockServer, nil\n }\n \n+func verifyUserAgent(next http.Handler) http.Handler {\n+\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tif r.Header.Get(\"User-Agent\") != httpclient.UserAgent {\n+\t\t\tw.WriteHeader(http.StatusBadRequest)\n+\t\t\t_, _ = w.Write([]byte(\"wrong user agent, expected: \" + httpclient.UserAgent))\n+\t\t}\n+\t\tnext.ServeHTTP(w, r)\n+\t})\n+}\n+\n // ClearAllHitCounters resets all http handlers hit counters. See MockServer.WellKnownHitCounter and MockServer.JWKsHitCounter\n func (m *MockServer) ClearAllHitCounters() {\n \tm.WellKnownHitCounter = 0"
+        },
+        {
+            "filename": "oidcclient/jwk.go",
+            "diff": "@@ -11,13 +11,13 @@ import (\n \t\"io\"\n \t\"mime\"\n \t\"net/http\"\n-\t\"net/url\"\n \t\"strings\"\n \t\"sync\"\n \t\"time\"\n \n \t\"github.com/lestrrat-go/jwx/jwk\"\n \t\"github.com/pquerna/cachecontrol\"\n+\t\"github.com/sap/cloud-security-client-go/httpclient\"\n )\n \n const defaultJwkExpiration = 15 * time.Minute\n@@ -48,11 +48,11 @@ type updateKeysResult struct {\n }\n \n // NewOIDCTenant instantiates a new OIDCTenant and performs the OIDC discovery\n-func NewOIDCTenant(httpClient *http.Client, targetIss *url.URL) (*OIDCTenant, error) {\n+func NewOIDCTenant(httpClient *http.Client, targetIssHost string) (*OIDCTenant, error) {\n \tks := new(OIDCTenant)\n \tks.httpClient = httpClient\n \tks.acceptedClients = make(map[ClientInfo]bool)\n-\terr := ks.performDiscovery(targetIss.Host)\n+\terr := ks.performDiscovery(targetIssHost)\n \tif err != nil {\n \t\treturn nil, err\n \t}\n@@ -106,7 +106,7 @@ func (ks *OIDCTenant) updateJWKsMemory(clientInfo ClientInfo) (jwk.Set, error) {\n \n func (ks *OIDCTenant) getJWKsFromServer(clientInfo ClientInfo) (r interface{}, err error) {\n \tresult := updateKeysResult{}\n-\treq, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, ks.ProviderJSON.JWKsURL, http.NoBody)\n+\treq, err := httpclient.NewRequestWithUserAgent(context.TODO(), http.MethodGet, ks.ProviderJSON.JWKsURL, http.NoBody)\n \tif err != nil {\n \t\treturn result, fmt.Errorf(\"can't create request to fetch jwk: %v\", err)\n \t}\n@@ -152,7 +152,7 @@ func (ks *OIDCTenant) getJWKsFromServer(clientInfo ClientInfo) (r interface{}, e\n \n func (ks *OIDCTenant) performDiscovery(baseURL string) error {\n \twellKnown := fmt.Sprintf(\"https://%s/.well-known/openid-configuration\", strings.TrimSuffix(baseURL, \"/\"))\n-\treq, err := http.NewRequestWithContext(context.TODO(), http.MethodGet, wellKnown, http.NoBody)\n+\treq, err := httpclient.NewRequestWithUserAgent(context.TODO(), http.MethodGet, wellKnown, http.NoBody)\n \tif err != nil {\n \t\treturn fmt.Errorf(\"unable to construct discovery request: %v\", err)\n \t}"
+        },
+        {
+            "filename": "sample/manifest.yaml",
+            "diff": "@@ -0,0 +1,14 @@\n+---\n+version: 1\n+applications:\n+  - name: go-sec-test\n+    path: ../\n+    memory: 256MB\n+    disk_quota: 256MB\n+    instances: 1\n+    env:\n+      GO_INSTALL_PACKAGE_SPEC: github.com/sap/cloud-security-client-go/sample\n+    buildpacks:\n+      - go_buildpack\n+    services:\n+      - ias-test # cf create-service identity application ias-test --wait\n\\ No newline at end of file"
+        },
+        {
+            "filename": "sample/middleware.go",
+            "diff": "@@ -31,7 +31,10 @@ func main() {\n \tr.Use(authMiddleware.AuthenticationHandler)\n \tr.HandleFunc(\"/helloWorld\", helloWorld).Methods(http.MethodGet)\n \n-\taddress := \":8080\"\n+\taddress := \":\" + os.Getenv(\"PORT\")\n+\tif address == \"\" {\n+\t\taddress = \":8080\"\n+\t}\n \tserver := &http.Server{\n \t\tAddr:              address,\n \t\tReadHeaderTimeout: 5 * time.Second,"
+        },
+        {
+            "filename": "tokenclient/tokenFlows.go",
+            "diff": "@@ -107,8 +107,8 @@ func NewTokenFlows(identity env.Identity, options Options) (*TokenFlows, error)\n }\n \n // ClientCredentials implements the client credentials flow (RFC 6749, section 4.4).\n-// Clients obtain an access token outside of the context of a user.\n-// It is used for non interactive applications (a CLI, a batch job, or for service-2-service communication) where the token is issued to the application itself,\n+// Clients obtain an access token outside the context of a user.\n+// It is used for non-interactive applications (a CLI, a batch job, or for service-2-service communication) where the token is issued to the application itself,\n // instead of an end user for accessing resources without principal propagation.\n //\n // ctx carries the request context like the deadline or other values that should be shared across API boundaries.\n@@ -128,7 +128,7 @@ func (t *TokenFlows) ClientCredentials(ctx context.Context, customerTenantURL st\n \tif err != nil {\n \t\treturn \"\", err\n \t}\n-\tr, err := http.NewRequestWithContext(ctx, http.MethodPost, targetURL, strings.NewReader(data.Encode())) // URL-encoded payload\n+\tr, err := httpclient.NewRequestWithUserAgent(ctx, http.MethodPost, targetURL, strings.NewReader(data.Encode())) // URL-encoded payload\n \tif err != nil {\n \t\treturn \"\", fmt.Errorf(\"error performing client credentials flow: %w\", err)\n \t}"
+        },
+        {
+            "filename": "tokenclient/tokenFlows_test.go",
+            "diff": "@@ -8,14 +8,16 @@ import (\n \t\"context\"\n \t\"encoding/json\"\n \t\"errors\"\n-\t\"github.com/gorilla/mux\"\n-\t\"github.com/sap/cloud-security-client-go/env\"\n-\t\"github.com/sap/cloud-security-client-go/mocks\"\n-\t\"github.com/stretchr/testify/assert\"\n \t\"net/http\"\n \t\"net/http/httptest\"\n \t\"testing\"\n \t\"time\"\n+\n+\t\"github.com/gorilla/mux\"\n+\t\"github.com/sap/cloud-security-client-go/env\"\n+\t\"github.com/sap/cloud-security-client-go/httpclient\"\n+\t\"github.com/sap/cloud-security-client-go/mocks\"\n+\t\"github.com/stretchr/testify/assert\"\n )\n \n var tokenRequestHandlerHitCounter int\n@@ -172,6 +174,7 @@ func TestClientCredentialsTokenFlow_UsingMockServer_Succeeds(t *testing.T) {\n \n func setupNewTLSServer(t *testing.T, f func(http.ResponseWriter, *http.Request)) *httptest.Server {\n \tr := mux.NewRouter()\n+\tr.Use(verifyUserAgent)\n \tr.HandleFunc(\"/oauth2/token\", f).Methods(http.MethodPost).Headers(\"Content-Type\", \"application/x-www-form-urlencoded\")\n \tr.HandleFunc(\"/oauth/token\", f).Methods(http.MethodPost).Headers(\"Content-Type\", \"application/x-www-form-urlencoded\")\n \n@@ -181,6 +184,16 @@ func setupNewTLSServer(t *testing.T, f func(http.ResponseWriter, *http.Request))\n \treturn httptest.NewTLSServer(r)\n }\n \n+func verifyUserAgent(next http.Handler) http.Handler {\n+\treturn http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n+\t\tif r.Header.Get(\"User-Agent\") != httpclient.UserAgent {\n+\t\t\tw.WriteHeader(http.StatusBadRequest)\n+\t\t\t_, _ = w.Write([]byte(\"wrong user agent, expected: \" + httpclient.UserAgent))\n+\t\t}\n+\t\tnext.ServeHTTP(w, r)\n+\t})\n+}\n+\n // tokenHandler is the http handler which serves the /oauth2/token endpoint.\n func tokenHandler(w http.ResponseWriter, r *http.Request) {\n \tbuf := new(bytes.Buffer)"
+        }
+    ],
+    "commitTime": "2023-11-23 13:16:54"
+}

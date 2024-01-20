@@ -1,0 +1,71 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 9.9,
+    "disclosureTime": "2023-12-16 00:40:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.10642",
+        "probability": "0.00044"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-JAVA-ORGXWIKIPLATFORM-6129509",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50723"
+        ],
+        "CWE": [
+            "CWE-95"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-17 11:57:08",
+    "remediation": "Upgrade org.xwiki.platform:xwiki-platform-administration-ui to version 14.10.15, 15.7-rc-1, 15.5.2 or higher. ",
+    "severity": "critical",
+    "socialTrendAlert": false,
+    "title": "Improper Control of Generation of Code ('Code Injection')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Control of Generation of Code ('Code Injection') via the administration interface due to improper user input sanitization. An attacker can gain programming rights and execute arbitrary code by injecting malicious content into the XWiki.ConfigurableClass object within the object editor. This is only exploitable if the attacker can edit wiki pages. ",
+        "Workaround": "It is possible to manually apply the fixes for the vulnerability by editing two pages in the wiki. This patch must be applied to the page XWiki.ConfigurableClassMacros . Further, the following patches need to be applied to the page XWiki.ConfigurableClass : 749f6ae#diff-bf419a99140f3c12fd78ea30f855b63cfb74c1c976ff4436898266d9b37ad3ce 1157c1e#diff-bf419a99140f3c12fd78ea30f855b63cfb74c1c976ff4436898266d9b37ad3ce 0f367aa Note that also the page XWiki.ConfigurableClass needs to be changed to xwiki/2.1 syntax for the escaping to work correctly but the security vulnerability is also fixed without changing the syntax. "
+    },
+    "source_code": [
+        {
+            "filename": "xwiki-platform-core/xwiki-platform-administration/xwiki-platform-administration-ui/src/main/resources/XWiki/ConfigurableClass.xml",
+            "diff": "@@ -241,7 +241,12 @@ $xwiki.jsfx.use('js/xwiki/actionbuttons/actionButtons.js', true)\n                 #showHeading($appName, $headingShowing)\n \n                 {{error}}\n-                  {{translation key=\"xe.admin.configurable.noObjectOfConfigurationClassFound\" parameters=\"$objClass.getName(), $app.getFullName()\"/}}\n+                  #set($escapedObjClassName =\n+                    $services.rendering.escape($escapetool.java($objClass.getName()), 'xwiki/2.1'))\n+                  #set($translationEscapedAppName =\n+                    $services.rendering.escape($escapetool.java($app.getFullName()), 'xwiki/2.1'))\n+                  {{translation key=\"xe.admin.configurable.noObjectOfConfigurationClassFound\"\n+                    parameters=\"~\"$escapedObjClassName~\", ~\"$translationEscapedAppName~\"\"/}}\n                 {{/error}}\n \n               #else"
+        }
+    ],
+    "commitTime": "2023-08-02 13:36:27"
+}

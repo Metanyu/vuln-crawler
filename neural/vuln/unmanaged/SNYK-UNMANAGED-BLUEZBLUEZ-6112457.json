@@ -1,0 +1,89 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "TEJ RATHI"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 6.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 8.8,
+    "disclosureTime": "2023-12-07 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12436",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-BLUEZBLUEZ-6112457",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-45866"
+        ],
+        "CWE": [
+            "CWE-287"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-08 12:19:17",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Authentication",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Authentication in the HID Profile. This can permit a device like a keyboard or emulating a keyboard, to successfully connect to a discoverable device without confirmation and permit keystroke injection. "
+    },
+    "source_code": [
+        {
+            "filename": "profiles/input/device.c",
+            "diff": "@@ -81,7 +81,7 @@ struct input_device {\n \n static int idle_timeout = 0;\n static bool uhid_enabled = false;\n-static bool classic_bonded_only = false;\n+static bool classic_bonded_only = true;\n \n void input_set_idle_timeout(int timeout)\n {"
+        },
+        {
+            "filename": "profiles/input/input.conf",
+            "diff": "@@ -17,7 +17,7 @@\n # platforms may want to make sure that input connections only come from bonded\n # device connections. Several older mice have been known for not supporting\n # pairing/encryption.\n-# Defaults to false to maximize device compatibility.\n+# Defaults to true for security.\n #ClassicBondedOnly=true\n \n # LE upgrade security"
+        }
+    ],
+    "commitTime": "2023-10-10 23:41:17"
+}

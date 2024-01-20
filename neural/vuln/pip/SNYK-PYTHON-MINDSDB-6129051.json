@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Sylwia Budzynska"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 9.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "critical"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-15 04:02:30",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.24494",
+        "probability": "0.00062"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-MINDSDB-6129051",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50731"
+        ],
+        "CWE": [
+            "CWE-552"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-15 14:14:06",
+    "remediation": "Upgrade MindsDB to version 23.11.4.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Files or Directories Accessible to External Parties",
+    "vulnDescription": {
+        "Overview": "MindsDB is a MindsDB server, provides server capabilities to mindsdb native python library Affected versions of this package are vulnerable to Files or Directories Accessible to External Parties. An attacker can write arbitrary files to the system by exploiting insufficient validation of user-supplied input. "
+    },
+    "source_code": [
+        {
+            "filename": "mindsdb/__about__.py",
+            "diff": "@@ -1,6 +1,6 @@\n __title__ = 'MindsDB'\n __package_name__ = 'mindsdb'\n-__version__ = '23.11.4.0'\n+__version__ = '23.11.4.1'\n __description__ = \"MindsDB server, provides server capabilities to mindsdb native python library\"\n __email__ = \"jorge@mindsdb.com\"\n __author__ = 'MindsDB Inc'"
+        },
+        {
+            "filename": "setup.py",
+            "diff": "@@ -20,8 +20,8 @@\n     'mariadb',\n     'scylla',\n     'cassandra',\n-    'clickhouse',\n-    'snowflake',\n+    # 'clickhouse',\n+    # 'snowflake',\n     'slack',\n     'sqlite',\n     'mongodb',"
+        }
+    ],
+    "commitTime": "2023-12-07 00:58:26"
+}

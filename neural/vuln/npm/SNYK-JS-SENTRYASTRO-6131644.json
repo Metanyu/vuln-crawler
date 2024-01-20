@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.5,
+    "disclosureTime": "2023-12-18 20:00:55",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12303",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-SENTRYASTRO-6131644",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50249"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-19 14:48:18",
+    "remediation": "Upgrade @sentry/astro to version 7.87.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Resource Exhaustion",
+    "vulnDescription": {
+        "Overview": "@sentry/astro is an Official Sentry SDK for Astro Affected versions of this package are vulnerable to Resource Exhaustion due to unescaped parameter values in RegExp. An attacker can cause excessive computation times on the server. ",
+        "Workaround": "1) Disable auto instrumentation if you're using Astro 3.5.0 or newer. 2)Remove the manually added Sentry middleware Note: After these changes, Sentry error reporting will still be functional, but some details such as server-side transactions and consequently, distributed traces between client and server, will be omitted. Therefore is recommended to update to 7.87.0 as soon as possible. "
+    },
+    "source_code": [
+        {
+            "filename": "packages/astro/src/server/middleware.ts",
+            "diff": "@@ -7,12 +7,7 @@ import {\n   startSpan,\n } from '@sentry/node';\n import type { Hub, Span } from '@sentry/types';\n-import {\n-  addNonEnumerableProperty,\n-  objectify,\n-  stripUrlQueryAndFragment,\n-  tracingContextFromHeaders,\n-} from '@sentry/utils';\n+import { addNonEnumerableProperty, objectify, stripUrlQueryAndFragment } from '@sentry/utils';\n import type { APIContext, MiddlewareResponseHandler } from 'astro';\n \n import { getTracingMetaTags } from './meta';\n@@ -64,7 +59,11 @@ type AstroLocalsWithSentry = Record<string, unknown> & {\n };\n \n export const handleRequest: (options?: MiddlewareOptions) => MiddlewareResponseHandler = options => {\n-  const handlerOptions = { trackClientIp: false, trackHeaders: false, ...options };\n+  const handlerOptions = {\n+    trackClientIp: false,\n+    trackHeaders: false,\n+    ...options,\n+  };\n \n   return async (ctx, next) => {\n     // if there is an active span, we know that this handle call is nested and hence\n@@ -113,18 +112,19 @@ async function instrumentRequest(\n   }\n \n   try {\n+    const interpolatedRoute = interpolateRouteFromUrlAndParams(ctx.url.pathname, ctx.params);\n     // storing res in a variable instead of directly returning is necessary to\n     // invoke the catch block if next() throws\n     const res = await startSpan(\n       {\n         ...traceCtx,\n-        name: `${method} ${interpolateRouteFromUrlAndParams(ctx.url.pathname, ctx.params)}`,\n+        name: `${method} ${interpolatedRoute || ctx.url.pathname}`,\n         op: 'http.server',\n         origin: 'auto.http.astro',\n         status: 'ok',\n         metadata: {\n           ...traceCtx?.metadata,\n-          source: 'route',\n+          source: interpolatedRoute ? 'route' : 'url',\n         },\n         data: {\n           method,\n@@ -202,10 +202,76 @@ function addMetaTagToHead(htmlChunk: string, hub: Hub, span?: Span): string {\n  * Best we can do to get a route name instead of a raw URL.\n  *\n  * exported for testing\n+ *\n+ * @param rawUrlPathname - The raw URL pathname, e.g. '/users/123/details'\n+ * @param params - The params object, e.g. `{ userId: '123' }`\n+ *\n+ * @returns The interpolated route, e.g. '/users/[userId]/details'\n  */\n-export function interpolateRouteFromUrlAndParams(rawUrl: string, params: APIContext['params']): string {\n-  return Object.entries(params).reduce((interpolateRoute, value) => {\n-    const [paramId, paramValue] = value;\n-    return interpolateRoute.replace(new RegExp(`(/|-)${paramValue}(/|-|$)`), `$1[${paramId}]$2`);\n-  }, rawUrl);\n+export function interpolateRouteFromUrlAndParams(\n+  rawUrlPathname: string,\n+  params: APIContext['params'],\n+): string | undefined {\n+  const decodedUrlPathname = tryDecodeUrl(rawUrlPathname);\n+  if (!decodedUrlPathname) {\n+    return undefined;\n+  }\n+\n+  // Invert params map so that the param values are the keys\n+  // differentiate between rest params spanning multiple url segments\n+  // and normal, single-segment params.\n+  const valuesToMultiSegmentParams: Record<string, string> = {};\n+  const valuesToParams: Record<string, string> = {};\n+  Object.entries(params).forEach(([key, value]) => {\n+    if (!value) {\n+      return;\n+    }\n+    if (value.includes('/')) {\n+      valuesToMultiSegmentParams[value] = key;\n+      return;\n+    }\n+    valuesToParams[value] = key;\n+  });\n+\n+  function replaceWithParamName(segment: string): string {\n+    const param = valuesToParams[segment];\n+    if (param) {\n+      return `[${param}]`;\n+    }\n+    return segment;\n+  }\n+\n+  // before we match single-segment params, we first replace multi-segment params\n+  const urlWithReplacedMultiSegmentParams = Object.keys(valuesToMultiSegmentParams).reduce((acc, key) => {\n+    return acc.replace(key, `[${valuesToMultiSegmentParams[key]}]`);\n+  }, decodedUrlPathname);\n+\n+  return urlWithReplacedMultiSegmentParams\n+    .split('/')\n+    .map(segment => {\n+      if (!segment) {\n+        return '';\n+      }\n+\n+      if (valuesToParams[segment]) {\n+        return replaceWithParamName(segment);\n+      }\n+\n+      // astro permits multiple params in a single path segment, e.g. /[foo]-[bar]/\n+      const segmentParts = segment.split('-');\n+      if (segmentParts.length > 1) {\n+        return segmentParts.map(part => replaceWithParamName(part)).join('-');\n+      }\n+\n+      return segment;\n+    })\n+    .join('/');\n+}\n+\n+function tryDecodeUrl(url: string): string | undefined {\n+  try {\n+    return decodeURI(url);\n+  } catch {\n+    return undefined;\n+  }\n }"
+        },
+        {
+            "filename": "packages/astro/test/server/middleware.test.ts",
+            "diff": "@@ -69,6 +69,43 @@ describe('sentryMiddleware', () => {\n     expect(resultFromNext).toStrictEqual(nextResult);\n   });\n \n+  it(\"sets source route if the url couldn't be decoded correctly\", async () => {\n+    const middleware = handleRequest();\n+    const ctx = {\n+      request: {\n+        method: 'GET',\n+        url: '/a%xx',\n+        headers: new Headers(),\n+      },\n+      url: { pathname: 'a%xx', href: 'http://localhost:1234/a%xx' },\n+      params: {},\n+    };\n+    const next = vi.fn(() => nextResult);\n+\n+    // @ts-expect-error, a partial ctx object is fine here\n+    const resultFromNext = middleware(ctx, next);\n+\n+    expect(startSpanSpy).toHaveBeenCalledWith(\n+      {\n+        data: {\n+          method: 'GET',\n+          url: 'http://localhost:1234/a%xx',\n+        },\n+        metadata: {\n+          source: 'url',\n+        },\n+        name: 'GET a%xx',\n+        op: 'http.server',\n+        origin: 'auto.http.astro',\n+        status: 'ok',\n+      },\n+      expect.any(Function), // the `next` function\n+    );\n+\n+    expect(next).toHaveBeenCalled();\n+    expect(resultFromNext).toStrictEqual(nextResult);\n+  });\n+\n   it('throws and sends an error to sentry if `next()` throws', async () => {\n     const captureExceptionSpy = vi.spyOn(SentryNode, 'captureException');\n \n@@ -299,15 +336,31 @@ describe('sentryMiddleware', () => {\n \n describe('interpolateRouteFromUrlAndParams', () => {\n   it.each([\n+    ['/', {}, '/'],\n     ['/foo/bar', {}, '/foo/bar'],\n     ['/users/123', { id: '123' }, '/users/[id]'],\n     ['/users/123', { id: '123', foo: 'bar' }, '/users/[id]'],\n     ['/lang/en-US', { lang: 'en', region: 'US' }, '/lang/[lang]-[region]'],\n     ['/lang/en-US/posts', { lang: 'en', region: 'US' }, '/lang/[lang]-[region]/posts'],\n+    // edge cases that astro doesn't support\n+    ['/lang/-US', { region: 'US' }, '/lang/-[region]'],\n+    ['/lang/en-', { lang: 'en' }, '/lang/[lang]-'],\n   ])('interpolates route from URL and params %s', (rawUrl, params, expectedRoute) => {\n     expect(interpolateRouteFromUrlAndParams(rawUrl, params)).toEqual(expectedRoute);\n   });\n \n+  it.each([\n+    ['/(a+)+/aaaaaaaaa!', { id: '(a+)+', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+    ['/([a-zA-Z]+)*/aaaaaaaaa!', { id: '([a-zA-Z]+)*', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+    ['/(a|aa)+/aaaaaaaaa!', { id: '(a|aa)+', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+    ['/(a|a?)+/aaaaaaaaa!', { id: '(a|a?)+', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+    // with URL encoding\n+    ['/(a%7Caa)+/aaaaaaaaa!', { id: '(a|aa)+', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+    ['/(a%7Ca?)+/aaaaaaaaa!', { id: '(a|a?)+', slug: 'aaaaaaaaa!' }, '/[id]/[slug]'],\n+  ])('handles regex characters in param values correctly %s', (rawUrl, params, expectedRoute) => {\n+    expect(interpolateRouteFromUrlAndParams(rawUrl, params)).toEqual(expectedRoute);\n+  });\n+\n   it('handles params across multiple URL segments in catchall routes', () => {\n     // Ideally, Astro would let us know that this is a catchall route so we can make the param [...catchall] but it doesn't\n     expect(\n@@ -324,4 +377,11 @@ describe('interpolateRouteFromUrlAndParams', () => {\n     const expectedRoute = '/usernames/[name]';\n     expect(interpolateRouteFromUrlAndParams(rawUrl, params)).toEqual(expectedRoute);\n   });\n+\n+  it('handles set but undefined params', () => {\n+    const rawUrl = '/usernames/user';\n+    const params = { name: undefined, name2: '' };\n+    const expectedRoute = '/usernames/user';\n+    expect(interpolateRouteFromUrlAndParams(rawUrl, params)).toEqual(expectedRoute);\n+  });\n });"
+        }
+    ],
+    "commitTime": "2023-12-13 12:18:14"
+}

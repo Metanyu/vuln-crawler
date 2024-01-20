@@ -1,0 +1,85 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.9,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-23 14:49:08",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12304",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-SYSTEMDSYSTEMD-6139259",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7008"
+        ],
+        "CWE": [
+            "CWE-345"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-25 09:11:02",
+    "remediation": "Upgrade systemd/systemd to version 248.13, 249.17, 250.14, 251.20, 252.21, 253.15, 254.8, 255.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Insufficient Verification of Data Authenticity",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Insufficient Verification of Data Authenticity due to improper validation of DNSSEC signatures in systemd-resolved . If the default DNSSEC=no option has been changed to yes , an attacker in a MitM position can manipulate DNS records. "
+    },
+    "source_code": [
+        {
+            "filename": "src/resolve/resolved-dns-transaction.c",
+            "diff": "@@ -2808,7 +2808,7 @@ static int dns_transaction_requires_rrsig(DnsTransaction *t, DnsResourceRecord *\n                         if (r == 0)\n                                 continue;\n \n-                        return FLAGS_SET(t->answer_query_flags, SD_RESOLVED_AUTHENTICATED);\n+                        return FLAGS_SET(dt->answer_query_flags, SD_RESOLVED_AUTHENTICATED);\n                 }\n \n                 return true;\n@@ -2835,7 +2835,7 @@ static int dns_transaction_requires_rrsig(DnsTransaction *t, DnsResourceRecord *\n                         /* We found the transaction that was supposed to find the SOA RR for us. It was\n                          * successful, but found no RR for us. This means we are not at a zone cut. In this\n                          * case, we require authentication if the SOA lookup was authenticated too. */\n-                        return FLAGS_SET(t->answer_query_flags, SD_RESOLVED_AUTHENTICATED);\n+                        return FLAGS_SET(dt->answer_query_flags, SD_RESOLVED_AUTHENTICATED);\n                 }\n \n                 return true;"
+        }
+    ],
+    "commitTime": "2023-12-22 22:28:51"
+}

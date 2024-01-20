@@ -1,0 +1,69 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 4.3,
+    "disclosureTime": "2022-04-23 00:40:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.44891",
+        "probability": "0.00114"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-MOODLEMOODLE-6141130",
+    "identifiers": {
+        "CVE": [
+            "CVE-2012-1159"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2024-01-01 12:48:11",
+    "remediation": "Upgrade moodle/moodle to version 1.9.17, 2.0.8, 2.1.5, 2.2.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure Through an Error Message",
+    "vulnDescription": {
+        "Overview": "moodle/moodle is a learning platform. Affected versions of this package are vulnerable to Information Exposure Through an Error Message due to the improper handling of user files during the course backup process. An attacker can gain access to private user files by exploiting this vulnerability. "
+    },
+    "source_code": [
+        {
+            "filename": "grade/report/overview/lib.php",
+            "diff": "@@ -119,7 +119,14 @@ public function fill_table() {\n                 if (!$course->showgrades) {\n                     continue;\n                 }\n+\n                 $coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);\n+\n+                if (!$course->visible && !has_capability('moodle/course:viewhiddencourses', $coursecontext)) {\n+                    // The course is hidden and the user isn't allowed to see it\n+                    continue;\n+                }\n+\n                 $courseshortname = format_string($course->shortname, true, array('context' => $coursecontext));\n                 $courselink = html_writer::link(new moodle_url('/grade/report/user/index.php', array('id' => $course->id, 'userid' => $this->user->id)), $courseshortname);\n                 $canviewhidden = has_capability('moodle/grade:viewhidden', $coursecontext);"
+        }
+    ],
+    "commitTime": "2012-02-03 01:46:54"
+}

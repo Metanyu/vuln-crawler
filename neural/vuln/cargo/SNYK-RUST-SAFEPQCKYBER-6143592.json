@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.9,
+    "disclosureTime": "2024-01-03 21:40:45",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-SAFEPQCKYBER-6143592",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-208"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2024-01-04 15:36:40",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure Through Timing Discrepancy",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Information Exposure Through Timing Discrepancy in the decapsulation process. An attacker with the ability to time decapsulation and forge ciphertexts could learn parts of the secret key. Note: This doesn't apply to ephemeral usage, such as when used in the regular way in TLS. "
+    },
+    "source_code": [
+        {
+            "filename": "src/reference/poly.rs",
+            "diff": "@@ -40,14 +40,30 @@ pub fn poly_compress(r: &mut[u8], a: Poly)\n   let mut k = 0usize;\r\n   let mut u: i16;\r\n \r\n+  // Compress_q(x, d) = \u2308(2\u1d48/q)x\u230b mod\u207a 2\u1d48\r\n+  //                  = \u230a(2\u1d48/q)x+\u00bd\u230b mod\u207a 2\u1d48\r\n+  //                  = \u230a((x << d) + q/2) / q\u230b mod\u207a 2\u1d48\r\n+  //                  = DIV((x << d) + q/2, q) & ((1<<d) - 1)\r\n+  //\r\n+  // We approximate DIV(x, q) by computing (x*a)>>e, where a/(2^e) \u2248 1/q.\r\n+  // For d in {10,11} we use 20,642,678/2^36, which computes division by x/q\r\n+  // correctly for 0 \u2264 x < 41,522,616, which fits (q << 11) + q/2 comfortably.\r\n+  // For d in {4,5} we use 315/2^20, which doesn't compute division by x/q\r\n+  // correctly for all inputs, but it's close enough that the end result\r\n+  // of the compression is correct. The advantage is that we do not need\r\n+  // to use a 64-bit intermediate value.\r\n+\r\n   match KYBER_POLYCOMPRESSEDBYTES {\r\n     128 => {\r\n       for i in 0..KYBER_N/8 {\r\n         for j in 0..8 {\r\n           // map to positive standard representatives\r\n           u = a.coeffs[8*i+j];\r\n           u += (u >> 15) & KYBER_Q as i16;\r\n-          t[j] = (((((u as u16) << 4) + KYBER_Q as u16 /2) / KYBER_Q as u16) & 15) as u8;\r\n+          let mut tmp : u32 = (((u as u16) << 4) + KYBER_Q as u16 /2) as u32;\r\n+          tmp *= 315;\r\n+          tmp >>= 20;\r\n+          t[j] = ((tmp as u16) & 15) as u8;\r\n         }\r\n         r[k]   = t[0] | (t[1] << 4);\r\n         r[k+1] = t[2] | (t[3] << 4);\r\n@@ -62,7 +78,10 @@ pub fn poly_compress(r: &mut[u8], a: Poly)\n           // map to positive standard representatives\r\n           u = a.coeffs[8*i+j];\r\n           u += (u >> 15) & KYBER_Q as i16;\r\n-          t[j] = (((((u as u32) << 5) + KYBER_Q as u32/2) / KYBER_Q as u32) & 31) as u8;\r\n+          let mut tmp : u32 = ((u as u32) << 5) + KYBER_Q as u32/2;\r\n+          tmp *= 315;\r\n+          tmp >>= 20;\r\n+          t[j] = ((tmp as u16) & 31) as u8;\r\n         }\r\n         r[k]   =  t[0]       | (t[1] << 5);\r\n         r[k+1] = (t[1] >> 3) | (t[2] << 2) | (t[3] << 7);\r\n@@ -321,14 +340,19 @@ pub fn poly_frommsg(r: &mut Poly, msg: &[u8])\n //              - const poly *a:      input polynomial\r\n pub fn poly_tomsg(msg: &mut[u8], a: Poly)\r\n {\r\n-  let mut t;\r\n+  let mut t : u32;\r\n \r\n   for i in 0..KYBER_N/8 {\r\n     msg[i] = 0;\r\n     for j in 0..8 {\r\n-      t  = a.coeffs[8*i+j];\r\n-      t += (t >> 15) & KYBER_Q as i16;\r\n-      t  = (((t << 1) + KYBER_Q as i16 /2) / KYBER_Q as i16) & 1;\r\n+      t  = a.coeffs[8*i+j] as u32;\r\n+\r\n+      t <<= 1;\r\n+      t = t.wrapping_add(1665);\r\n+      t = t.wrapping_mul(80635);\r\n+      t >>= 28;\r\n+      t &= 1;\r\n+\r\n       msg[i] |= (t << j) as u8;\r\n     }\r\n   }\r"
+        },
+        {
+            "filename": "src/reference/polyvec.rs",
+            "diff": "@@ -36,7 +36,10 @@ pub fn polyvec_compress(r: &mut[u8], a: Polyvec)\n         for k in 0..8 {\r\n           t[k]  = a.vec[i].coeffs[8*j+k] as u16;\r\n           t[k] = t[k].wrapping_add((((t[k] as i16) >> 15) & KYBER_Q as i16) as u16);\r\n-          t[k]  = (((((t[k] as u32) << 11) + KYBER_Q as u32/2)/KYBER_Q as u32) & 0x7ff ) as u16;\r\n+          let mut tmp : u64 = ((t[k] as u32) << 11) + KYBER_Q as u32/2;\r\n+          tmp *= 20642679;\r\n+          tmp >>= 36;\r\n+          t[k]  = (tmp as u16) & 0x7ff;\r\n         }\r\n         r[idx+0] =  (t[0] >>  0) as u8;\r\n         r[idx+1] = ((t[0] >>  8) | (t[1] << 3)) as u8;\r\n@@ -63,8 +66,10 @@ pub fn polyvec_compress(r: &mut[u8], a: Polyvec)\n         for k in 0..4 {\r\n           t[k]  = a.vec[i].coeffs[4*j+k] as u16;\r\n           t[k] = t[k].wrapping_add((((t[k] as i16) >> 15) & KYBER_Q as i16) as u16);\r\n-          t[k]  = \r\n-            (((((t[k] as u32) << 10) + KYBER_Q as u32/2)/ KYBER_Q as u32) & 0x3ff) as u16;\r\n+          let mut tmp : u64 = (((t[k] as u32) << 10) + KYBER_Q as u32/2) as u64;\r\n+          tmp *= 20642679;\r\n+          tmp >>= 36;\r\n+          t[k]  = (tmp as u16) & 0x3ff;\r\n         }\r\n         r[idx+0] =  (t[0] >> 0) as u8;\r\n         r[idx+1] = ((t[0] >> 8) | (t[1] << 2)) as u8;\r"
+        }
+    ],
+    "commitTime": "2023-12-30 13:31:17"
+}

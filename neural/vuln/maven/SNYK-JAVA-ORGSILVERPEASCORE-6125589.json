@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "LOW",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "TeneBrae93"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2023-12-13 15:30:58",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-ORGSILVERPEASCORE-6125589",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-47322"
+        ],
+        "CWE": [
+            "CWE-79"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 13:05:16",
+    "remediation": "Upgrade org.silverpeas.core:silverpeas-core-web to version 6.3.2 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Cross-Site Request Forgery (CSRF)",
+    "vulnDescription": {
+        "Overview": "org.silverpeas.core:silverpeas-core-web is a WEB platform that improves the collaboration between the actors of a company or organization. Affected versions of this package are vulnerable to Cross-Site Request Forgery (CSRF) via the userModify feature. An attacker can escalate privileges by tricking an authenticated administrator into visiting a malicious URL, which results in the execution of unauthorized actions on behalf of the administrator. "
+    },
+    "source_code": []
+}

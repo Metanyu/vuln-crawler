@@ -1,0 +1,74 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Peng Zhou"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4.7,
+    "disclosureTime": "2024-01-03 09:44:59",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-PADDLEPADDLEPADDLE-6142739",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-52313"
+        ],
+        "CWE": [
+            "CWE-369"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-03 14:26:54",
+    "remediation": "Upgrade paddlepaddle/paddle to version 2.6.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Divide By Zero",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Divide By Zero via the paddle.argmin and paddle.argmax functions. An attacker can cause a runtime crash and induce a denial of service. "
+    },
+    "source_code": [
+        {
+            "filename": "paddle/phi/kernels/cpu/arg_min_max_kernel.cc",
+            "diff": "@@ -153,6 +153,11 @@ void ArgMinMaxKernel(const Context& dev_ctx,\n                      bool flatten,\n                      DataType dtype,\n                      DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\n+          \"argmin/argmax input numel must > 0, bug got %d\", x.numel()));\n   if (dtype == DataType::UNDEFINED) {\n     phi::VisitDataTypeTiny(\n         phi::DataType::INT64,"
+        },
+        {
+            "filename": "paddle/phi/kernels/gpu/arg_min_max_kernel.cu",
+            "diff": "@@ -211,6 +211,11 @@ void ArgMinMaxOpCUDAKernel(const Context& dev_ctx,\n                            bool flatten,\n                            DataType dtype,\n                            DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\n+          \"argmin/argmax input numel must > 0, bug got %d\", x.numel()));\n   if (dtype == DataType::UNDEFINED) {\n     phi::VisitDataTypeTiny(\n         phi::DataType::INT64,"
+        },
+        {
+            "filename": "paddle/phi/kernels/xpu/arg_min_max_kernel.cc",
+            "diff": "@@ -30,6 +30,11 @@ void ArgMaxKernel(const Context& dev_ctx,\n                   bool flatten,\n                   DataType dtype,\n                   DenseTensor* out) {\n+  PADDLE_ENFORCE_GT(\n+      x.numel(),\n+      0,\n+      phi::errors::InvalidArgument(\n+          \"argmin/argmax input numel must > 0, bug got %d\", x.numel()));\n   using XPUType = typename XPUTypeTrait<T>::Type;\n   PADDLE_ENFORCE_EQ(\n       (dtype == DataType::UNDEFINED || dtype == DataType::INT32 ||"
+        }
+    ],
+    "commitTime": "2023-12-14 01:26:12"
+}

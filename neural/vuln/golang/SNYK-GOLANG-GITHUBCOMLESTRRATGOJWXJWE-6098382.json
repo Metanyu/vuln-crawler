@@ -1,0 +1,92 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "P3ngu1nW"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-05 00:51:11",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06970",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-GOLANG-GITHUBCOMLESTRRATGOJWXJWE-6098382",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49290"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-06 11:42:18",
+    "remediation": "Upgrade github.com/lestrrat-go/jwx/jwe to version 1.2.27 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) when the p2c parameter is set too high for PBKDF2 based encryption. An attacker can cause excessive CPU to be consumed. ",
+        "PoC": "package main import ( \"fmt\" \"github.com/lestrrat-go/jwx/v2/jwa\" \"github.com/lestrrat-go/jwx/v2/jwe\" \"github.com/lestrrat-go/jwx/v2/jwk\" ) func main() { token := []byte(\"eyJhbGciOiJQQkVTMi1IUzI1NitBMTI4S1ciLCJlbmMiOiJBMjU2R0NNIiwicDJjIjoyMDAwMDAwMDAwLCJwMnMiOiJNNzczSnlmV2xlX2FsSXNrc0NOTU9BIn0=.S8B1kXdIR7BM6i_TaGsgqEOxU-1Sgdakp4mHq7UVhn-_REzOiGz2gg.gU_LfzhBXtQdwYjh.9QUIS-RWkLc.m9TudmzUoCzDhHsGGfzmCA\") key, err := jwk.FromRaw([]byte(`abcdefg`)) payload, err := jwe.Decrypt(token, jwe.WithKey(jwa.PBES2_HS256_A128KW, key)) if err == nil { fmt.Println(string(payload)) } } "
+    },
+    "source_code": [
+        {
+            "filename": "Changes",
+            "diff": "@@ -4,6 +4,15 @@ Changes\n v2 has many incompatibilities with v1. To see the full list of differences between\n v1 and v2, please read the Changes-v2.md file (https://github.com/lestrrat-go/jwx/blob/develop/v2/Changes-v2.md)\n \n+v2.0.18 UNRELEASED\n+[Security Fixes]\n+  * [jwe] A large number in p2c parameter for PBKDF2 based encryptions could cause a DoS attack,\n+    similar to https://nvd.nist.gov/vuln/detail/CVE-2022-36083.  All users who use JWE via this\n+    package should upgrade. While the JOSE spec allows for encryption using JWE on JWTs, users of\n+    the `jwt` package are not immediately susceptible unless they explicitly try to decrypt\n+    JWTs -- by default the `jwt` package verifies signatures, but does not decrypt messages.\n+    [GHSA-7f9x-gw85-8grf]\n+\n v2.0.17 20 Nov 2023\n [Bug Fixes]\n   * [jws] Previously, `jws.UnregisterSigner` did not remove the previous signer instance when"
+        },
+        {
+            "filename": "jwe/jwe.go",
+            "diff": "@@ -10,6 +10,7 @@ import (\n \t\"crypto/rsa\"\n \t\"fmt\"\n \t\"io\"\n+\t\"sync\"\n \n \t\"github.com/lestrrat-go/blackmagic\"\n \t\"github.com/lestrrat-go/jwx/v2/internal/base64\"\n@@ -24,6 +25,20 @@ import (\n \t\"github.com/lestrrat-go/jwx/v2/x25519\"\n )\n \n+var muSettings sync.RWMutex\n+var maxPBES2Count = 10000\n+\n+func Settings(options ...GlobalOption) {\n+\tmuSettings.Lock()\n+\tdefer muSettings.Unlock()\n+\tfor _, option := range options {\n+\t\tswitch option.Ident() {\n+\t\tcase identMaxPBES2Count{}:\n+\t\t\tmaxPBES2Count = option.Value().(int)\n+\t\t}\n+\t}\n+}\n+\n const (\n \tfmtInvalid = iota\n \tfmtCompact\n@@ -702,6 +717,12 @@ func (dctx *decryptCtx) decryptContent(ctx context.Context, alg jwa.KeyEncryptio\n \t\tif !ok {\n \t\t\treturn nil, fmt.Errorf(\"unexpected type for 'p2c': %T\", count)\n \t\t}\n+\t\tmuSettings.RLock()\n+\t\tmaxCount := maxPBES2Count\n+\t\tmuSettings.RUnlock()\n+\t\tif countFlt > float64(maxCount) {\n+\t\t\treturn nil, fmt.Errorf(\"invalid 'p2c' value\")\n+\t\t}\n \t\tsalt, err := base64.DecodeString(saltB64Str)\n \t\tif err != nil {\n \t\t\treturn nil, fmt.Errorf(`failed to b64-decode 'salt': %w`, err)"
+        },
+        {
+            "filename": "jwe/jwe_test.go",
+            "diff": "@@ -911,3 +911,51 @@ func TestGH1001(t *testing.T) {\n \trequire.Equal(t, \"Lorem Ipsum\", string(decrypted), `decrypted message should match`)\n \trequire.NotNil(t, cek, `cek should not be nil`)\n }\n+\n+func TestGHSA_7f9x_gw85_8grf(t *testing.T) {\n+\ttoken := []byte(\"eyJhbGciOiJQQkVTMi1IUzI1NitBMTI4S1ciLCJlbmMiOiJBMjU2R0NNIiwicDJjIjoyMDAwMDAwMDAwLCJwMnMiOiJNNzczSnlmV2xlX2FsSXNrc0NOTU9BIn0=.S8B1kXdIR7BM6i_TaGsgqEOxU-1Sgdakp4mHq7UVhn-_REzOiGz2gg.gU_LfzhBXtQdwYjh.9QUIS-RWkLc.m9TudmzUoCzDhHsGGfzmCA\")\n+\tkey, err := jwk.FromRaw([]byte(`abcdefg`))\n+\trequire.NoError(t, err, `jwk.FromRaw should succeed`)\n+\n+\t{\n+\t\tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\t\tdefer cancel()\n+\n+\t\tdone := make(chan struct{})\n+\t\tgo func(t *testing.T, done chan struct{}) {\n+\t\t\t_, err := jwe.Decrypt(token, jwe.WithKey(jwa.PBES2_HS256_A128KW, key))\n+\t\t\trequire.Error(t, err, `jwe.Decrypt should fail`)\n+\t\t\tclose(done)\n+\t\t}(t, done)\n+\n+\t\tselect {\n+\t\tcase <-done:\n+\t\tcase <-ctx.Done():\n+\t\t\trequire.Fail(t, \"jwe.Decrypt should not block\")\n+\t\t}\n+\t}\n+\n+\t// NOTE: HAS GLOBAL EFFECT\n+\t// Should allow for timeout to occur\n+\tjwe.Settings(jwe.WithMaxPBES2Count(100000000000000000))\n+\n+\t// put it back to normal after the test\n+\tdefer jwe.Settings(jwe.WithMaxPBES2Count(10000))\n+\t{\n+\t\tctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)\n+\t\tdefer cancel()\n+\n+\t\tdone := make(chan struct{})\n+\t\tgo func(t *testing.T, done chan struct{}) {\n+\t\t\t_, _ = jwe.Decrypt(token, jwe.WithKey(jwa.PBES2_HS256_A128KW, key))\n+\t\t\tclose(done)\n+\t\t}(t, done)\n+\n+\t\tselect {\n+\t\tcase <-done:\n+\t\t\trequire.Fail(t, \"jwe.Decrypt should block\")\n+\t\tcase <-ctx.Done():\n+\t\t\t// timeout occurred as it should\n+\t\t}\n+\t}\n+}"
+        },
+        {
+            "filename": "jwe/options.yaml",
+            "diff": "@@ -1,6 +1,9 @@\n package_name: jwe\n output: jwe/options_gen.go\n interfaces:\n+  - name: GlobalOption\n+    comment: |\n+      GlobalOption describes options that changes global settings for this package\n   - name: CompactOption\n     comment: |\n       CompactOption describes options that can be passed to `jwe.Compact`\n@@ -129,3 +132,10 @@ options:\n       \n       This option is currently considered EXPERIMENTAL, and is subject to\n       future changes across minor/micro versions.\n+  - ident: MaxPBES2Count\n+    interface: GlobalOption\n+    argument_type: int\n+    comment: |\n+      WithMaxPBES2Count specifies the maximum number of PBES2 iterations\n+      to use when decrypting a message. If not specified, the default\n+      value of 10,000 is used.\n\\ No newline at end of file"
+        },
+        {
+            "filename": "jwe/options_gen.go",
+            "diff": "@@ -62,6 +62,18 @@ type encryptOption struct {\n \n func (*encryptOption) encryptOption() {}\n \n+// GlobalOption describes options that changes global settings for this package\n+type GlobalOption interface {\n+\tOption\n+\tglobalOption()\n+}\n+\n+type globalOption struct {\n+\tOption\n+}\n+\n+func (*globalOption) globalOption() {}\n+\n // ReadFileOption is a type of `Option` that can be passed to `jwe.Parse`\n type ParseOption interface {\n \tOption\n@@ -117,6 +129,7 @@ type identFS struct{}\n type identKey struct{}\n type identKeyProvider struct{}\n type identKeyUsed struct{}\n+type identMaxPBES2Count struct{}\n type identMergeProtectedHeaders struct{}\n type identMessage struct{}\n type identPerRecipientHeaders struct{}\n@@ -153,6 +166,10 @@ func (identKeyUsed) String() string {\n \treturn \"WithKeyUsed\"\n }\n \n+func (identMaxPBES2Count) String() string {\n+\treturn \"WithMaxPBES2Count\"\n+}\n+\n func (identMergeProtectedHeaders) String() string {\n \treturn \"WithMergeProtectedHeaders\"\n }\n@@ -228,6 +245,13 @@ func WithKeyUsed(v interface{}) DecryptOption {\n \treturn &decryptOption{option.New(identKeyUsed{}, v)}\n }\n \n+// WithMaxPBES2Count specifies the maximum number of PBES2 iterations\n+// to use when decrypting a message. If not specified, the default\n+// value of 10,000 is used.\n+func WithMaxPBES2Count(v int) GlobalOption {\n+\treturn &globalOption{option.New(identMaxPBES2Count{}, v)}\n+}\n+\n // WithMergeProtectedHeaders specify that when given multiple headers\n // as options to `jwe.Encrypt`, these headers should be merged instead\n // of overwritten"
+        },
+        {
+            "filename": "jwe/options_gen_test.go",
+            "diff": "@@ -16,6 +16,7 @@ func TestOptionIdent(t *testing.T) {\n \trequire.Equal(t, \"WithKey\", identKey{}.String())\n \trequire.Equal(t, \"WithKeyProvider\", identKeyProvider{}.String())\n \trequire.Equal(t, \"WithKeyUsed\", identKeyUsed{}.String())\n+\trequire.Equal(t, \"WithMaxPBES2Count\", identMaxPBES2Count{}.String())\n \trequire.Equal(t, \"WithMergeProtectedHeaders\", identMergeProtectedHeaders{}.String())\n \trequire.Equal(t, \"WithMessage\", identMessage{}.String())\n \trequire.Equal(t, \"WithPerRecipientHeaders\", identPerRecipientHeaders{}.String())"
+        }
+    ],
+    "commitTime": "2023-12-03 06:35:12"
+}

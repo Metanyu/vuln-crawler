@@ -1,0 +1,73 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Imam Uasa"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "HIGH",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "LOW",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-05 00:51:02",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12352",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMECIESGOV2-6100634",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49292"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-05 14:55:23",
+    "remediation": "Upgrade github.com/ecies/go/v2 to version 2.0.8 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "github.com/ecies/go/v2 is an Elliptic Curve Integrated Encryption Scheme for secp256k1 Affected versions of this package are vulnerable to Information Exposure through the Encapsulate() , Decapsulate() , and ECDH() functions. An attacker can recover any private key that interacts with these functions by calling them. "
+    },
+    "source_code": [
+        {
+            "filename": "privatekey.go",
+            "diff": "@@ -77,6 +77,10 @@ func (k *PrivateKey) Encapsulate(pub *PublicKey) ([]byte, error) {\n \t\treturn nil, fmt.Errorf(\"public key is empty\")\n \t}\n \n+\tif !k.Curve.IsOnCurve(pub.X, pub.Y) {\n+\t\treturn nil, fmt.Errorf(\"invalid public key\")\n+\t}\n+\n \tvar secret bytes.Buffer\n \tsecret.Write(k.PublicKey.Bytes(false))\n \n@@ -98,6 +102,10 @@ func (k *PrivateKey) ECDH(pub *PublicKey) ([]byte, error) {\n \t\treturn nil, fmt.Errorf(\"public key is empty\")\n \t}\n \n+\tif !k.Curve.IsOnCurve(pub.X, pub.Y) {\n+\t\treturn nil, fmt.Errorf(\"invalid public key\")\n+\t}\n+\n \t// Shared secret generation\n \tsx, sy := pub.Curve.ScalarMult(pub.X, pub.Y, k.D.Bytes())\n "
+        },
+        {
+            "filename": "publickey.go",
+            "diff": "@@ -137,8 +137,12 @@ func (k *PublicKey) Hex(compressed bool) string {\n // Decapsulate decapsulates key by using Key Encapsulation Mechanism and returns symmetric key;\n // can be safely used as encryption key\n func (k *PublicKey) Decapsulate(priv *PrivateKey) ([]byte, error) {\n+\tif !k.Curve.IsOnCurve(k.X, k.Y) {\n+\t\treturn nil, fmt.Errorf(\"invalid public key\")\n+\t}\n+\n \tif priv == nil {\n-\t\treturn nil, fmt.Errorf(\"public key is empty\")\n+\t\treturn nil, fmt.Errorf(\"private key is empty\")\n \t}\n \n \tvar secret bytes.Buffer"
+        }
+    ],
+    "commitTime": "2023-12-04 20:35:16"
+}

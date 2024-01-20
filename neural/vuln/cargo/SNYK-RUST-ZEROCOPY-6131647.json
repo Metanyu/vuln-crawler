@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 5.9,
+    "disclosureTime": "2023-12-18 19:18:46",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-ZEROCOPY-6131647",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-843"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2023-12-19 15:31:33",
+    "remediation": "Upgrade zerocopy to version 0.2.9, 0.3.2, 0.4.1, 0.5.2, 0.6.6, 0.7.31 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Access of Resource Using Incompatible Type ('Type Confusion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Access of Resource Using Incompatible Type ('Type Confusion') via the Ref methods into_ref , into_mut , into_slice , and into_slice_mut . An attacker can induce undefined behavior by using these methods with Ref<B, T> where B is cell::Ref or cell::RefMut . Note: This issue does not affect B types other than cell::Ref or cell::RefMut . "
+    },
+    "source_code": [
+        {
+            "filename": "src/lib.rs",
+            "diff": "@@ -387,8 +387,10 @@ pub unsafe trait FromBytes {\n             return Box::new(Self::new_zeroed());\n         }\n \n+        // TODO(#61): Add a \"SAFETY\" comment and remove this `allow`.\n+        #[allow(clippy::undocumented_unsafe_blocks)]\n         unsafe {\n-            let ptr = alloc::alloc::alloc_zeroed(layout) as *mut Self;\n+            let ptr = alloc::alloc::alloc_zeroed(layout).cast::<Self>();\n             if ptr.is_null() {\n                 alloc::alloc::handle_alloc_error(layout);\n             }\n@@ -431,9 +433,12 @@ pub unsafe trait FromBytes {\n             mem::align_of::<Self>(),\n         )\n         .expect(\"total allocation size overflows `isize`\");\n+\n+        // TODO(#61): Add a \"SAFETY\" comment and remove this `allow`.\n+        #[allow(clippy::undocumented_unsafe_blocks)]\n         unsafe {\n             if layout.size() != 0 {\n-                let ptr = alloc::alloc::alloc_zeroed(layout) as *mut Self;\n+                let ptr = alloc::alloc::alloc_zeroed(layout).cast::<Self>();\n                 if ptr.is_null() {\n                     alloc::alloc::handle_alloc_error(layout);\n                 }\n@@ -2153,6 +2158,8 @@ mod alloc_support {\n \n     #[cfg(test)]\n     mod tests {\n+        use core::convert::TryFrom as _;\n+\n         use super::*;\n \n         #[test]\n@@ -2360,7 +2367,8 @@ mod alloc_support {\n         #[test]\n         #[should_panic(expected = \"total allocation size overflows `isize`: LayoutError\")]\n         fn test_new_box_slice_zeroed_panics_isize_overflow() {\n-            let _ = u16::new_box_slice_zeroed((isize::MAX as usize / mem::size_of::<u16>()) + 1);\n+            let max = usize::try_from(isize::MAX).unwrap();\n+            let _ = u16::new_box_slice_zeroed((max / mem::size_of::<u16>()) + 1);\n         }\n     }\n }"
+        },
+        {
+            "filename": "zerocopy-derive/src/lib.rs",
+            "diff": "@@ -2,6 +2,7 @@\n // Use of this source code is governed by a BSD-style license that can be\n // found in the LICENSE file.\n \n+#![deny(clippy::all)]\n #![recursion_limit = \"128\"]\n \n mod ext;\n@@ -616,12 +617,12 @@ mod tests {\n         }\n \n         fn elements_are_sorted_and_deduped<T: Clone + Ord>(lists: &[&[T]]) -> bool {\n-            lists.iter().all(|list| is_sorted_and_deduped(*list))\n+            lists.iter().all(|list| is_sorted_and_deduped(list))\n         }\n \n         fn config_is_sorted<T: KindRepr + Clone>(config: &Config<T>) -> bool {\n-            elements_are_sorted_and_deduped(&config.allowed_combinations)\n-                && elements_are_sorted_and_deduped(&config.disallowed_but_legal_combinations)\n+            elements_are_sorted_and_deduped(config.allowed_combinations)\n+                && elements_are_sorted_and_deduped(config.disallowed_but_legal_combinations)\n         }\n \n         assert!(config_is_sorted(&STRUCT_UNION_UNALIGNED_CFG));"
+        }
+    ],
+    "commitTime": "2022-10-17 18:00:02"
+}

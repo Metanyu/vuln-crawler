@@ -1,0 +1,78 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Eric Rosenberg"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.3,
+    "disclosureTime": "2023-12-05 23:42:49",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06946",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-RUST-TOKIOBORING-6100970",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-6180"
+        ],
+        "CWE": [
+            "CWE-400"
+        ]
+    },
+    "language": "rust",
+    "malicious": false,
+    "packageManager": "cargo",
+    "publicationTime": "2023-12-06 12:30:49",
+    "remediation": "Upgrade tokio-boring to version 4.1.0 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Denial of Service (DoS)",
+    "vulnDescription": {
+        "Details": "Denial of Service (DoS) describes a family of attacks, all aimed at making a system inaccessible to its intended and legitimate users. Unlike other vulnerabilities, DoS attacks usually do not aim at breaching security. Rather, they are focused on making websites and services unavailable to genuine users resulting in downtime. One popular Denial of Service vulnerability is DDoS (a Distributed Denial of Service), an attack that attempts to clog network pipes to the system by generating a large volume of traffic from many machines. When it comes to open source libraries, DoS vulnerabilities allow attackers to trigger such a crash or crippling of the service by using a flaw either in the application code or from the use of open source libraries. Two common types of DoS vulnerabilities: High CPU/Memory Consumption- An attacker sending crafted requests that could cause the system to take a disproportionate amount of time to process. For example, commons-fileupload:commons-fileupload . Crash - An attacker sending crafted requests that could cause the system to crash. For Example, npm ws package ",
+        "Overview": "Affected versions of this package are vulnerable to Denial of Service (DoS) via the set_ex_data function. An attacker can cause excessive resource consumption and potential service disruption by repeatedly establishing TLS connections, which leads to a memory leak as the function does not deallocate memory used by pre-existing data after each connection. "
+    },
+    "source_code": [
+        {
+            "filename": "boring/src/ssl/mod.rs",
+            "diff": "@@ -864,7 +864,9 @@ impl SslContextBuilder {\n             // out. When that happens, we wouldn't be able to look up the callback's state in the\n             // context's ex data. Instead, pass the pointer directly as the servername arg. It's\n             // still stored in ex data to manage the lifetime.\n-            let arg = self.set_ex_data_inner(SslContext::cached_ex_index::<F>(), callback);\n+            let arg = self\n+                .ctx\n+                .set_ex_data(SslContext::cached_ex_index::<F>(), callback);\n \n             ffi::SSL_CTX_set_tlsext_servername_arg(self.as_ptr(), arg);\n             ffi::SSL_CTX_set_tlsext_servername_callback(self.as_ptr(), Some(raw_sni::<F>));\n@@ -1653,19 +1655,30 @@ impl SslContextBuilder {\n     ///\n     /// This corresponds to [`SSL_CTX_set_ex_data`].\n     ///\n+    /// Note that if this method is called multiple times with the same index, any previous\n+    /// value stored in the `SslContextBuilder` will be leaked.\n+    ///\n     /// [`SSL_CTX_set_ex_data`]: https://www.openssl.org/docs/man1.0.2/ssl/SSL_CTX_set_ex_data.html\n     pub fn set_ex_data<T>(&mut self, index: Index<SslContext, T>, data: T) {\n-        self.set_ex_data_inner(index, data);\n-    }\n-\n-    fn set_ex_data_inner<T>(&mut self, index: Index<SslContext, T>, data: T) -> *mut c_void {\n         unsafe {\n-            let data = Box::into_raw(Box::new(data)) as *mut c_void;\n-            ffi::SSL_CTX_set_ex_data(self.as_ptr(), index.as_raw(), data);\n-            data\n+            self.ctx.set_ex_data(index, data);\n         }\n     }\n \n+    /// Sets or overwrites the extra data at the specified index.\n+    ///\n+    /// This can be used to provide data to callbacks registered with the context. Use the\n+    /// `Ssl::new_ex_index` method to create an `Index`.\n+    ///\n+    /// This corresponds to [`SSL_set_ex_data`].\n+    ///\n+    /// Any previous value will be returned and replaced by the new one.\n+    ///\n+    /// [`SSL_set_ex_data`]: https://www.openssl.org/docs/manmaster/man3/SSL_set_ex_data.html\n+    pub fn replace_ex_data<T>(&mut self, index: Index<SslContext, T>, data: T) -> Option<T> {\n+        unsafe { self.ctx.replace_ex_data(index, data) }\n+    }\n+\n     /// Sets the context's session cache size limit, returning the previous limit.\n     ///\n     /// A value of 0 means that the cache size is unbounded.\n@@ -1916,6 +1929,39 @@ impl SslContextRef {\n         }\n     }\n \n+    // Unsafe because SSL contexts are not guaranteed to be unique, we call\n+    // this only from SslContextBuilder.\n+    unsafe fn ex_data_mut<T>(&mut self, index: Index<SslContext, T>) -> Option<&mut T> {\n+        let data = ffi::SSL_CTX_get_ex_data(self.as_ptr(), index.as_raw());\n+        if data.is_null() {\n+            None\n+        } else {\n+            Some(&mut *(data as *mut T))\n+        }\n+    }\n+\n+    // Unsafe because SSL contexts are not guaranteed to be unique, we call\n+    // this only from SslContextBuilder.\n+    unsafe fn set_ex_data<T>(&mut self, index: Index<SslContext, T>, data: T) -> *mut c_void {\n+        unsafe {\n+            let data = Box::into_raw(Box::new(data)) as *mut c_void;\n+            ffi::SSL_CTX_set_ex_data(self.as_ptr(), index.as_raw(), data);\n+            data\n+        }\n+    }\n+\n+    // Unsafe because SSL contexts are not guaranteed to be unique, we call\n+    // this only from SslContextBuilder.\n+    unsafe fn replace_ex_data<T>(&mut self, index: Index<SslContext, T>, data: T) -> Option<T> {\n+        if let Some(old) = self.ex_data_mut(index) {\n+            return Some(mem::replace(old, data));\n+        }\n+\n+        self.set_ex_data(index, data);\n+\n+        None\n+    }\n+\n     /// Adds a session to the context's cache.\n     ///\n     /// Returns `true` if the session was successfully added to the cache, and `false` if it was already present.\n@@ -3191,8 +3237,17 @@ impl SslRef {\n     ///\n     /// This corresponds to [`SSL_set_ex_data`].\n     ///\n+    /// Note that if this method is called multiple times with the same index, any previous\n+    /// value stored in the `SslContextBuilder` will be leaked.\n+    ///\n     /// [`SSL_set_ex_data`]: https://www.openssl.org/docs/manmaster/man3/SSL_set_ex_data.html\n     pub fn set_ex_data<T>(&mut self, index: Index<Ssl, T>, data: T) {\n+        if let Some(old) = self.ex_data_mut(index) {\n+            *old = data;\n+\n+            return;\n+        }\n+\n         unsafe {\n             let data = Box::new(data);\n             ffi::SSL_set_ex_data(\n@@ -3203,6 +3258,26 @@ impl SslRef {\n         }\n     }\n \n+    /// Sets or overwrites the extra data at the specified index.\n+    ///\n+    /// This can be used to provide data to callbacks registered with the context. Use the\n+    /// `Ssl::new_ex_index` method to create an `Index`.\n+    ///\n+    /// This corresponds to [`SSL_set_ex_data`].\n+    ///\n+    /// Any previous value will be dropped and replaced by the new one.\n+    ///\n+    /// [`SSL_set_ex_data`]: https://www.openssl.org/docs/manmaster/man3/SSL_set_ex_data.html\n+    pub fn replace_ex_data<T>(&mut self, index: Index<Ssl, T>, data: T) -> Option<T> {\n+        if let Some(old) = self.ex_data_mut(index) {\n+            return Some(mem::replace(old, data));\n+        }\n+\n+        self.set_ex_data(index, data);\n+\n+        None\n+    }\n+\n     /// Returns a reference to the extra data at the specified index.\n     ///\n     /// This corresponds to [`SSL_get_ex_data`]."
+        },
+        {
+            "filename": "boring/src/ssl/test/mod.rs",
+            "diff": "@@ -1044,3 +1044,24 @@ fn server_set_default_curves_list() {\n     // Panics if Kyber768 missing in boringSSL.\n     ssl.server_set_default_curves_list();\n }\n+\n+#[test]\n+fn drop_ex_data_in_context() {\n+    let index = SslContext::new_ex_index::<&'static str>().unwrap();\n+    let mut ctx = SslContext::builder(SslMethod::dtls()).unwrap();\n+\n+    assert_eq!(ctx.replace_ex_data(index, \"comt\u00e9\"), None);\n+    assert_eq!(ctx.replace_ex_data(index, \"camembert\"), Some(\"comt\u00e9\"));\n+    assert_eq!(ctx.replace_ex_data(index, \"raclette\"), Some(\"camembert\"));\n+}\n+\n+#[test]\n+fn drop_ex_data_in_ssl() {\n+    let index = Ssl::new_ex_index::<&'static str>().unwrap();\n+    let ctx = SslContext::builder(SslMethod::dtls()).unwrap().build();\n+    let mut ssl = Ssl::new(&ctx).unwrap();\n+\n+    assert_eq!(ssl.replace_ex_data(index, \"comt\u00e9\"), None);\n+    assert_eq!(ssl.replace_ex_data(index, \"camembert\"), Some(\"comt\u00e9\"));\n+    assert_eq!(ssl.replace_ex_data(index, \"raclette\"), Some(\"camembert\"));\n+}"
+        },
+        {
+            "filename": "tokio-boring/src/lib.rs",
+            "diff": "@@ -300,18 +300,20 @@ where\n         mid_handshake.get_mut().set_waker(Some(ctx));\n         mid_handshake\n             .ssl_mut()\n-            .set_ex_data(*TASK_WAKER_INDEX, Some(ctx.waker().clone()));\n+            .replace_ex_data(*TASK_WAKER_INDEX, Some(ctx.waker().clone()));\n \n         match mid_handshake.handshake() {\n             Ok(mut stream) => {\n                 stream.get_mut().set_waker(None);\n-                stream.ssl_mut().set_ex_data(*TASK_WAKER_INDEX, None);\n+                stream.ssl_mut().replace_ex_data(*TASK_WAKER_INDEX, None);\n \n                 Poll::Ready(Ok(SslStream(stream)))\n             }\n             Err(ssl::HandshakeError::WouldBlock(mut mid_handshake)) => {\n                 mid_handshake.get_mut().set_waker(None);\n-                mid_handshake.ssl_mut().set_ex_data(*TASK_WAKER_INDEX, None);\n+                mid_handshake\n+                    .ssl_mut()\n+                    .replace_ex_data(*TASK_WAKER_INDEX, None);\n \n                 self.0 = Some(mid_handshake);\n "
+        }
+    ],
+    "commitTime": "2023-11-16 18:47:16"
+}

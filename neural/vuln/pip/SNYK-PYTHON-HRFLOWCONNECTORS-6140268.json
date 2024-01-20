@@ -1,0 +1,57 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-11-01 06:31:51",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PYTHON-HRFLOWCONNECTORS-6140268",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-362"
+        ],
+        "PVE": [
+            "PVE-2023-62084"
+        ]
+    },
+    "language": "python",
+    "malicious": false,
+    "packageManager": "pip",
+    "publicationTime": "2023-12-27 18:18:38",
+    "remediation": "Upgrade hrflow-connectors to version 4.1.0 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Race Condition",
+    "vulnDescription": {
+        "Overview": "hrflow-connectors is a hrflow-connectors is an open source project created by HrFlow.ai to allow developers to connect easily HR ecosystem component. Affected versions of this package are vulnerable to Race Condition due to backend tests in CI environments. This appears to arise when multiple CI runs occur simultaneously. These may cause one test to inadvertently find the result of another test running at the same time, thereby compromising the integrity of the tests. "
+    },
+    "source_code": [
+        {
+            "filename": "src/hrflow_connectors/core/connector.py",
+            "diff": "@@ -300,13 +300,15 @@ class WorkflowType(str, enum.Enum):\n \n \n class ActionName(str, enum.Enum):\n+    pull_application_list = \"pull_application_list\"\n     pull_job_list = \"pull_job_list\"\n     pull_profile_list = \"pull_profile_list\"\n     pull_resume_attachment_list = \"pull_resume_attachment_list\"\n     push_profile = \"push_profile\"\n     push_job = \"push_job\"\n     push_profile_list = \"push_profile_list\"\n     push_job_list = \"push_job_list\"\n+    push_score_list = \"push_score_list\"\n     catch_profile = \"catch_profile\"\n     catch_job = \"catch_job\"\n     # TalentSoft actions\n@@ -387,11 +389,17 @@ def target_is_writable(cls, target):\n     @validator(\"name\", pre=False)\n     def name_is_coherent_with_trigger_type(cls, v, values, **kwargs):\n         if (\n-            v in [ActionName.pull_job_list, ActionName.pull_profile_list]\n+            v\n+            in [\n+                ActionName.pull_application_list,\n+                ActionName.pull_job_list,\n+                ActionName.pull_profile_list,\n+            ]\n             and values[\"trigger_type\"] != WorkflowType.pull\n         ):\n             raise ValueError(\n-                \"`pull_job_list` and `pull_profile_list` are only available for\"\n+                \"`pull_application_list`, `pull_job_list` and `pull_profile_list`\"\n+                \" are only available for\"\n                 \" trigger_type={}\".format(WorkflowType.pull)\n             )\n         return v"
+        },
+        {
+            "filename": "tests/core/test_backend.py",
+            "diff": "@@ -15,6 +15,7 @@\n from pydantic import BaseModel\n \n from hrflow_connectors.core import backend\n+from tests.conftest import random_workflow_id\n \n \n @pytest.fixture\n@@ -114,7 +115,7 @@ def test_localjson_store_bad_configuration(backend_restore):\n \n \n def test_localjson_store(backend_restore, tmp_path):\n-    key = \"xxx_TestLocalJson\"\n+    key = random_workflow_id()\n     data = TestModel(key1=\"xxx\", key2=3, key3=dict(test=True))\n \n     with mock.patch.dict(\n@@ -242,7 +243,7 @@ def test_s3_store_no_read_permission(backend_restore, s3_restore):\n \n @pytest.mark.skipif(skip_s3_tests, reason=\"s3 extra not activated\")\n def test_s3_store(backend_restore, s3_restore):\n-    key = \"xxx_TestS3Store\"\n+    key = random_workflow_id()\n     data = TestModel(key1=\"xxx\", key2=3, key3=dict(test=True))\n \n     with mock.patch.dict(\n@@ -302,7 +303,7 @@ def test_s3_store_implicit_credentials(backend_restore, s3_restore):\n \n @pytest.mark.skipif(skip_s3_tests, reason=\"s3 extra not activated\")\n def test_s3_store_prefix_working(backend_restore, s3_restore, s3_resource):\n-    key = \"xxx_TestS3StoreWithPrefix\"\n+    key = random_workflow_id()\n     data = TestModel(key1=\"xxx\", key2=3, key3=dict(test=True))\n     prefix = \"pytest\"\n "
+        },
+        {
+            "filename": "tests/core/test_connector.py",
+            "diff": "@@ -138,7 +138,7 @@ def test_action_pull_profile_list_only_with_trigger_type_pull():\n     assert errors[0][\"loc\"] == (\"name\",)\n     assert errors[0][\n         \"msg\"\n-    ] == \"`pull_job_list` and `pull_profile_list` are only available for trigger_type={}\".format(  # noqa: E501\n+    ] == \"`pull_application_list`, `pull_job_list` and `pull_profile_list` are only available for trigger_type={}\".format(  # noqa: E501\n         WorkflowType.pull\n     )\n \n@@ -167,7 +167,36 @@ def test_action_pull_job_list_only_with_trigger_type_pull():\n     assert errors[0][\"loc\"] == (\"name\",)\n     assert errors[0][\n         \"msg\"\n-    ] == \"`pull_job_list` and `pull_profile_list` are only available for trigger_type={}\".format(  # noqa: E501\n+    ] == \"`pull_application_list`, `pull_job_list` and `pull_profile_list` are only available for trigger_type={}\".format(  # noqa: E501\n+        WorkflowType.pull\n+    )\n+\n+\n+def test_action_pull_application_list_only_with_trigger_type_pull():\n+    with pytest.raises(ValidationError) as excinfo:\n+        Connector(\n+            name=\"SmartLeads\",\n+            type=ConnectorType.Other,\n+            description=DESCRIPTION,\n+            url=\"https://www.smartleads.test/\",\n+            actions=[\n+                ConnectorAction(\n+                    name=\"pull_application_list\",\n+                    action_type=ActionType.inbound,\n+                    trigger_type=WorkflowType.catch,\n+                    description=\"Test action\",\n+                    parameters=BaseActionParameters,\n+                    origin=UsersWarehouse,\n+                    target=LeadsWarehouse,\n+                ),\n+            ],\n+        )\n+\n+    errors = excinfo.value.errors()\n+    assert errors[0][\"loc\"] == (\"name\",)\n+    assert errors[0][\n+        \"msg\"\n+    ] == \"`pull_application_list`, `pull_job_list` and `pull_profile_list` are only available for trigger_type={}\".format(  # noqa: E501\n         WorkflowType.pull\n     )\n "
+        }
+    ],
+    "commitTime": "2023-10-30 11:08:28"
+}

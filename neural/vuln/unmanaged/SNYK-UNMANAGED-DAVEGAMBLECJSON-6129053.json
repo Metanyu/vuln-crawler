@@ -1,0 +1,90 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "LOW"
+    },
+    "credit": [
+        "Du4t"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 4,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "LOW"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 7.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 4,
+    "disclosureTime": "2023-12-14 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06929",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-DAVEGAMBLECJSON-6129053",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50472"
+        ],
+        "CWE": [
+            "CWE-476"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-15 14:18:21",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "NULL Pointer Dereference",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to NULL Pointer Dereference due to a segmentation violation in the cJSON_SetValuestring function. An attacker can cause a denial of service by triggering a null pointer dereference. "
+    },
+    "source_code": [
+        {
+            "filename": "cJSON.c",
+            "diff": "@@ -401,7 +401,12 @@ CJSON_PUBLIC(char*) cJSON_SetValuestring(cJSON *object, const char *valuestring)\n {\n     char *copy = NULL;\n     /* if object's type is not cJSON_String or is cJSON_IsReference, it should not set valuestring */\n-    if (!(object->type & cJSON_String) || (object->type & cJSON_IsReference))\n+    if ((object == NULL) || !(object->type & cJSON_String) || (object->type & cJSON_IsReference))\n+    {\n+        return NULL;\n+    }\n+    /* return NULL if the object is corrupted */\n+    if (object->valuestring == NULL)\n     {\n         return NULL;\n     }\n@@ -2264,7 +2269,7 @@ CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON\n {\n     cJSON *after_inserted = NULL;\n \n-    if (which < 0)\n+    if (which < 0 || newitem == NULL)\n     {\n         return false;\n     }\n@@ -2282,6 +2287,11 @@ CJSON_PUBLIC(cJSON_bool) cJSON_InsertItemInArray(cJSON *array, int which, cJSON\n     {\n         array->child = newitem;\n     }\n+    else if (newitem->prev == NULL)\n+    {\n+        /* return false if after_inserted is a corrupted array item */\n+        return false;\n+    }\n     else\n     {\n         newitem->prev->next = newitem;"
+        },
+        {
+            "filename": "tests/misc_tests.c",
+            "diff": "@@ -352,6 +352,15 @@ static void cjson_functions_should_not_crash_with_null_pointers(void)\n {\n     char buffer[10];\n     cJSON *item = cJSON_CreateString(\"item\");\n+    cJSON *array = cJSON_CreateArray();\n+    cJSON *item1 = cJSON_CreateString(\"item1\");\n+    cJSON *item2 = cJSON_CreateString(\"corrupted array item\");\n+    cJSON *corruptedString = cJSON_CreateString(\"corrupted\");\n+\n+    add_item_to_array(array, item1);\n+    add_item_to_array(array, item2);\n+    item2->prev = NULL;\n+    corruptedString->valuestring = NULL;\n \n     cJSON_InitHooks(NULL);\n     TEST_ASSERT_NULL(cJSON_Parse(NULL));\n@@ -411,6 +420,8 @@ static void cjson_functions_should_not_crash_with_null_pointers(void)\n     cJSON_DeleteItemFromObject(item, NULL);\n     cJSON_DeleteItemFromObjectCaseSensitive(NULL, \"item\");\n     cJSON_DeleteItemFromObjectCaseSensitive(item, NULL);\n+    TEST_ASSERT_FALSE(cJSON_InsertItemInArray(array, 0, NULL));\n+    TEST_ASSERT_FALSE(cJSON_InsertItemInArray(array, 1, item));\n     TEST_ASSERT_FALSE(cJSON_InsertItemInArray(NULL, 0, item));\n     TEST_ASSERT_FALSE(cJSON_InsertItemInArray(item, 0, NULL));\n     TEST_ASSERT_FALSE(cJSON_ReplaceItemViaPointer(NULL, item, item));\n@@ -427,6 +438,8 @@ static void cjson_functions_should_not_crash_with_null_pointers(void)\n     TEST_ASSERT_NULL(cJSON_Duplicate(NULL, true));\n     TEST_ASSERT_FALSE(cJSON_Compare(item, NULL, false));\n     TEST_ASSERT_FALSE(cJSON_Compare(NULL, item, false));\n+    TEST_ASSERT_NULL(cJSON_SetValuestring(NULL, \"test\"));\n+    TEST_ASSERT_NULL(cJSON_SetValuestring(corruptedString, \"test\"));\n     cJSON_Minify(NULL);\n     /* skipped because it is only used via a macro that checks for NULL */\n     /* cJSON_SetNumberHelper(NULL, 0); */"
+        }
+    ],
+    "commitTime": "2023-12-15 11:42:10"
+}

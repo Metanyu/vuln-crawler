@@ -1,0 +1,63 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 4.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 7.1,
+    "disclosureTime": "2023-12-13 18:31:04",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06914",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JAVA-COMCLOUDTPJENKINS-6125771",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50777"
+        ],
+        "CWE": [
+            "CWE-312"
+        ]
+    },
+    "language": "java",
+    "malicious": false,
+    "packageManager": "maven",
+    "publicationTime": "2023-12-14 14:59:32",
+    "remediation": "There is no fixed version for com.cloudtp.jenkins:paaslane-estimate . ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Cleartext Storage of Sensitive Information",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Cleartext Storage of Sensitive Information due to the improper handling of authentication tokens on the job configuration form. An attacker can observe and capture these tokens by accessing the form where they are displayed in plain text. "
+    },
+    "source_code": []
+}

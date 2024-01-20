@@ -1,0 +1,73 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "xorg-server"
+        }
+    ],
+    "credit": [
+        "Jan-Niklas Sohn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 8.4,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T11:03:17.742081Z",
+            "severity": "high"
+        },
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 7.8,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "modificationTime": "2024-01-18T13:48:38.458512Z",
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 7.8,
+    "description": "## Overview Affected versions of this package are vulnerable to Out-of-Bounds Write when a device frozen by a sync grab is reattached to a different master device. An attacker can cause an application crash, local privilege escalation, or remote code execution in SSH X11 forwarding environments by exploiting the improper handling of out-of-bounds memory access. ## Remediation Upgrade `xorg-server` to version 21.1.11, 23.2.4 or higher. ## References - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/7173a8911ebeaa7c9c12bd64a2ba9c8685c6593c) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2256690) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-XORGSERVER-6178918",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0229"
+        ],
+        "CWE": [
+            "CWE-788"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "xorg-server",
+    "publicationTime": "2024-01-18T14:47:09.505492Z",
+    "remediation": "Upgrade xorg-server to version 21.1.11, 23.2.4 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,21.1.11)",
+            "[22.1.0,23.2.4)"
+        ]
+    },
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Out-of-Bounds Write",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Out-of-Bounds Write when a device frozen by a sync grab is reattached to a different master device. An attacker can cause an application crash, local privilege escalation, or remote code execution in SSH X11 forwarding environments by exploiting the improper handling of out-of-bounds memory access. ",
+        "References": [
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/7173a8911ebeaa7c9c12bd64a2ba9c8685c6593c",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2256690"
+        ]
+    },
+    "vulnerableVersions": "[,21.1.11) , [22.1.0,23.2.4)"
+}

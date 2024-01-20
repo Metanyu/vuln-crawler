@@ -1,0 +1,86 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "REQUIRED",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Lekensteyn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "REQUIRED",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "HIGH"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8.5,
+    "disclosureTime": "2023-12-29 12:55:10",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12283",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-WRANGLER-6140500",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7080"
+        ],
+        "CWE": [
+            "CWE-274"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-31 14:00:15",
+    "remediation": "Upgrade wrangler to version 2.20.2, 3.19.0 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Improper Handling of Insufficient Privileges",
+    "vulnDescription": {
+        "Overview": "wrangler is a Command-line interface for all things Cloudflare Workers Affected versions of this package are vulnerable to Improper Handling of Insufficient Privileges via the wrangler dev server configuration. An attacker on the local network can connect to the inspector and execute arbitrary code. Additionally, without proper validation of Origin/Host headers, an attacker could exploit this to run code by convincing a user to visit a malicious website. Note: If wrangler dev --remote is used, the attacker could also access production resources bound to the worker. ",
+        "Workaround": "This vulnerability can be mitigated by configuring Wrangler to listen on local interfaces instead with wrangler dev --ip 127.0.0.1 to prevent SSRF. "
+    },
+    "source_code": [
+        {
+            "filename": ".changeset/warm-dryers-double.md",
+            "diff": "@@ -0,0 +1,5 @@\n+---\n+\"wrangler\": patch\n+---\n+\n+Change dev registry and inspector server to listen on 127.0.0.1 instead of all interfaces"
+        },
+        {
+            "filename": "packages/wrangler/src/__tests__/api-devregistry.test.ts",
+            "diff": "@@ -41,7 +41,7 @@ describe(\"multi-worker testing\", () => {\n \t});\n \n \tit(\"parentWorker and childWorker should be added devRegistry\", async () => {\n-\t\tconst resp = await fetch(\"http://localhost:6284/workers\");\n+\t\tconst resp = await fetch(\"http://127.0.0.1:6284/workers\");\n \t\tif (resp) {\n \t\t\tconst parsedResp = (await resp.json()) as {\n \t\t\t\tparent: unknown;"
+        },
+        {
+            "filename": "packages/wrangler/src/__tests__/unstableDev.test.ts",
+            "diff": "@@ -23,7 +23,7 @@ describe(\"unstable devRegistry testing\", () => {\n \t\t\tmode: \"local\",\n \t\t\tdurableObjects: [{ name: \"testing\", className: \"testing\" }],\n \t\t});\n-\t\tconst resp = await fetch(\"http://localhost:6284/workers\");\n+\t\tconst resp = await fetch(\"http://127.0.0.1:6284/workers\");\n \t\tif (resp) {\n \t\t\tconst parsedResp = (await resp.json()) as {\n \t\t\t\ttest: unknown;\n@@ -35,7 +35,7 @@ describe(\"unstable devRegistry testing\", () => {\n \tit(\"should not restart the devRegistry if the devRegistry already start\", async () => {\n \t\tawait startWorkerRegistry();\n \n-\t\tawait fetch(\"http://localhost:6284/workers/init\", {\n+\t\tawait fetch(\"http://127.0.0.1:6284/workers/init\", {\n \t\t\tmethod: \"POST\",\n \t\t\tbody: JSON.stringify({}),\n \t\t});\n@@ -48,7 +48,7 @@ describe(\"unstable devRegistry testing\", () => {\n \t\t\tdurableObjects: [{ name: \"testing\", className: \"testing\" }],\n \t\t});\n \n-\t\tconst resp = await fetch(\"http://localhost:6284/workers\");\n+\t\tconst resp = await fetch(\"http://127.0.0.1:6284/workers\");\n \t\tif (resp) {\n \t\t\tconst parsedResp = (await resp.json()) as {\n \t\t\t\ttest: unknown;"
+        },
+        {
+            "filename": "packages/wrangler/src/dev-registry.ts",
+            "diff": "@@ -1,17 +1,17 @@\n-import http from \"http\";\n import net from \"net\";\n+import { createServer } from \"node:http\";\n import bodyParser from \"body-parser\";\n import express from \"express\";\n import { createHttpTerminator } from \"http-terminator\";\n import { fetch } from \"undici\";\n import { logger } from \"./logger\";\n \n import type { Config } from \"./config\";\n-import type { Server } from \"http\";\n import type { HttpTerminator } from \"http-terminator\";\n+import type { Server } from \"node:http\";\n \n-const DEV_REGISTRY_PORT = \"6284\";\n-const DEV_REGISTRY_HOST = `http://localhost:${DEV_REGISTRY_PORT}`;\n+const DEV_REGISTRY_PORT = 6284;\n+const DEV_REGISTRY_HOST = `http://127.0.0.1:${DEV_REGISTRY_PORT}`;\n \n let server: Server | null;\n let terminator: HttpTerminator;\n@@ -48,7 +48,7 @@ async function isPortAvailable() {\n \t\t\t\tnetServer.close();\n \t\t\t\tresolve(true);\n \t\t\t});\n-\t\tnetServer.listen(DEV_REGISTRY_PORT);\n+\t\tnetServer.listen(DEV_REGISTRY_PORT, \"127.0.0.1\");\n \t});\n }\n \n@@ -80,9 +80,9 @@ export async function startWorkerRegistry() {\n \t\t\t\tworkers = {};\n \t\t\t\tres.json(null);\n \t\t\t});\n-\t\tserver = http.createServer(app);\n+\t\tserver = createServer(app);\n \t\tterminator = createHttpTerminator({ server });\n-\t\tserver.listen(DEV_REGISTRY_PORT);\n+\t\tserver.listen(DEV_REGISTRY_PORT, \"127.0.0.1\");\n \n \t\t/**\n \t\t * The registry server may have already been started by another wrangler process."
+        },
+        {
+            "filename": "packages/wrangler/src/dev/inspect.ts",
+            "diff": "@@ -125,7 +125,7 @@ export default function useInspector(props: InspectorProps) {\n \t\t\t\t\tcase \"/json/list\":\n \t\t\t\t\t\t{\n \t\t\t\t\t\t\tres.setHeader(\"Content-Type\", \"application/json\");\n-\t\t\t\t\t\t\tconst localHost = `localhost:${props.port}/ws`;\n+\t\t\t\t\t\t\tconst localHost = `127.0.0.1:${props.port}/ws`;\n \t\t\t\t\t\t\tconst devtoolsFrontendUrl = `devtools://devtools/bundled/js_app.html?experiments=true&v8only=true&ws=${localHost}`;\n \t\t\t\t\t\t\tconst devtoolsFrontendUrlCompat = `devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=${localHost}`;\n \t\t\t\t\t\t\tres.end(\n@@ -252,7 +252,7 @@ export default function useInspector(props: InspectorProps) {\n \t\t\t\ttimeout: 2000,\n \t\t\t\tabortSignal: abortController.signal,\n \t\t\t});\n-\t\t\tserver.listen(props.port);\n+\t\t\tserver.listen(props.port, \"127.0.0.1\");\n \t\t}\n \t\tstartInspectorProxy().catch((err) => {\n \t\t\tif ((err as { code: string }).code !== \"ABORT_ERR\") {\n@@ -862,7 +862,7 @@ export const openInspector = async (\n ) => {\n \tconst query = new URLSearchParams();\n \tquery.set(\"theme\", \"systemPreferred\");\n-\tquery.set(\"ws\", `localhost:${inspectorPort}/ws`);\n+\tquery.set(\"ws\", `127.0.0.1:${inspectorPort}/ws`);\n \tif (worker) query.set(\"domain\", worker);\n \tquery.set(\"debugger\", \"true\");\n \tconst url = `https://devtools.devprod.cloudflare.dev/js_app?${query.toString()}`;"
+        }
+    ],
+    "commitTime": "2023-11-16 15:39:38"
+}

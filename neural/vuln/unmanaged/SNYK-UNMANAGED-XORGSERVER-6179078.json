@@ -1,0 +1,74 @@
+{
+    "CVSSv3": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+    "breadcrumbItems": [
+        {
+            "label": "Snyk Vulnerability Database",
+            "url": "/vuln"
+        },
+        {
+            "label": "Unmanaged (C/C++)",
+            "url": "/vuln/unmanaged"
+        },
+        {
+            "findByTestHook": "filter",
+            "label": "xorg-server"
+        }
+    ],
+    "credit": [
+        "Donn Seeley"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:H",
+            "modificationTime": "2024-01-18T13:49:13.646843Z",
+            "severity": "medium"
+        },
+        {
+            "assigner": "SUSE",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:H/A:N",
+            "modificationTime": "2024-01-20T11:02:20.821929Z",
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 5.5,
+    "description": "## Overview Affected versions of this package are vulnerable to Improper Neutralization of Null Byte or NUL Character due to improper handling of SELinux unlabeled GLX PBuffer objects. An attacker can cause a denial of service by exploiting this vulnerability. ## Remediation Upgrade `xorg-server` to version 21.1.11, 23.2.4 or higher. ## References - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/4093057b98bc5a178f130c9ba6b0b28385e24ae5) - [Gitlab Commit](https://gitlab.freedesktop.org/xorg/xserver/-/commit/8d825f72da71d6c38cbb02cf2ee2dd9e0e0f50f2) - [RedHat Bugzilla Bug](https://bugzilla.redhat.com/show_bug.cgi?id=2257689) ",
+    "disclosureTime": "2024-01-16T00:00:00Z",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-XORGSERVER-6179078",
+    "identifiers": {
+        "CVE": [
+            "CVE-2024-0408"
+        ],
+        "CWE": [
+            "CWE-158"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "packageName": "xorg-server",
+    "publicationTime": "2024-01-18T15:10:28.773221Z",
+    "remediation": "Upgrade xorg-server to version 21.1.11, 23.2.4 or higher. ",
+    "semver": {
+        "vulnerable": [
+            "[,21.1.11)",
+            "[22.1.0,23.2.4)"
+        ]
+    },
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Neutralization of Null Byte or NUL Character",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Neutralization of Null Byte or NUL Character due to improper handling of SELinux unlabeled GLX PBuffer objects. An attacker can cause a denial of service by exploiting this vulnerability. ",
+        "References": [
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/4093057b98bc5a178f130c9ba6b0b28385e24ae5",
+            "https://gitlab.freedesktop.org/xorg/xserver/-/commit/8d825f72da71d6c38cbb02cf2ee2dd9e0e0f50f2",
+            "https://bugzilla.redhat.com/show_bug.cgi?id=2257689"
+        ]
+    },
+    "vulnerableVersions": "[,21.1.11) , [22.1.0,23.2.4)"
+}

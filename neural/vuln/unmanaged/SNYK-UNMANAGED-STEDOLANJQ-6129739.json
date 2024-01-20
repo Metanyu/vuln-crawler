@@ -1,0 +1,93 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "Red Hat",
+            "cvssV3BaseScore": 6.2,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        },
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.5,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "LOCAL",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "LOW",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "NONE",
+                "integrity": "NONE",
+                "availability": "HIGH"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 6.2,
+    "disclosureTime": "2023-12-13 00:00:00",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.26329",
+        "probability": "0.00064"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-UNMANAGED-STEDOLANJQ-6129739",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50268"
+        ],
+        "CWE": [
+            "CWE-120"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2023-12-18 13:31:13",
+    "remediation": "Upgrade stedolan/jq to version 1.7.1 or higher. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Buffer Overflow",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Buffer Overflow via the use of decNumber . An attacker can cause a crash or potentially execute arbitrary code by providing a crafted input that triggers the overflow. "
+    },
+    "source_code": [
+        {
+            "filename": "NEWS.md",
+            "diff": "@@ -3,7 +3,7 @@\n ## Security\n \n - CVE-2023-50246: ....\n-- CVE-2023-50268: ....\n+- CVE-2023-50268: fix stack-buffer-overflow if comparing nan with payload\n \n ## CLI changes\n "
+        },
+        {
+            "filename": "src/jv.c",
+            "diff": "@@ -740,15 +740,19 @@ int jvp_number_cmp(jv a, jv b) {\n \n #ifdef USE_DECNUM\n   if (JVP_HAS_FLAGS(a, JVP_FLAGS_NUMBER_LITERAL) && JVP_HAS_FLAGS(b, JVP_FLAGS_NUMBER_LITERAL)) {\n-    decNumber res;\n-    decNumberCompare(&res,\n+    struct {\n+      decNumber number;\n+      decNumberUnit units[1];\n+    } res;\n+\n+    decNumberCompare(&res.number,\n                      jvp_dec_number_ptr(a),\n                      jvp_dec_number_ptr(b),\n                      DEC_CONTEXT()\n                      );\n-    if (decNumberIsZero(&res)) {\n+    if (decNumberIsZero(&res.number)) {\n       return 0;\n-    } else if (decNumberIsNegative(&res)) {\n+    } else if (decNumberIsNegative(&res.number)) {\n       return -1;\n     } else {\n       return 1;"
+        },
+        {
+            "filename": "tests/shtest",
+            "diff": "@@ -594,6 +594,11 @@ if ! x=$($JQ -n \"1 # foo$cr + 2\") || [ \"$x\" != 1 ]; then\n   exit 1\n fi\n \n+# CVE-2023-50268: No stack overflow comparing a nan with a large payload\n+$VALGRIND $Q $JQ '1 != .' <<\\EOF >/dev/null\n+Nan4000\n+EOF\n+\n # Allow passing the inline jq script before -- #2919\n if ! r=$($JQ --args -rn -- '$ARGS.positional[0]' bar) || [ \"$r\" != bar ]; then\n     echo \"passing the inline script after -- didn't work\""
+        }
+    ],
+    "commitTime": "2023-12-13 19:17:17"
+}

@@ -1,0 +1,50 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "E": "P",
+        "attackVector": "LOCAL",
+        "attackComplexity": "LOW",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "NONE",
+        "availability": "HIGH"
+    },
+    "credit": [
+        "Song Jiaxuan",
+        "Zeng Yunxiang"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.2,
+    "disclosureTime": "2024-01-03 19:44:13",
+    "epssDetails": null,
+    "exploitMaturity": "Proof of Concept",
+    "id": "SNYK-UNMANAGED-GPACGPAC-6143557",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-46929"
+        ],
+        "CWE": [
+            "CWE-248"
+        ]
+    },
+    "language": "cpp",
+    "malicious": false,
+    "packageManager": "unmanaged",
+    "publicationTime": "2024-01-04 11:28:01",
+    "remediation": "A fix was pushed into the master branch but not yet published. ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Uncontrolled Resource Consumption ('Resource Exhaustion')",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Uncontrolled Resource Consumption ('Resource Exhaustion') via the gf_avc_change_vui function in av_parsers.c . An attacker can cause the application to crash by triggering a specific condition in the function. "
+    },
+    "source_code": [
+        {
+            "filename": "src/media_tools/av_parsers.c",
+            "diff": "@@ -6865,6 +6865,9 @@ GF_Err gf_avc_change_vui(GF_AVCConfig *avcc, GF_VUIInfo *vui_info)\n \tGF_AVCConfigSlot *slc;\n \torig = NULL;\n \n+\tif (!avcc)\n+\t\treturn GF_NON_COMPLIANT_BITSTREAM;\n+\n \tmemset(&avc, 0, sizeof(AVCState));\n \tavc.sps_active_idx = -1;\n "
+        }
+    ],
+    "commitTime": "2023-10-26 09:29:52"
+}

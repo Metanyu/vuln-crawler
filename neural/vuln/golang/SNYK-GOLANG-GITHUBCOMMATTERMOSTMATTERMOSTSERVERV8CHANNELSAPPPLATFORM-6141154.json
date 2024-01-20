@@ -1,0 +1,56 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "REQUIRED",
+        "scope": "UNCHANGED",
+        "confidentiality": "NONE",
+        "integrity": "LOW",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 2.6,
+    "disclosureTime": "2024-01-02 10:46:06",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMMATTERMOSTMATTERMOSTSERVERV8CHANNELSAPPPLATFORM-6141154",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-50333"
+        ],
+        "CWE": [
+            "CWE-284"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2024-01-02 12:49:39",
+    "remediation": "Upgrade github.com/mattermost/mattermost/server/v8/channels/app/platform to version 8.1.7, 9.3.0-rc1 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Improper Access Control",
+    "vulnDescription": {
+        "Overview": "Affected versions of this package are vulnerable to Improper Access Control. An attacker can change group names by exploiting the permissions of a user session that should have been restricted after demotion to guest status. "
+    },
+    "source_code": [
+        {
+            "filename": "server/channels/app/platform/session.go",
+            "diff": "@@ -223,8 +223,13 @@ func (ps *PlatformService) ExtendSessionExpiry(session *model.Session, newExpiry\n \treturn nil\n }\n \n-func (ps *PlatformService) UpdateSessionsIsGuest(userID string, isGuest bool) error {\n-\tsessions, err := ps.GetSessions(userID)\n+func (ps *PlatformService) UpdateSessionsIsGuest(user *model.User, isGuest bool) error {\n+\tsessions, err := ps.GetSessions(user.Id)\n+\tif err != nil {\n+\t\treturn err\n+\t}\n+\n+\t_, err = ps.Store.Session().UpdateRoles(user.Id, user.GetRawRoles())\n \tif err != nil {\n \t\treturn err\n \t}"
+        },
+        {
+            "filename": "server/channels/app/platform/session_test.go",
+            "diff": "@@ -4,6 +4,7 @@\n package platform\n \n import (\n+\t\"context\"\n \t\"testing\"\n \t\"time\"\n \n@@ -132,3 +133,59 @@ func TestOAuthRevokeAccessToken(t *testing.T) {\n \terr = th.Service.RevokeAccessToken(accessData.Token)\n \trequire.NoError(t, err)\n }\n+\n+func TestUpdateSessionsIsGuest(t *testing.T) {\n+\tth := Setup(t)\n+\tdefer th.TearDown()\n+\n+\tt.Run(\"Test session is demoted\", func(t *testing.T) {\n+\t\tuser := th.CreateUserOrGuest(false)\n+\n+\t\tsession := &model.Session{}\n+\t\tsession.CreateAt = model.GetMillis()\n+\t\tsession.UserId = user.Id\n+\t\tsession.Token = model.NewId()\n+\t\tsession.Roles = \"fake_role\"\n+\t\tth.Service.SetSessionExpireInHours(session, 24)\n+\n+\t\tsession, _ = th.Service.CreateSession(session)\n+\n+\t\tdemotedUser, err := th.Service.Store.User().DemoteUserToGuest(user.Id)\n+\t\trequire.NoError(t, err)\n+\t\trequire.Equal(t, model.SystemGuestRoleId, demotedUser.Roles)\n+\n+\t\terr = th.Service.UpdateSessionsIsGuest(demotedUser, true)\n+\t\trequire.NoError(t, err)\n+\n+\t\tsession, err = th.Service.GetSession(session.Id)\n+\t\trequire.NoError(t, err)\n+\t\trequire.Equal(t, model.SystemGuestRoleId, session.Roles)\n+\t\trequire.Equal(t, \"true\", session.Props[model.SessionPropIsGuest])\n+\t})\n+\n+\tt.Run(\"Test session is promoted\", func(t *testing.T) {\n+\t\tuser := th.CreateUserOrGuest(true)\n+\n+\t\tsession := &model.Session{}\n+\t\tsession.CreateAt = model.GetMillis()\n+\t\tsession.UserId = user.Id\n+\t\tsession.Token = model.NewId()\n+\t\tsession.Roles = \"fake_role\"\n+\t\tth.Service.SetSessionExpireInHours(session, 24)\n+\n+\t\tsession, _ = th.Service.CreateSession(session)\n+\n+\t\terr := th.Service.Store.User().PromoteGuestToUser(user.Id)\n+\t\trequire.NoError(t, err)\n+\n+\t\tpromotedUser, err := th.Service.Store.User().Get(context.Background(), user.Id)\n+\t\trequire.NoError(t, err)\n+\t\terr = th.Service.UpdateSessionsIsGuest(promotedUser, false)\n+\t\trequire.NoError(t, err)\n+\n+\t\tsession, err = th.Service.GetSession(session.Id)\n+\t\trequire.NoError(t, err)\n+\t\trequire.Equal(t, model.SystemUserRoleId, session.Roles)\n+\t\trequire.Equal(t, \"false\", session.Props[model.SessionPropIsGuest])\n+\t})\n+}"
+        },
+        {
+            "filename": "server/channels/app/user.go",
+            "diff": "@@ -2299,7 +2299,7 @@ func (a *App) PromoteGuestToUser(c *request.Context, user *model.User, requestor\n \t\tc.Logger().Warn(\"Failed to get user on promote guest to user\", mlog.Err(err))\n \t} else {\n \t\ta.sendUpdatedUserEvent(*promotedUser)\n-\t\tif uErr := a.ch.srv.platform.UpdateSessionsIsGuest(promotedUser.Id, promotedUser.IsGuest()); uErr != nil {\n+\t\tif uErr := a.ch.srv.platform.UpdateSessionsIsGuest(promotedUser, promotedUser.IsGuest()); uErr != nil {\n \t\t\tc.Logger().Warn(\"Unable to update user sessions\", mlog.String(\"user_id\", promotedUser.Id), mlog.Err(uErr))\n \t\t}\n \t}\n@@ -2344,7 +2344,7 @@ func (a *App) DemoteUserToGuest(c request.CTX, user *model.User) *model.AppError\n \t}\n \n \ta.sendUpdatedUserEvent(*demotedUser)\n-\tif uErr := a.ch.srv.platform.UpdateSessionsIsGuest(demotedUser.Id, demotedUser.IsGuest()); uErr != nil {\n+\tif uErr := a.ch.srv.platform.UpdateSessionsIsGuest(demotedUser, demotedUser.IsGuest()); uErr != nil {\n \t\tc.Logger().Warn(\"Unable to update user sessions\", mlog.String(\"user_id\", demotedUser.Id), mlog.Err(uErr))\n \t}\n "
+        }
+    ],
+    "commitTime": "2023-11-21 15:04:46"
+}

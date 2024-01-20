@@ -1,0 +1,146 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "ADJACENT_NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "CHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Lekensteyn"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 8.1,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "ADJACENT_NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "HIGH",
+                "integrity": "HIGH",
+                "availability": "NONE"
+            },
+            "severity": "high"
+        }
+    ],
+    "cvssScore": 8,
+    "disclosureTime": "2023-12-29 12:55:08",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.06918",
+        "probability": "0.00043"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-JS-MINIFLARE-6140499",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-7078"
+        ],
+        "CWE": [
+            "CWE-918"
+        ]
+    },
+    "language": "js",
+    "malicious": false,
+    "packageManager": "npm",
+    "publicationTime": "2023-12-31 11:53:30",
+    "remediation": "Upgrade miniflare to version 3.20231030.2 or higher. ",
+    "severity": "high",
+    "socialTrendAlert": false,
+    "title": "Server-Side Request Forgery (SSRF)",
+    "vulnDescription": {
+        "Overview": "miniflare is a Fun, full-featured, fully-local simulator for Cloudflare Workers Affected versions of this package are vulnerable to Server-Side Request Forgery (SSRF) via specially crafted HTTP and WebSocket requests to the server. An attacker can access other local servers, by sending arbitrary requests from the server by accessing it when configured to listen on external network interfaces. ",
+        "Workaround": "Ensure Miniflare is configured to listen on just local interfaces. This is the default behaviour, but can also be configured with the host: \"127.0.0.1\" option. "
+    },
+    "source_code": [
+        {
+            "filename": ".changeset/shiny-poets-smell.md",
+            "diff": "@@ -0,0 +1,7 @@\n+---\n+\"wrangler\": minor\n+---\n+\n+fix: change `wrangler (pages) dev` to listen on `localhost` by default\n+\n+Previously, Wrangler listened on all interfaces (`*`) by default. This change switches `wrangler (pages) dev` to just listen on local interfaces. Whilst this is technically a breaking change, we've decided the security benefits outweigh the potential disruption caused. If you need to access your dev server from another device on your network, you can use `wrangler (pages) dev --ip *` to restore the previous behaviour."
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/cache/index.ts",
+            "diff": "@@ -13,6 +13,7 @@ import {\n \tPersistenceSchema,\n \tPlugin,\n \tSERVICE_LOOPBACK,\n+\tgetControlEndpointBindings,\n \tgetPersistPath,\n } from \"../shared\";\n \n@@ -128,6 +129,7 @@ export const CACHE_PLUGIN: Plugin<\n \t\t\t\t\t\t\tname: SharedBindings.MAYBE_SERVICE_LOOPBACK,\n \t\t\t\t\t\t\tservice: { name: SERVICE_LOOPBACK },\n \t\t\t\t\t\t},\n+\t\t\t\t\t\t...getControlEndpointBindings(),\n \t\t\t\t\t],\n \t\t\t\t},\n \t\t\t};"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/core/index.ts",
+            "diff": "@@ -52,6 +52,7 @@ import {\n \tconvertModuleDefinition,\n \twithSourceURL,\n } from \"./modules\";\n+import { PROXY_SECRET } from \"./proxy\";\n import { ServiceDesignatorSchema } from \"./services\";\n \n // `workerd`'s `trustBrowserCas` should probably be named `trustSystemCas`.\n@@ -637,6 +638,10 @@ export function getGlobalServices({\n \t\t\tname: CoreBindings.DURABLE_OBJECT_NAMESPACE_PROXY,\n \t\t\tdurableObjectNamespace: { className: \"ProxyServer\" },\n \t\t},\n+\t\t{\n+\t\t\tname: CoreBindings.DATA_PROXY_SECRET,\n+\t\t\tdata: PROXY_SECRET,\n+\t\t},\n \t\t// Add `proxyBindings` here, they'll be added to the `ProxyServer` `env`\n \t\t...proxyBindings,\n \t];"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/core/proxy/client.ts",
+            "diff": "@@ -1,5 +1,6 @@\n /* eslint-disable @typescript-eslint/ban-types */\n import assert from \"assert\";\n+import crypto from \"crypto\";\n import { ReadableStream, TransformStream } from \"stream/web\";\n import util from \"util\";\n import type { ServiceWorkerGlobalScope } from \"@cloudflare/workers-types/experimental\";\n@@ -63,6 +64,9 @@ const revivers: ReducersRevivers = {\n \t// `Native` reviver depends on `ProxyStubHandler` methods\n };\n \n+export const PROXY_SECRET = crypto.randomBytes(16);\n+const PROXY_SECRET_HEX = PROXY_SECRET.toString(\"hex\");\n+\n // Exported public API of the proxy system\n export class ProxyClient {\n \t#bridge: ProxyClientBridge;\n@@ -168,6 +172,7 @@ class ProxyClientBridge {\n \t\t\tawait this.dispatchFetch(this.url, {\n \t\t\t\tmethod: \"DELETE\",\n \t\t\t\theaders: {\n+\t\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t\t[CoreHeaders.OP]: ProxyOps.FREE,\n \t\t\t\t\t[CoreHeaders.OP_TARGET]: addresses.join(\",\"),\n \t\t\t\t},\n@@ -234,6 +239,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\t\t\tconst resPromise = this.bridge.dispatchFetch(this.bridge.url, {\n \t\t\t\t\tmethod: \"POST\",\n \t\t\t\t\theaders: {\n+\t\t\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t\t\t[CoreHeaders.OP]: ProxyOps.GET, // GET without key just gets target\n \t\t\t\t\t\t[CoreHeaders.OP_TARGET]: stringify(target, reducers),\n \t\t\t\t\t},\n@@ -367,6 +373,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\tconst syncRes = this.bridge.sync.fetch(this.bridge.url, {\n \t\t\tmethod: \"POST\",\n \t\t\theaders: {\n+\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t[CoreHeaders.OP]: ProxyOps.GET,\n \t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n \t\t\t\t[CoreHeaders.OP_KEY]: key,\n@@ -416,6 +423,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\tconst syncRes = this.bridge.sync.fetch(this.bridge.url, {\n \t\t\tmethod: \"POST\",\n \t\t\theaders: {\n+\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t[CoreHeaders.OP]: ProxyOps.GET_OWN_DESCRIPTOR,\n \t\t\t\t[CoreHeaders.OP_KEY]: key,\n \t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n@@ -440,6 +448,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\tconst syncRes = this.bridge.sync.fetch(this.bridge.url, {\n \t\t\tmethod: \"POST\",\n \t\t\theaders: {\n+\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t[CoreHeaders.OP]: ProxyOps.GET_OWN_KEYS,\n \t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n \t\t\t},\n@@ -526,6 +535,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\tconst syncRes = this.bridge.sync.fetch(this.bridge.url, {\n \t\t\tmethod: \"POST\",\n \t\t\theaders: {\n+\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t[CoreHeaders.OP]: ProxyOps.CALL,\n \t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n \t\t\t\t[CoreHeaders.OP_KEY]: key,\n@@ -548,6 +558,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\t\tresPromise = this.bridge.dispatchFetch(this.bridge.url, {\n \t\t\t\tmethod: \"POST\",\n \t\t\t\theaders: {\n+\t\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t\t[CoreHeaders.OP]: ProxyOps.CALL,\n \t\t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n \t\t\t\t\t[CoreHeaders.OP_KEY]: key,\n@@ -563,6 +574,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\t\tresPromise = this.bridge.dispatchFetch(this.bridge.url, {\n \t\t\t\tmethod: \"POST\",\n \t\t\t\theaders: {\n+\t\t\t\t\t[CoreHeaders.OP_SECRET]: PROXY_SECRET_HEX,\n \t\t\t\t\t[CoreHeaders.OP]: ProxyOps.CALL,\n \t\t\t\t\t[CoreHeaders.OP_TARGET]: this.#stringifiedTarget,\n \t\t\t\t\t[CoreHeaders.OP_KEY]: key,\n@@ -581,6 +593,7 @@ class ProxyStubHandler<T extends object> implements ProxyHandler<T> {\n \t\tconst request = new Request(...args);\n \t\t// If adding new headers here, remember to `delete()` them in `ProxyServer`\n \t\t// before calling `fetch()`.\n+\t\trequest.headers.set(CoreHeaders.OP_SECRET, PROXY_SECRET_HEX);\n \t\trequest.headers.set(CoreHeaders.OP, ProxyOps.CALL);\n \t\trequest.headers.set(CoreHeaders.OP_TARGET, this.#stringifiedTarget);\n \t\trequest.headers.set(CoreHeaders.OP_KEY, \"fetch\");"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/d1/index.ts",
+            "diff": "@@ -11,6 +11,7 @@ import {\n \tPersistenceSchema,\n \tPlugin,\n \tSERVICE_LOOPBACK,\n+\tgetControlEndpointBindings,\n \tgetPersistPath,\n \tkProxyNodeBinding,\n \tmigrateDatabase,\n@@ -117,6 +118,7 @@ export const D1_PLUGIN: Plugin<\n \t\t\t\t\t\t\tname: SharedBindings.MAYBE_SERVICE_LOOPBACK,\n \t\t\t\t\t\t\tservice: { name: SERVICE_LOOPBACK },\n \t\t\t\t\t\t},\n+\t\t\t\t\t\t...getControlEndpointBindings(),\n \t\t\t\t\t],\n \t\t\t\t},\n \t\t\t};"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/kv/index.ts",
+            "diff": "@@ -11,6 +11,7 @@ import {\n \tPersistenceSchema,\n \tPlugin,\n \tSERVICE_LOOPBACK,\n+\tgetControlEndpointBindings,\n \tgetPersistPath,\n \tkProxyNodeBinding,\n \tmigrateDatabase,\n@@ -123,6 +124,7 @@ export const KV_PLUGIN: Plugin<\n \t\t\t\t\t\t\tname: SharedBindings.MAYBE_SERVICE_LOOPBACK,\n \t\t\t\t\t\t\tservice: { name: SERVICE_LOOPBACK },\n \t\t\t\t\t\t},\n+\t\t\t\t\t\t...getControlEndpointBindings(),\n \t\t\t\t\t],\n \t\t\t\t},\n \t\t\t};"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/queues/index.ts",
+            "diff": "@@ -15,6 +15,7 @@ import { getUserServiceName } from \"../core\";\n import {\n \tPlugin,\n \tSERVICE_LOOPBACK,\n+\tgetControlEndpointBindings,\n \tkProxyNodeBinding,\n \tnamespaceEntries,\n \tnamespaceKeys,\n@@ -87,6 +88,7 @@ export const QUEUES_PLUGIN: Plugin<typeof QueuesOptionsSchema> = {\n \t\t\t\t\t\tname: SharedBindings.MAYBE_SERVICE_LOOPBACK,\n \t\t\t\t\t\tservice: { name: SERVICE_LOOPBACK },\n \t\t\t\t\t},\n+\t\t\t\t\t...getControlEndpointBindings(),\n \t\t\t\t\t{\n \t\t\t\t\t\tname: SharedBindings.DURABLE_OBJECT_NAMESPACE_OBJECT,\n \t\t\t\t\t\tdurableObjectNamespace: {"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/r2/index.ts",
+            "diff": "@@ -11,6 +11,7 @@ import {\n \tPersistenceSchema,\n \tPlugin,\n \tSERVICE_LOOPBACK,\n+\tgetControlEndpointBindings,\n \tgetPersistPath,\n \tkProxyNodeBinding,\n \tmigrateDatabase,\n@@ -97,6 +98,7 @@ export const R2_PLUGIN: Plugin<\n \t\t\t\t\t\t\tname: SharedBindings.MAYBE_SERVICE_LOOPBACK,\n \t\t\t\t\t\t\tservice: { name: SERVICE_LOOPBACK },\n \t\t\t\t\t\t},\n+\t\t\t\t\t\t...getControlEndpointBindings(),\n \t\t\t\t\t],\n \t\t\t\t},\n \t\t\t};"
+        },
+        {
+            "filename": "packages/miniflare/src/plugins/shared/constants.ts",
+            "diff": "@@ -26,6 +26,20 @@ export const WORKER_BINDING_SERVICE_LOOPBACK: Worker_Binding = {\n \tservice: { name: SERVICE_LOOPBACK },\n };\n \n+const WORKER_BINDING_ENABLE_CONTROL_ENDPOINT: Worker_Binding = {\n+\tname: SharedBindings.MAYBE_JSON_ENABLE_CONTROL_ENDPOINTS,\n+\tjson: \"true\",\n+};\n+let enableControlEndpoints = false;\n+export function getControlEndpointBindings(): Worker_Binding[] {\n+\tif (enableControlEndpoints) return [WORKER_BINDING_ENABLE_CONTROL_ENDPOINT];\n+\telse return [];\n+}\n+/** @internal */\n+export function _enableControlEndpoints() {\n+\tenableControlEndpoints = true;\n+}\n+\n export function objectEntryWorker(\n \tdurableObjectNamespace: Worker_Binding_DurableObjectNamespaceDesignator,\n \tnamespace: string"
+        },
+        {
+            "filename": "packages/miniflare/src/workers/core/constants.ts",
+            "diff": "@@ -6,6 +6,7 @@ export const CoreHeaders = {\n \tROUTE_OVERRIDE: \"MF-Route-Override\",\n \n \t// API Proxy\n+\tOP_SECRET: \"MF-Op-Secret\",\n \tOP: \"MF-Op\",\n \tOP_TARGET: \"MF-Op-Target\",\n \tOP_KEY: \"MF-Op-Key\",\n@@ -25,6 +26,7 @@ export const CoreBindings = {\n \tJSON_LOG_LEVEL: \"MINIFLARE_LOG_LEVEL\",\n \tDATA_LIVE_RELOAD_SCRIPT: \"MINIFLARE_LIVE_RELOAD_SCRIPT\",\n \tDURABLE_OBJECT_NAMESPACE_PROXY: \"MINIFLARE_PROXY\",\n+\tDATA_PROXY_SECRET: \"MINIFLARE_PROXY_SECRET\",\n } as const;\n \n export const ProxyOps = {"
+        },
+        {
+            "filename": "packages/miniflare/src/workers/core/proxy.worker.ts",
+            "diff": "@@ -1,7 +1,9 @@\n import assert from \"node:assert\";\n+import { Buffer } from \"node:buffer\";\n import { parse } from \"devalue\";\n import { readPrefix, reduceError } from \"miniflare:shared\";\n import {\n+\tCoreBindings,\n \tCoreHeaders,\n \tProxyAddresses,\n \tProxyOps,\n@@ -59,6 +61,10 @@ function getType(value: unknown) {\n \treturn Object.prototype.toString.call(value).slice(8, -1); // `[object <type>]`\n }\n \n+type Env = Record<string, unknown> & {\n+\t[CoreBindings.DATA_PROXY_SECRET]: ArrayBuffer;\n+};\n+\n // TODO(someday): extract `ProxyServer` into component that could be used by\n //  other (user) Durable Objects\n export class ProxyServer implements DurableObject {\n@@ -105,7 +111,10 @@ export class ProxyServer implements DurableObject {\n \t};\n \tnativeReviver: ReducersRevivers = { Native: this.revivers.Native };\n \n-\tconstructor(_state: DurableObjectState, env: Record<string, unknown>) {\n+\tconstructor(\n+\t\t_state: DurableObjectState,\n+\t\treadonly env: Env\n+\t) {\n \t\tthis.heap.set(ProxyAddresses.GLOBAL, globalThis);\n \t\tthis.heap.set(ProxyAddresses.ENV, env);\n \t}\n@@ -123,6 +132,15 @@ export class ProxyServer implements DurableObject {\n \t}\n \n \tasync #fetch(request: Request) {\n+\t\t// Validate secret header to prevent unauthorised access to proxy\n+\t\tconst secretHex = request.headers.get(CoreHeaders.OP_SECRET);\n+\t\tif (secretHex == null) return new Response(null, { status: 401 });\n+\t\tconst expectedSecret = this.env[CoreBindings.DATA_PROXY_SECRET];\n+\t\tconst secretBuffer = Buffer.from(secretHex, \"hex\");\n+\t\tif (!crypto.subtle.timingSafeEqual(secretBuffer, expectedSecret)) {\n+\t\t\treturn new Response(null, { status: 401 });\n+\t\t}\n+\n \t\tconst opHeader = request.headers.get(CoreHeaders.OP);\n \t\tconst targetHeader = request.headers.get(CoreHeaders.OP_TARGET);\n \t\tconst keyHeader = request.headers.get(CoreHeaders.OP_KEY);\n@@ -188,6 +206,7 @@ export class ProxyServer implements DurableObject {\n \t\t\t\tconst url = new URL(originalUrl ?? request.url);\n \t\t\t\t// Create a new request to allow header mutation and use original URL\n \t\t\t\trequest = new Request(url, request);\n+\t\t\t\trequest.headers.delete(CoreHeaders.OP_SECRET);\n \t\t\t\trequest.headers.delete(CoreHeaders.OP);\n \t\t\t\trequest.headers.delete(CoreHeaders.OP_TARGET);\n \t\t\t\trequest.headers.delete(CoreHeaders.OP_KEY);"
+        },
+        {
+            "filename": "packages/miniflare/src/workers/shared/constants.ts",
+            "diff": "@@ -7,6 +7,7 @@ export const SharedBindings = {\n \tDURABLE_OBJECT_NAMESPACE_OBJECT: \"MINIFLARE_OBJECT\",\n \tMAYBE_SERVICE_BLOBS: \"MINIFLARE_BLOBS\",\n \tMAYBE_SERVICE_LOOPBACK: \"MINIFLARE_LOOPBACK\",\n+\tMAYBE_JSON_ENABLE_CONTROL_ENDPOINTS: \"MINIFLARE_ENABLE_CONTROL_ENDPOINTS\",\n } as const;\n \n export enum LogLevel {"
+        },
+        {
+            "filename": "packages/miniflare/src/workers/shared/object.worker.ts",
+            "diff": "@@ -18,6 +18,10 @@ export interface MiniflareDurableObjectEnv {\n \t// NOTE: this binding is optional so simulators can run standalone, without\n \t// a Node.js loopback server. In this case, logging is a no-op.\n \t[SharedBindings.MAYBE_SERVICE_LOOPBACK]?: Fetcher;\n+\t// If set to `true`, Miniflare enables additional endpoints in Durable Objects\n+\t// for testing. Note these endpoints allow anyone with access to the Miniflare\n+\t// dev server to run arbitrary SQL queries and read arbitrary blobs.\n+\t[SharedBindings.MAYBE_JSON_ENABLE_CONTROL_ENDPOINTS]?: boolean;\n }\n \n export interface MiniflareDurableObjectCfControlOp {\n@@ -119,8 +123,10 @@ export abstract class MiniflareDurableObject<\n \tasync fetch(req: Request<unknown, MiniflareDurableObjectCf>) {\n \t\t// Allow control of object internals by specifying operations in the `cf`\n \t\t// object. Used by tests to update fake time, and access internal storage.\n-\t\tconst controlOp = req?.cf?.miniflare?.controlOp;\n-\t\tif (controlOp !== undefined) return this.#handleControlOp(controlOp);\n+\t\tif (this.env[SharedBindings.MAYBE_JSON_ENABLE_CONTROL_ENDPOINTS] === true) {\n+\t\t\tconst controlOp = req?.cf?.miniflare?.controlOp;\n+\t\t\tif (controlOp !== undefined) return this.#handleControlOp(controlOp);\n+\t\t}\n \n \t\t// Each regular request to a `MiniflareDurableObject` includes the object\n \t\t// ID's name, so we can create the `BlobStore`. Note, we could just use the"
+        },
+        {
+            "filename": "packages/miniflare/test/plugins/core/proxy/client.spec.ts",
+            "diff": "@@ -13,6 +13,7 @@ import {\n \tReplaceWorkersTypes,\n \tResponse,\n \tWebSocketPair,\n+\tfetch,\n } from \"miniflare\";\n \n // This file tests API proxy edge cases. Cache, D1, Durable Object and R2 tests\n@@ -265,3 +266,13 @@ test(\"ProxyClient: can `JSON.stringify()` proxies\", async (t) => {\n \t\tversion: object.version,\n \t});\n });\n+\n+test(\"ProxyServer: prevents unauthorised access\", async (t) => {\n+\tconst mf = new Miniflare({ script: nullScript });\n+\tt.teardown(() => mf.dispose());\n+\n+\tconst url = await mf.ready;\n+\tconst res = await fetch(url, { headers: { \"MF-Op\": \"GET\" } });\n+\tt.is(res.status, 401);\n+\tawait res.arrayBuffer(); // (drain)\n+});"
+        },
+        {
+            "filename": "packages/miniflare/test/setup.mjs",
+            "diff": "@@ -1,5 +1,8 @@\n import Module from \"node:module\";\n-import { _initialiseInstanceRegistry } from \"../dist/src/index.js\";\n+import {\n+\t_initialiseInstanceRegistry,\n+\t_enableControlEndpoints,\n+} from \"../dist/src/index.js\";\n import { fileURLToPath } from \"node:url\";\n import path from \"node:path\";\n \n@@ -20,6 +23,8 @@ const registry = _initialiseInstanceRegistry();\n const bigSeparator = \"=\".repeat(80);\n const separator = \"-\".repeat(80);\n \n+_enableControlEndpoints();\n+\n // `process.on(\"exit\")` is more like `worker_thread.on(`exit`)` here. It will\n // be called once AVA's finished running tests and `after` hooks. Note we can't\n // use an `after` hook here, as that would run before `miniflareTest`'s"
+        },
+        {
+            "filename": "packages/wrangler/src/__tests__/configuration.test.ts",
+            "diff": "@@ -30,7 +30,7 @@ describe(\"normalizeAndValidateConfig()\", () => {\n \t\t\tconstellation: [],\n \t\t\thyperdrive: [],\n \t\t\tdev: {\n-\t\t\t\tip: \"*\",\n+\t\t\t\tip: \"localhost\",\n \t\t\t\tlocal_protocol: \"http\",\n \t\t\t\tport: undefined, // the default of 8787 is set at runtime\n \t\t\t\tupstream_protocol: \"https\","
+        },
+        {
+            "filename": "packages/wrangler/src/__tests__/dev.test.tsx",
+            "diff": "@@ -833,13 +833,15 @@ describe(\"wrangler dev\", () => {\n \t});\n \n \tdescribe(\"ip\", () => {\n-\t\tit(\"should default ip to *\", async () => {\n+\t\tit(\"should default ip to localhost\", async () => {\n \t\t\twriteWranglerToml({\n \t\t\t\tmain: \"index.js\",\n \t\t\t});\n \t\t\tfs.writeFileSync(\"index.js\", `export default {};`);\n \t\t\tawait runWrangler(\"dev\");\n-\t\t\texpect((Dev as jest.Mock).mock.calls[0][0].initialIp).toEqual(\"*\");\n+\t\t\texpect((Dev as jest.Mock).mock.calls[0][0].initialIp).toEqual(\n+\t\t\t\t\"localhost\"\n+\t\t\t);\n \t\t\texpect(std.out).toMatchInlineSnapshot(`\"\"`);\n \t\t\texpect(std.warn).toMatchInlineSnapshot(`\"\"`);\n \t\t\texpect(std.err).toMatchInlineSnapshot(`\"\"`);\n@@ -1055,7 +1057,9 @@ describe(\"wrangler dev\", () => {\n \t\t\t});\n \t\t\tfs.writeFileSync(\"index.js\", `export default {};`);\n \t\t\tawait runWrangler(\"dev\");\n-\t\t\texpect((Dev as jest.Mock).mock.calls[0][0].initialIp).toEqual(\"*\");\n+\t\t\texpect((Dev as jest.Mock).mock.calls[0][0].initialIp).toEqual(\n+\t\t\t\t\"localhost\"\n+\t\t\t);\n \t\t\texpect(std.out).toMatchInlineSnapshot(`\n \t\t\t        \"Your worker has access to the following bindings:\n \t\t\t        - Durable Objects:"
+        },
+        {
+            "filename": "packages/wrangler/src/config/config.ts",
+            "diff": "@@ -187,7 +187,7 @@ export interface DevConfig {\n \t/**\n \t * IP address for the local dev server to listen on,\n \t *\n-\t * @default `*`\n+\t * @default `localhost`\n \t */\n \tip: string;\n "
+        },
+        {
+            "filename": "packages/wrangler/src/config/validation.ts",
+            "diff": "@@ -390,7 +390,7 @@ function normalizeAndValidateDev(\n \trawDev: RawDevConfig\n ): DevConfig {\n \tconst {\n-\t\tip = \"*\",\n+\t\tip = \"localhost\",\n \t\tport,\n \t\tinspector_port,\n \t\tlocal_protocol = \"http\","
+        },
+        {
+            "filename": "packages/wrangler/src/pages/dev.ts",
+            "diff": "@@ -99,7 +99,7 @@ export function Options(yargs: CommonYargsArgv) {\n \t\t\t},\n \t\t\tip: {\n \t\t\t\ttype: \"string\",\n-\t\t\t\tdefault: \"0.0.0.0\",\n+\t\t\t\tdefault: \"localhost\",\n \t\t\t\tdescription: \"The IP address to listen on\",\n \t\t\t},\n \t\t\tport: {"
+        }
+    ],
+    "commitTime": "2023-11-30 18:25:43"
+}

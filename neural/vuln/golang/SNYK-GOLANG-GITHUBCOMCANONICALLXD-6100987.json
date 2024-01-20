@@ -1,0 +1,40 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "LOW",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "HIGH",
+        "integrity": "HIGH",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Paul Ouellette"
+    ],
+    "cvssDetails": [],
+    "cvssScore": 6.8,
+    "disclosureTime": "2023-12-05 23:32:58",
+    "epssDetails": null,
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-GOLANG-GITHUBCOMCANONICALLXD-6100987",
+    "identifiers": {
+        "CVE": [],
+        "CWE": [
+            "CWE-20"
+        ]
+    },
+    "language": "golang",
+    "malicious": false,
+    "packageManager": "golang",
+    "publicationTime": "2023-12-06 15:47:30",
+    "remediation": "There is no fixed version for github.com/canonical/lxd . ",
+    "severity": "medium",
+    "socialTrendAlert": false,
+    "title": "Improper Input Validation",
+    "vulnDescription": {
+        "Overview": "github.com/canonical/lxd is an a modern, secure and powerful system container and virtual machine manager. Affected versions of this package are vulnerable to Improper Input Validation. An attacker can gain root access on the system by creating a disk device with shift=true and creating a setuid root executable when restricted access to a project is configured with restricted=true but without setting restricted.devices.disk.paths . This allows the shift property to be used unrestrictedly. "
+    },
+    "source_code": []
+}

@@ -1,0 +1,70 @@
+{
+    "CVSSv3": {
+        "CVSS": "3.1",
+        "attackVector": "NETWORK",
+        "attackComplexity": "HIGH",
+        "privilegesRequired": "NONE",
+        "userInteraction": "NONE",
+        "scope": "UNCHANGED",
+        "confidentiality": "LOW",
+        "integrity": "NONE",
+        "availability": "NONE"
+    },
+    "credit": [
+        "Unknown"
+    ],
+    "cvssDetails": [
+        {
+            "assigner": "NVD",
+            "cvssV3BaseScore": 5.3,
+            "cvssV3Vector": {
+                "CVSS": "3.1",
+                "attackVector": "NETWORK",
+                "attackComplexity": "LOW",
+                "privilegesRequired": "NONE",
+                "userInteraction": "NONE",
+                "scope": "UNCHANGED",
+                "confidentiality": "LOW",
+                "integrity": "NONE",
+                "availability": "NONE"
+            },
+            "severity": "medium"
+        }
+    ],
+    "cvssScore": 3.7,
+    "disclosureTime": "2023-12-05 22:46:25",
+    "epssDetails": {
+        "modelVersion": "v2023.03.01",
+        "percentile": "0.12342",
+        "probability": "0.00045"
+    },
+    "exploitMaturity": "Not Defined",
+    "id": "SNYK-PHP-MICROSOFTMICROSOFTGRAPH-6102826",
+    "identifiers": {
+        "CVE": [
+            "CVE-2023-49282"
+        ],
+        "CWE": [
+            "CWE-200"
+        ]
+    },
+    "language": "php",
+    "malicious": false,
+    "packageManager": "composer",
+    "publicationTime": "2023-12-07 11:58:16",
+    "remediation": "Upgrade microsoft/microsoft-graph to version 1.109.1, 2.0.0-RC5 or higher. ",
+    "severity": "low",
+    "socialTrendAlert": false,
+    "title": "Information Exposure",
+    "vulnDescription": {
+        "Overview": "microsoft/microsoft-graph is a Microsoft Graph SDK for PHP Affected versions of this package are vulnerable to Information Exposure via the tests/GetPhpInfo.php script which includes a call to the phpinfo() function. An attacker can obtain sensitive system information if the server is misconfigured to expose the tests under the /vendor directory. ",
+        "Workaround": "This vulnerability can be mitigated by deleting the vendor/microsoft/microsoft-graph/tests/GetPhpInfo.php file, removing access to the /vendor directory, or disabling the phpinfo function. "
+    },
+    "source_code": [
+        {
+            "filename": "tests/GetPhpInfo.php",
+            "diff": "@@ -1,3 +0,0 @@\n-<?php\n-\n-phpinfo();\n\\ No newline at end of file"
+        }
+    ],
+    "commitTime": "2023-11-30 00:40:06"
+}
