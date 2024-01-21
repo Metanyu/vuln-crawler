@@ -5,7 +5,7 @@ Web Crawler specified for snyk vulnerabilities database.
 Follow instruction in [google colab note](https://colab.research.google.com/drive/1nv_0hi6ySOT5KCrvj0zH_fVo_4dN-vat?usp=sharing).
 
 ### DATA BREAKDOWN: 
-[an example of cleaned data](https://jsonblob.com/1194465440306159616)
+[an example of cleaned data](https://jsonblob.com/1198419017756172288)
 * CVSS - or Common Vulnerability Scoring System: A way to evaluate and rank vulnerabilities. CVSS generates a score from 0 to 10 based on the severity of the vulnerability.
   * Base Score:
       CVSS values have been grouped into rankings as follow:
