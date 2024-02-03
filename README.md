@@ -6,6 +6,9 @@ Follow instruction in [google colab note](https://colab.research.google.com/driv
 
 ### DATA BREAKDOWN: 
 [an example of cleaned data](https://jsonblob.com/1198419017756172288)
+* ID: refers to the ID given to the vulnerability by snyk team.
+* Credit: The author who discovered the vulnerability.
+* language: program language used.
 * CVSS - or Common Vulnerability Scoring System: A way to evaluate and rank vulnerabilities. CVSS generates a score from 0 to 10 based on the severity of the vulnerability.
   * Base Score:
       CVSS values have been grouped into rankings as follow:
@@ -79,3 +82,4 @@ Follow instruction in [google colab note](https://colab.research.google.com/driv
   This refers to the date and time when Snyk itself published the specific vulnerability.
 * commitTime:
   This refers to the date and time when a fix is published by the maintainer.
+* source_code: The source code of the patch where the vulnerability is fixed. 
