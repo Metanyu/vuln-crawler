@@ -5,10 +5,9 @@ Web Crawler specified for snyk vulnerabilities database.
 Follow instruction in [google colab note](https://colab.research.google.com/drive/1nv_0hi6ySOT5KCrvj0zH_fVo_4dN-vat?usp=sharing).
 
 ### OBTAINED DATASET
-Here is the cleaned and standardized [dataset](https://www.kaggle.com/datasets/bouncybois/snyk-vulnerabily) that was used for our analyses.
+Here is the cleaned and standardized [dataset](https://kaggle.com/datasets/651934a5cda003b9efc2cca45575cf880079cdac662952ddad2a2e38ef34a33c) that was used for our analyses.
 
 ### DATA BREAKDOWN: 
-[an example of cleaned data](https://jsonblob.com/1198419017756172288)
 * ID: refers to the ID given to the vulnerability by snyk team.
 * Credit: The author who discovered the vulnerability.
 * language: program language used.
